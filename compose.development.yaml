@@ -1,0 +1,84 @@
+name: landbase_ai_suite_development
+
+services:
+  postgres:
+    image: postgres:${POSTGRES_VERSION}
+    env_file:
+      - .env.development
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: n8nio/n8n:${N8N_VERSION}
+    env_file:
+      - .env.development
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+    ports:
+      - "${N8N_PORT}:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  rails:
+    build:
+      context: .
+      dockerfile: Dockerfile.rails
+      target: development
+      args:
+        - RUBY_VERSION=${RUBY_VERSION}
+        - NODE_VERSION=${NODE_VERSION}
+        - YARN_VERSION=${YARN_VERSION}
+        - RAILS_VERSION=${RAILS_VERSION}
+    env_file:
+      - .env.development
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "${RAILS_PORT}:3000"
+    volumes:
+      - ./${RAILS_APP_NAME}:/${RAILS_APP_NAME}
+      - bundle_cache:/usr/local/bundle
+      - yarn_global_cache:/root/.yarn/berry/cache
+    command: >
+      bash -c "
+        cd /${RAILS_APP_NAME} &&
+        bin/dev
+      "
+    stdin_open: true
+    tty: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
+  n8n_data:
+    driver: local
+  bundle_cache:
+    driver: local
+  yarn_global_cache:
+    driver: local
