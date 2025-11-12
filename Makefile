@@ -1,5 +1,5 @@
 # LandBase AI Suite Development Lifecycle Automation
-# n8n + Rails 8 + Next.js 15 + Flutter 3 + PostgreSQL
+# Mattermost + n8n + Rails 8 + Next.js 15 + Flutter 3 + PostgreSQL
 
 include .env.development
 export
@@ -20,11 +20,12 @@ help: ## ヘルプ表示
 		| awk 'BEGIN {FS = ":.*?## "}; {printf " ${GREEN}%-15s${NC} %s\n", $$1, $$2}'
 
 .PHONY: up
-up: ## n8nとPostgreSQLを起動
-	@echo "${GREEN}Starting n8n and PostgreSQL...${NC}"
-	$(DC) up -d postgres n8n
+up: ## Mattermost, n8n, PostgreSQLを起動
+	@echo "${GREEN}Starting Mattermost, n8n and PostgreSQL...${NC}"
+	$(DC) up -d postgres mattermost n8n
+	@echo "${GREEN}Mattermost is running at http://localhost:${MATTERMOST_PORT}${NC}"
 	@echo "${GREEN}n8n is running at http://localhost:${N8N_PORT}${NC}"
-	@echo "${YELLOW}Login: ${N8N_BASIC_AUTH_USER} / ${N8N_BASIC_AUTH_PASSWORD}${NC}"
+	@echo "${YELLOW}n8n Login: ${N8N_BASIC_AUTH_USER} / ${N8N_BASIC_AUTH_PASSWORD}${NC}"
 
 .PHONY: down
 down: ## サービス停止
@@ -45,6 +46,10 @@ postgres-logs: ## PostgreSQLログ表示
 .PHONY: postgres-shell
 postgres-shell: ## PostgreSQLシェル接続
 	$(DC) exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+
+.PHONY: mattermost-logs
+mattermost-logs: ## Mattermostログ表示
+	$(DC) logs -f mattermost
 
 .PHONY: rails-shell
 rails-shell: ## Railsコンテナにシェル接続
