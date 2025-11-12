@@ -5,10 +5,6 @@ services:
     image: postgres:${POSTGRES_VERSION}
     env_file:
       - .env.development
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
@@ -30,10 +26,6 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
       - DB_POSTGRESDB_USER=${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
-      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
-      - WEBHOOK_URL=${WEBHOOK_URL}
     ports:
       - "${N8N_PORT}:5678"
     volumes:
@@ -54,8 +46,6 @@ services:
         - RAILS_VERSION=${RAILS_VERSION}
     env_file:
       - .env.development
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
     ports:
       - "${RAILS_PORT}:3000"
     volumes:
