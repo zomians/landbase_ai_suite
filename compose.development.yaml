@@ -48,8 +48,7 @@ services:
 
   rails:
     build:
-      context: .
-      dockerfile: Dockerfile.rails
+      context: ./rails
       target: development
       args:
         - RUBY_VERSION=${RUBY_VERSION}
@@ -77,8 +76,7 @@ services:
 
   nextjs:
     build:
-      context: .
-      dockerfile: Dockerfile.nextjs
+      context: ./nextjs
       target: development
       args:
         - NODE_VERSION=${NODE_VERSION}
