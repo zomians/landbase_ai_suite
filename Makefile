@@ -1,5 +1,5 @@
 # LandBase AI Suite Development Lifecycle Automation
-# n8n + Rails 8 + Flutter 3 + PostgreSQL
+# n8n + Rails 8 + Next.js 15 + Flutter 3 + PostgreSQL
 
 include .env.development
 export
@@ -45,6 +45,28 @@ postgres-logs: ## PostgreSQLログ表示
 .PHONY: postgres-shell
 postgres-shell: ## PostgreSQLシェル接続
 	$(DC) exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+
+.PHONY: nextjs-shell
+nextjs-shell: ## Next.jsコンテナにシェル接続
+	$(DC) run --rm --service-ports nextjs bash
+
+.PHONY: nextjs-new
+nextjs-new: ## 新規Next.jsアプリ作成
+	@echo "${GREEN}Creating new Next.js application...${NC}"
+	@[ -d ${NEXTJS_APP_NAME} ] && echo "${YELLOW}Next.js application '${NEXTJS_APP_NAME}' already exists.${NC}" || \
+		$(DC) run --rm --service-ports nextjs bash -c " \
+			cd /app && \
+			npx create-next-app@${NEXTJS_VERSION} ${NEXTJS_APP_NAME} \
+				--typescript \
+				--tailwind \
+				--app \
+				--src-dir \
+				--import-alias '@/*' \
+		"
+
+.PHONY: nextjs-logs
+nextjs-logs: ## Next.jsログ表示
+	$(DC) logs -f nextjs
 
 .PHONY: clean
 clean: ## クリーンアップ（全削除）

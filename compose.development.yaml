@@ -73,6 +73,29 @@ services:
       postgres:
         condition: service_healthy
 
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile.nextjs
+      target: development
+      args:
+        - NODE_VERSION=${NODE_VERSION}
+        - NEXTJS_VERSION=${NEXTJS_VERSION}
+    env_file:
+      - .env.development
+    ports:
+      - "${NEXTJS_PORT}:3000"
+    volumes:
+      - ./${NEXTJS_APP_NAME}:/app/${NEXTJS_APP_NAME}
+      - nextjs_node_modules:/app/${NEXTJS_APP_NAME}/node_modules
+    command: >
+      bash -c "
+        cd /app/${NEXTJS_APP_NAME} &&
+        npm run dev
+      "
+    stdin_open: true
+    tty: true
+
 volumes:
   postgres_data:
     driver: local
@@ -81,4 +104,6 @@ volumes:
   bundle_cache:
     driver: local
   yarn_global_cache:
+    driver: local
+  nextjs_node_modules:
     driver: local
