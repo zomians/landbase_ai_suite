@@ -239,6 +239,22 @@ INSERT INTO workflow_entity (
     0
 ) ON CONFLICT (id) DO NOTHING;
 
+-- Get the first project ID (personal project)
+DO $$
+DECLARE
+    project_id_var VARCHAR(36);
+BEGIN
+    SELECT id INTO project_id_var FROM project LIMIT 1;
+
+    -- Share workflows with the project
+    INSERT INTO shared_workflow ("workflowId", "projectId", role, "createdAt", "updatedAt")
+    VALUES
+        ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', project_id_var, 'workflow:owner', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+        ('b2c3d4e5-f6a7-8901-bcde-f12345678901', project_id_var, 'workflow:owner', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+        ('c3d4e5f6-a7b8-9012-cdef-123456789012', project_id_var, 'workflow:owner', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT ("workflowId", "projectId") DO NOTHING;
+END $$;
+
 -- Display result
 SELECT '✅ Sample workflows imported successfully!' as message;
 SELECT COUNT(*) as total_workflows FROM workflow_entity;
