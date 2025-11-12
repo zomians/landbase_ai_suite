@@ -46,6 +46,25 @@ postgres-logs: ## PostgreSQLログ表示
 postgres-shell: ## PostgreSQLシェル接続
 	$(DC) exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 
+.PHONY: rails-shell
+rails-shell: ## Railsコンテナにシェル接続
+	$(DC) run --rm --service-ports rails bash
+
+.PHONY: rails-new
+rails-new: ## 新規Railsアプリ作成（PostgreSQL対応）
+	@echo "${GREEN}Creating new Rails application with PostgreSQL...${NC}"
+	@[ -d ${RAILS_APP_NAME} ] && echo "${YELLOW}Rails application '${RAILS_APP_NAME}' already exists.${NC}" || \
+		$(DC) run --rm --service-ports rails bash -c " \
+			rails new ${RAILS_APP_NAME} \
+				--database=postgresql \
+				--javascript=esbuild \
+				--css=tailwind \
+		"
+
+.PHONY: rails-logs
+rails-logs: ## Railsログ表示
+	$(DC) logs -f rails
+
 .PHONY: nextjs-shell
 nextjs-shell: ## Next.jsコンテナにシェル接続
 	$(DC) run --rm --service-ports nextjs bash
