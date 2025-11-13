@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # scripts/add_client.rb
-# クライアント情報をclients.ymlに追加
+# クライアント情報をclient_list.yamlに追加
 
 require 'yaml'
 require 'securerandom'
@@ -17,8 +17,8 @@ name = ARGV[1]
 industry = ARGV[2]
 email = ARGV[3] || "admin@#{code}.landbase.ai"
 
-# clients.yml読み込み
-clients_file = File.join(__dir__, '../config/clients.yml')
+# client_list.yaml読み込み
+clients_file = File.join(__dir__, '../config/client_list.yaml')
 clients_data = if File.exist?(clients_file)
   YAML.load_file(clients_file) || {}
 else

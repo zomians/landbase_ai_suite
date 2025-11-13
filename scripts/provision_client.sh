@@ -19,9 +19,9 @@ fi
 
 CLIENT_CODE=$1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_FILE="${SCRIPT_DIR}/../config/clients.yml"
+CONFIG_FILE="${SCRIPT_DIR}/../config/client_list.yaml"
 
-# clients.ymlからクライアント情報を取得（Ruby使用）
+# client_list.yamlからクライアント情報を取得（Ruby使用）
 CLIENT_DATA=$(ruby -ryaml -e "
   data = YAML.load_file('${CONFIG_FILE}')
   client = data['clients'].find { |c| c['code'] == '${CLIENT_CODE}' }
