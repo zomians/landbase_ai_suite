@@ -39,16 +39,6 @@ logs: ## 全サービスのログ表示
 n8n-logs: ## n8nログ表示
 	$(DC) logs -f n8n
 
-.PHONY: n8n-import-workflows
-n8n-import-workflows: ## n8nにサンプルワークフローをインポート
-	@echo "${GREEN}Importing sample workflows into n8n...${NC}"
-	@echo "${YELLOW}Waiting for n8n to be ready...${NC}"
-	@until curl -s http://localhost:${N8N_PORT}/healthz > /dev/null 2>&1; do sleep 2; done
-	@echo "${GREEN}n8n is ready!${NC}"
-	@sleep 3
-	@$(DC) exec -T postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < n8n/import-workflows.sql
-	@echo "${GREEN}Sample workflows imported successfully!${NC}"
-
 .PHONY: postgres-logs
 postgres-logs: ## PostgreSQLログ表示
 	$(DC) logs -f postgres
@@ -115,8 +105,8 @@ build: ## サービスビルド（キャッシュ無効）
 # プラットフォーム初期セットアップ
 # ================================
 
-.PHONY: setup-platform
-setup-platform: ## 初回セットアップ（n8n自動構成）
+.PHONY: init
+init: ## 初回セットアップ（n8n自動構成）
 	@echo "${GREEN}========================================${NC}"
 	@echo "${GREEN}🚀 LandBase AI Suite 初回セットアップ${NC}"
 	@echo "${GREEN}========================================${NC}"
@@ -144,7 +134,7 @@ list-clients: ## クライアント一覧表示
 	@echo "${GREEN}📋 登録クライアント一覧${NC}"
 	@echo "${GREEN}========================================${NC}"
 	@ruby -ryaml -e " \
-		data = YAML.load_file('config/clients.yml'); \
+		data = YAML.load_file('config/client_list.yaml'); \
 		if data['clients'].empty?; \
 			puts '⚠️  登録されているクライアントはありません'; \
 		else; \
@@ -171,19 +161,46 @@ remove-client: ## クライアント削除（例: make remove-client CODE=okinaw
 	@echo "${RED}========================================${NC}"
 	@echo "${RED}⚠️  クライアント削除${NC}"
 	@echo "${RED}========================================${NC}"
+	@echo ""
 	@ruby -ryaml -e " \
 		code = '$(CODE)'; \
-		file = 'config/clients.yml'; \
+		file = 'config/client_list.yaml'; \
 		data = YAML.load_file(file); \
 		client = data['clients'].find { |c| c['code'] == code }; \
 		if client.nil?; \
 			puts '❌ クライアント \"#{code}\" が見つかりません'; \
 			exit 1; \
 		end; \
+	"
+	@echo "${YELLOW}📦 Step 1/3: Dockerコンテナ停止・削除中...${NC}"
+	@if [ -f "compose.client.$(CODE).yaml" ]; then \
+		docker compose -f compose.client.$(CODE).yaml down --volumes || true; \
+		echo "${GREEN}✅ Dockerコンテナ削除完了${NC}"; \
+	else \
+		echo "${YELLOW}⚠️  Composeファイルが見つかりません（スキップ）${NC}"; \
+	fi
+	@echo ""
+	@echo "${YELLOW}📦 Step 2/3: Composeファイル削除中...${NC}"
+	@if [ -f "compose.client.$(CODE).yaml" ]; then \
+		rm compose.client.$(CODE).yaml; \
+		echo "${GREEN}✅ Composeファイル削除完了${NC}"; \
+	else \
+		echo "${YELLOW}⚠️  Composeファイルが見つかりません（スキップ）${NC}"; \
+	fi
+	@echo ""
+	@echo "${YELLOW}📦 Step 3/3: client_list.yamlから削除中...${NC}"
+	@ruby -ryaml -e " \
+		code = '$(CODE)'; \
+		file = 'config/client_list.yaml'; \
+		data = YAML.load_file(file); \
 		data['clients'].reject! { |c| c['code'] == code }; \
 		File.write(file, data.to_yaml); \
-		puts \"✅ クライアント \\\"#{code}\\\" を削除しました\"; \
+		puts \"${GREEN}✅ client_list.yamlから削除完了${NC}\"; \
 	"
+	@echo ""
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}✅ クライアント '$(CODE)' の削除完了${NC}"
+	@echo "${GREEN}========================================${NC}"
 
 # ================================
 # LINE Bot 統合

@@ -19,9 +19,9 @@ fi
 
 CLIENT_CODE=$1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONFIG_FILE="${SCRIPT_DIR}/../config/clients.yml"
+CONFIG_FILE="${SCRIPT_DIR}/../config/client_list.yaml"
 
-# clients.ymlからクライアント情報を取得（Ruby使用）
+# client_list.yamlからクライアント情報を取得（Ruby使用）
 CLIENT_DATA=$(ruby -ryaml -e "
   data = YAML.load_file('${CONFIG_FILE}')
   client = data['clients'].find { |c| c['code'] == '${CLIENT_CODE}' }
@@ -97,24 +97,6 @@ if echo "$N8N_SETUP_RESPONSE" | grep -q "email"; then
 else
   echo -e "${RED}❌ n8nオーナー作成失敗${NC}"
   echo -e "${YELLOW}⚠️  レスポンス: ${N8N_SETUP_RESPONSE}${NC}"
-fi
-
-# ================================================
-# Step 4: ワークフロー導入（業種別）
-# ================================================
-echo ""
-echo -e "${YELLOW}📦 Step 4/4: 業種別ワークフロー導入中...${NC}"
-
-INDUSTRY=$(echo $CLIENT_DATA | ruby -rjson -e "puts JSON.parse(STDIN.read)['industry']")
-TEMPLATE_FILE="${SCRIPT_DIR}/../config/templates/${INDUSTRY}.json"
-
-if [ -f "$TEMPLATE_FILE" ]; then
-  echo -e "   テンプレート: ${INDUSTRY}.json"
-  # TODO: n8n API経由でワークフロー導入
-  echo -e "${GREEN}✅ ワークフロー導入完了${NC}"
-else
-  echo -e "${YELLOW}⚠️  テンプレートが見つかりません: ${INDUSTRY}.json${NC}"
-  echo -e "${YELLOW}   スキップします${NC}"
 fi
 
 # ================================================

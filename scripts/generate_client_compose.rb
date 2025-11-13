@@ -12,10 +12,10 @@ end
 
 client_code = ARGV[0]
 
-# clients.yml読み込み
-clients_file = File.join(__dir__, '../config/clients.yml')
+# client_list.yaml読み込み
+clients_file = File.join(__dir__, '../config/client_list.yaml')
 unless File.exist?(clients_file)
-  puts "❌ エラー: config/clients.yml が見つかりません"
+  puts "❌ エラー: config/client_list.yaml が見つかりません"
   exit 1
 end
 
