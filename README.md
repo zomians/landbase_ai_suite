@@ -69,30 +69,39 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 ### 全体構成図
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    LandBase AI Suite                         │
-│                  (Docker Compose環境)                        │
-├─────────────────────────────────────────────────────────────┤
-│                                                               │
-│  ┌─────────────────┐    ┌──────────────────────────────┐   │
-│  │  Platform Layer │    │     Client Layer             │   │
-│  │  (内部管理用)   │    │  (クライアント専用環境)      │   │
-│  ├─────────────────┤    ├──────────────────────────────┤   │
-│  │ n8n             │    │ n8n (Client 1) - Port 5679   │   │
-│  │ Port: 5678      │    │ Schema: n8n_client1          │   │
-│  │ Schema: public  │    ├──────────────────────────────┤   │
-│  ├─────────────────┤    │ n8n (Client 2) - Port 5680   │   │
-│  │ Mattermost      │    │ Schema: n8n_client2          │   │
-│  │ Port: 8065      │    ├──────────────────────────────┤   │
-│  └─────────────────┘    │ n8n (Client 3) - Port 5681   │   │
-│                          │ Schema: n8n_client3          │   │
-│  ┌──────────────────────┴──────────────────────────────┐   │
-│  │           PostgreSQL (Port 5432)                     │   │
-│  │  - Database: landbase_development                    │   │
-│  │  - Schema分離: public, n8n_client1, n8n_client2...  │   │
-│  └──────────────────────────────────────────────────────┘   │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│               LandBase AI Suite (Docker Compose)          │
+└──────────────────────────────────────────────────────────┘
+
+[Platform Layer - 内部管理用]
+  ┌─────────────────┐
+  │ n8n             │ Port: 5678
+  │ (Platform)      │ Schema: public
+  └─────────────────┘
+
+  ┌─────────────────┐
+  │ Mattermost      │ Port: 8065
+  └─────────────────┘
+
+[Client Layer - クライアント専用環境]
+  ┌─────────────────┐
+  │ n8n (Client 1)  │ Port: 5679, Schema: n8n_client1
+  └─────────────────┘
+
+  ┌─────────────────┐
+  │ n8n (Client 2)  │ Port: 5680, Schema: n8n_client2
+  └─────────────────┘
+
+  ┌─────────────────┐
+  │ n8n (Client N)  │ Port: 5679+N, Schema: n8n_clientN
+  └─────────────────┘
+
+[Database Layer - 共通データベース]
+  ┌─────────────────────────────────────────────────────────┐
+  │ PostgreSQL (Port 5432)                                   │
+  │ Database: landbase_development                           │
+  │ Schemas: public, n8n_client1, n8n_client2, ...          │
+  └─────────────────────────────────────────────────────────┘
 ```
 
 ### マルチテナント設計
@@ -159,9 +168,14 @@ landbase_ai_suite/
 ├── compose.development.yaml      # Platform サービス定義
 ├── compose.client.*.yaml         # クライアント専用 n8n 定義（自動生成）
 ├── Makefile                      # 統一コマンドインターフェース
+├── README.md                     # プロジェクトドキュメント
 │
 ├── config/                       # 設定ファイル
 │   └── client_list.yaml          # クライアントレジストリ（マスターデータ）
+│
+├── docs/                         # 詳細ドキュメント
+│   ├── line-bot-integration.md   # LINE Bot統合ガイド
+│   └── roadmap.md                # 開発ロードマップ
 │
 ├── scripts/                      # 自動化スクリプト
 │   ├── add_client.rb             # クライアント登録
@@ -173,9 +187,11 @@ landbase_ai_suite/
 │   └── workflows/                # ワークフロー定義
 │       └── line-to-gdrive.json   # LINE Bot → Google Drive
 │
-├── rails/                        # Rails アプリ（将来実装）
-├── nextjs/                       # Next.js アプリ（将来実装）
-└── postgres/                     # PostgreSQL 設定
+├── rails/                        # Rails 開発環境
+│   └── Dockerfile                # Rails 用 Dockerfile
+│
+└── nextjs/                       # Next.js 開発環境
+    └── Dockerfile                # Next.js 用 Dockerfile
 ```
 
 ---
@@ -205,8 +221,7 @@ make init
 
 #### Platform n8n (社内管理用)
 - URL: http://localhost:5678
-- Email: `admin@landbase.local`
-- Password: `Admin123456`
+- 認証情報: `.env.development` の `N8N_OWNER_*` を参照
 
 #### Mattermost
 - URL: http://localhost:8065
@@ -348,287 +363,30 @@ make remove-client         # クライアント削除
 make init                  # n8n オーナー作成 + Mattermost 手動セットアップ案内
 ```
 
-### スクリプト詳細
+### スクリプト概要
 
-#### 1. `scripts/add_client.rb`
+| スクリプト | 用途 | Makeコマンド |
+|-----------|------|-------------|
+| `add_client.rb` | クライアント情報を `client_list.yaml` に登録 | `make add-client` |
+| `generate_client_compose.rb` | クライアント専用 Docker Compose ファイル生成 | `make provision-client` で自動実行 |
+| `provision_client.sh` | クライアント環境の完全自動構築 | `make provision-client` |
+| `setup_n8n_owner.sh` | Platform n8n の初回セットアップ | `make init` |
 
-**目的**: クライアント情報を `client_list.yaml` に追加
-
-**主要機能**:
-- 引数バリデーション
-- 重複チェック
-- ポート自動割り当て（5679から順次）
-- パスワード自動生成（16文字英数字）
-- メールアドレス生成（アンダースコアをハイフンに変換）
-
-**使用例**:
-```bash
-ruby scripts/add_client.rb hotel_sunrise "Sunrise Hotel" hotel info@hotel.com
-```
-
-#### 2. `scripts/generate_client_compose.rb`
-
-**目的**: クライアント専用 Docker Compose ファイル生成
-
-**主要機能**:
-- `client_list.yaml` から設定読み込み
-- n8n コンテナ定義生成
-- 専用ボリューム作成
-- プラットフォームネットワークへの接続
-
-**生成例**:
-```yaml
-name: landbase_ai_suite_development
-services:
-  n8n-shrimp-shells:
-    image: n8nio/n8n:latest
-    container_name: n8n_shrimp_shells
-    environment:
-      - DB_POSTGRESDB_SCHEMA=n8n_shrimp_shells
-    ports:
-      - "5679:5678"
-    volumes:
-      - n8n_data_shrimp_shells:/home/node/.n8n
-    networks:
-      - landbase_ai_suite_development_default
-```
-
-#### 3. `scripts/provision_client.sh`
-
-**目的**: クライアント環境の完全自動構築
-
-**実行ステップ**:
-1. Docker Compose 生成 (`generate_client_compose.rb` 呼び出し)
-2. n8n コンテナ起動
-3. ヘルスチェック待機
-4. n8n オーナー作成（REST API: `/rest/owner/setup`）
-5. 業種別ワークフロー導入（未実装）
-
-**エラーハンドリング**:
-- クライアント存在チェック
-- n8n API レスポンス検証
-
-#### 4. `scripts/setup_n8n_owner.sh`
-
-**目的**: Platform n8n の初回セットアップ
-
-**実行内容**:
-- `.env.development` から認証情報読み込み
-- `/rest/owner/setup` API 呼び出し
-- セットアップ完了確認
+詳細は各スクリプトのコメントを参照してください。
 
 ---
 
 ## LINE Bot 統合
 
-### 概要
-
-LINE Bot と n8n を連携して、LINE グループに投稿された画像を自動的に Google Drive の `inbox` フォルダに保存するワークフローです。
-
-### アーキテクチャ
-
-```
-[LINE Group] → [LINE Bot] → [ngrok] → [ローカルn8n] → [Google Drive]
-                             Webhook
-```
-
-### セットアップ手順
-
-#### 1. LINE Bot 作成
-
-**LINE Developers Console での設定:**
-
-```bash
-# 1. LINE Developers Console にアクセス
-https://developers.line.biz/console/
-
-# 2. 新しいプロバイダー作成
-
-# 3. Messaging API チャネル作成
-
-# 4. 以下の情報を取得:
-#    - Channel Secret
-#    - Channel Access Token (Long-lived)
-
-# 5. 以下の設定を ON にする:
-#    - Webhook送信: ON
-#    - グループトーク参加: ON
-```
-
-#### 2. 環境変数設定
-
-`.env.development` に LINE Bot の認証情報を設定:
-
-```bash
-# .env.development を編集
-LINE_CHANNEL_SECRET=your_actual_channel_secret
-LINE_CHANNEL_ACCESS_TOKEN=your_actual_channel_access_token
-```
-
-設定状況を確認:
-
-```bash
-make line-bot-info
-```
-
-#### 3. ngrok で n8n を公開
-
-ローカルの n8n を外部から Webhook 受信できるように公開:
-
-```bash
-# ngrok のインストール (未インストールの場合)
-brew install ngrok
-
-# n8n を公開
-make ngrok
-
-# 出力例:
-# Forwarding https://xxxx-xxxx-xxxx.ngrok-free.app -> http://localhost:5678
-```
-
-#### 4. LINE Webhook URL 設定
-
-LINE Developers Console で Webhook URL を設定:
-
-```
-https://<ngrok-url>/webhook/line-webhook
-```
-
-**確認方法:**
-
-```bash
-# Webhook 接続テスト
-make line-bot-test
-```
-
-#### 5. Google Drive 認証設定
-
-**n8n UI で Google Drive Credential を作成:**
-
-1. n8n にアクセス: http://localhost:5678
-2. Credentials → New Credential → Google Drive OAuth2 API
-3. OAuth 認証フロー実行
-4. Google Drive に `inbox` フォルダを作成
-
-#### 6. n8n ワークフローのインポート
-
-**ワークフローファイル:** `n8n/workflows/line-to-gdrive.json`
-
-**n8n UI でインポート:**
-
-1. n8n UI の Workflows → Import from File
-2. `n8n/workflows/line-to-gdrive.json` を選択
-3. Credentials を設定:
-   - **LINE Bot Auth**: HTTP Header Auth で以下を設定
-     - Header Name: `Authorization`
-     - Header Value: `Bearer <LINE_CHANNEL_ACCESS_TOKEN>`
-   - **Google Drive OAuth2**: 上記で作成した Credential を選択
-4. ワークフローを Activate
-
-#### 7. LINE グループで動作確認
-
-```bash
-# 1. LINE Bot をグループに招待
-
-# 2. グループで画像を送信
-
-# 3. Google Drive の inbox フォルダを確認
-#    ファイル名: YYYY-MM-DD_HHmmss_<groupId>.jpg
-```
-
-### ワークフロー詳細
-
-#### ノード構成
-
-```
-1. Webhook          : LINE からメッセージ受信
-2. IF Image         : 画像メッセージか判定
-3. Get LINE Image   : LINE API から画像データ取得
-4. Google Drive     : inbox フォルダにアップロード
-5. Response Success : 成功レスポンス返却
-6. Response Ignored : 画像以外は無視
-```
-
-#### ファイル命名規則
-
-```javascript
-// Google Drive に保存されるファイル名
-{timestamp}_{groupId}.jpg
-
-// 例:
-2025-11-13_163000_Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.jpg
-```
-
-#### マルチグループ対応
-
-複数の LINE グループに対応しています。グループ ID でファイルを識別可能です。
-
-### 主要コマンド
-
-```bash
-# ngrok 起動
-make ngrok
-
-# LINE Bot 設定情報表示
-make line-bot-info
-
-# Webhook 接続テスト
-make line-bot-test
-
-# n8n ログ確認
-make n8n-logs
-```
-
-### トラブルシューティング (LINE Bot)
-
-#### 問題: ngrok URL が変更される
-
-**症状:**
-```
-ngrok の無料版は 8時間で URL が変更される
-```
-
-**解決策:**
-```bash
-# 1. 新しい ngrok URL を取得
-make ngrok
-
-# 2. LINE Developers Console で Webhook URL を更新
-https://<new-ngrok-url>/webhook/line-webhook
-```
-
-**代替案:**
-- ngrok 有料プラン (固定 URL)
-- localtunnel の使用
-- Cloudflare Tunnel の使用
-
-#### 問題: 画像が Google Drive に保存されない
-
-**確認項目:**
-
-```bash
-# 1. n8n ログを確認
-make n8n-logs
-
-# 2. LINE Webhook が届いているか確認
-#    n8n UI の Executions タブで確認
-
-# 3. Google Drive Credential が有効か確認
-#    n8n UI の Credentials タブで確認
-
-# 4. inbox フォルダが存在するか確認
-#    Google Drive で確認
-```
-
-#### 問題: LINE Bot がグループに参加できない
-
-**確認項目:**
-
-```bash
-# LINE Developers Console で以下を確認:
-# 1. グループトーク参加が ON になっているか
-# 2. Bot が Blocked 状態になっていないか
-```
+LINE Bot と n8n を連携して、LINE グループに投稿された画像を自動的に Google Drive に保存するワークフローを実装できます。
+
+**主な機能:**
+- LINE グループでの画像自動保存
+- マルチグループ対応
+- ngrok による Webhook 受信
+
+**詳細な手順:**
+→ [LINE Bot 統合ガイド](docs/line-bot-integration.md)
 
 ---
 
@@ -713,198 +471,17 @@ make up
 
 ## 今後の開発ロードマップ
 
-### 開発アプローチ
+**開発アプローチ:** 実用機能ファースト - AI機能などの具体的な価値提供機能を作りながら、必要に応じてコア機能を段階的に完成させていくアプローチを採用します。
 
-**コンセプト: 実用機能ファースト**
+**計画中の主要機能:**
+- 🎯 AIワークフロー自動生成
+- 📸 現場報告自動仕分けサービス
+- 📱 SNS自動投稿AI
+- 📦 在庫最適化アラート
+- 🖥️ マルチクライアント管理画面
 
-AI機能などの具体的な価値提供機能を作りながら、必要に応じてコア機能を段階的に完成させていくアプローチを採用します。
-
-```
-従来型アプローチ (X):
-  Phase 1 → Phase 2 → Phase 3 → Phase 4
-  (完璧なインフラ構築後に機能実装)
-
-採用アプローチ (✓):
-  具体機能の開発 → 必要なコア機能の拡充 → 繰り返し
-  (実用機能を作りながらインフラを強化)
-```
-
----
-
-### Iteration 1: AIワークフロー自動生成（現在）
-
-**ゴール**: クライアントが日本語で「こういう自動化がしたい」と入力すると、n8nワークフローが自動生成される
-
-#### 実装する具体機能
-- 🎯 自然言語からワークフロー生成 (Claude API統合)
-- 🎯 業種別プリセットからのカスタマイズ提案
-- 🎯 生成されたワークフローの即時デプロイ
-
-#### 必要となるコア機能の拡充
-- ⚙️ n8n API 統合強化（ワークフロー CRUD）
-- ⚙️ Claude API クライアント実装
-- ⚙️ プロンプトエンジニアリング（業種×ユースケース）
-- ⚙️ クライアント用ワークフロー自動導入の完成
-
-#### 成果物
-- Rails API: `/api/workflows/generate` エンドポイント
-- n8n 統合モジュール
-- 業種別プロンプトテンプレート
-
----
-
-### Iteration 2: 現場報告自動仕分けサービス
-
-**ゴール**: 現場スタッフが領収書や清掃完了写真・動画をLINEやメールで送信すると、AIが内容を理解して自動的に仕分け・記録
-
-#### 実装する具体機能
-- 📸 マルチチャネル受信（LINE Bot、メール、Mattermost）
-- 📸 Claude Vision API による画像・動画分析
-  - 領収書: 金額、日付、カテゴリを自動抽出
-  - 清掃写真: Before/After 判定、場所特定
-  - 作業動画: 作業内容の要約生成
-- 📸 自動仕分けルール適用
-  - 経費申請データベースへの登録
-  - 清掃チェックリストへの記録
-  - 異常検知（領収書の重複、未完了作業など）
-- 📸 確認通知（Mattermost または LINE で結果送信）
-
-#### ユースケース例
-
-**ホテル業**: 清掃スタッフが各客室の清掃完了写真をLINEで送信
-- → AIが部屋番号を認識
-- → 清掃状態を判定（OK/要再確認）
-- → フロントに自動通知
-
-**飲食店**: スタッフが仕入れ時の領収書をスマホで撮影して送信
-- → AIが金額・品目・店名を抽出
-- → 経費データベースに自動登録
-- → 月次レポートに反映
-
-**ツアー会社**: ガイドがツアー中の写真をメール送信
-- → AIがツアー名と参加者数を推測
-- → 写真をアルバムに自動整理
-- → SNS投稿用に最良の写真を選定
-
-#### 必要となるコア機能の拡充
-- ⚙️ LINE Bot SDK 統合
-- ⚙️ メール受信サーバー（Postfix + Rails ActionMailbox）
-- ⚙️ Mattermost Webhook 双方向連携
-- ⚙️ Claude Vision API クライアント実装
-- ⚙️ ファイルストレージ（S3 または MinIO）
-- ⚙️ 動画サムネイル生成（FFmpeg）
-- ⚙️ OCR機能（領収書テキスト抽出）
-- ⚙️ データベーススキーマ設計（経費、清掃記録、作業ログ）
-
-#### 成果物
-- LINE Bot アプリケーション
-- メール受信・解析パイプライン
-- Claude Vision 統合 API
-- 仕分けルールエンジン
-- 管理者向け確認 UI（Rails or Next.js）
-
----
-
-### Iteration 3: SNS自動投稿AI
-
-**ゴール**: クライアントの商品写真をアップロードすると、AIが魅力的なSNS投稿文を生成して自動投稿
-
-#### 実装する具体機能
-- 📸 画像アップロード機能
-- 📸 Claude Vision API で画像分析
-- 📸 SNS投稿文生成（Instagram、X、Facebook対応）
-- 📸 n8n経由での自動投稿
-
-#### 必要となるコア機能の拡充
-- ⚙️ ファイルアップロード・ストレージ（S3 または MinIO）
-- ⚙️ 画像処理パイプライン
-- ⚙️ SNS API 統合（Instagram、X、Facebook）
-- ⚙️ クライアント用 Web UI の初期実装
-
-#### 成果物
-- 画像分析・投稿生成 API
-- SNS 連携 n8n ワークフロー
-- シンプルな Web UI
-
----
-
-### Iteration 4: 在庫最適化アラート
-
-**ゴール**: 飲食店向けに、在庫データから発注最適タイミングをAIが提案
-
-#### 実装する具体機能
-- 📦 在庫データ入力 UI
-- 📦 消費予測モデル
-- 📦 発注タイミング提案
-- 📦 Mattermost または LINE 通知
-
-#### 必要となるコア機能の拡充
-- ⚙️ Mattermost Webhook 統合
-- ⚙️ LINE Bot 実装（オプション）
-- ⚙️ データ入力フォーム（Flutter Web or Next.js）
-- ⚙️ 定期実行バッチジョブ
-
-#### 成果物
-- 在庫管理 Web UI
-- 予測アルゴリズム
-- 通知システム
-
----
-
-### Iteration 5: マルチクライアント管理画面
-
-**ゴール**: 社内管理者が全クライアントの状況を一覧で確認・管理できる
-
-#### 実装する具体機能
-- 🖥️ クライアント一覧ダッシュボード
-- 🖥️ プロビジョニング Web UI（CLI の GUI化）
-- 🖥️ 使用状況モニタリング（ワークフロー実行回数、ストレージ使用量）
-- 🖥️ 課金ステータス管理
-
-#### 必要となるコア機能の拡充
-- ⚙️ Rails Admin または独自管理画面
-- ⚙️ メトリクス収集（Prometheus + Grafana or カスタム実装）
-- ⚙️ 課金システム基盤（Stripe 統合準備）
-
-#### 成果物
-- 管理者ダッシュボード
-- モニタリングシステム
-- 課金管理基盤
-
----
-
-### 将来的なスケーラビリティ対応（必要に応じて）
-
-これらは**具体機能の開発中に必要になったタイミング**で実装:
-
-#### インフラ強化
-- 🔧 Kubernetes 移行（10+ クライアント時）
-- 🔧 サブドメイン方式（SEO/ブランディング要求時）
-- 🔧 CDN 統合（大容量画像配信時）
-- 🔧 マルチリージョン対応（海外展開時）
-
-#### セキュリティ強化
-- 🔒 SSO/SAML対応（大企業クライアント獲得時）
-- 🔒 監査ログ（コンプライアンス要求時）
-- 🔒 GDPR対応（欧州展開時）
-
----
-
-### 現在の進捗状況
-
-✅ **完了**
-- マルチテナントアーキテクチャ
-- n8n 自動プロビジョニング
-- クライアント管理 CLI
-- 包括的なドキュメント
-
-🚧 **進行中**
-- Iteration 1 準備（AIワークフロー自動生成の設計）
-
-📋 **次のアクション**
-1. Claude API 統合の実装
-2. n8n REST API クライアント作成
-3. シンプルなワークフロー生成プロトタイプ
+**詳細なロードマップ:**
+→ [開発ロードマップ](docs/roadmap.md)
 
 ---
 
