@@ -18,7 +18,6 @@
 - [LINE Bot 統合](#line-bot-統合)
 - [トラブルシューティング](#トラブルシューティング)
 - [ブランチ戦略](#ブランチ戦略)
-- [業種別ワークフローテンプレート](#業種別ワークフローテンプレート)
 - [今後の開発ロードマップ](#今後の開発ロードマップ)
 - [ライセンス](#ライセンス)
 - [連絡先](#連絡先)
@@ -163,11 +162,7 @@ landbase_ai_suite/
 ├── Makefile                      # 統一コマンドインターフェース
 │
 ├── config/                       # 設定ファイル
-│   ├── clients.yml               # クライアントレジストリ（マスターデータ）
-│   └── templates/                # 業種別ワークフローテンプレート
-│       ├── hotel.json
-│       ├── restaurant.json
-│       └── tour.json
+│   └── clients.yml               # クライアントレジストリ（マスターデータ）
 │
 ├── scripts/                      # 自動化スクリプト
 │   ├── add_client.rb             # クライアント登録
@@ -176,7 +171,8 @@ landbase_ai_suite/
 │   └── setup_n8n_owner.sh        # Platform n8n 初期化
 │
 ├── n8n/                          # n8n関連
-│   └── import-workflows.sql      # サンプルワークフロー
+│   └── workflows/                # ワークフロー定義
+│       └── line-to-gdrive.json   # LINE Bot → Google Drive
 │
 ├── rails/                        # Rails アプリ（将来実装）
 ├── nextjs/                       # Next.js アプリ（将来実装）
@@ -204,9 +200,6 @@ make up
 
 # 3. Platform n8n 初期化
 make init
-
-# 4. サンプルワークフローインポート（オプション）
-make n8n-import-workflows
 ```
 
 ### アクセス情報
@@ -251,7 +244,6 @@ make provision-client CODE=hotel_sunrise
 # - Docker Compose ファイル生成
 # - n8n コンテナ起動 (Port 5680)
 # - n8n オーナー作成
-# - 業種別ワークフロー導入（hotel.json）
 ```
 
 ### クライアント一覧表示
@@ -336,7 +328,6 @@ make clean                 # 完全クリーンアップ（Docker イメージ�
 
 # n8n 管理
 make n8n-logs              # n8n ログ表示
-make n8n-import-workflows  # サンプルワークフローインポート
 
 # Mattermost 管理
 make mattermost-logs       # Mattermost ログ表示
@@ -887,85 +878,6 @@ git push origin feature/hotel_sunrise
 | `feature/<feature_name>` | ✅ 必須 | ✅ する | コア機能開発・改善 |
 | `bugfix/<issue_name>` | ✅ 必須 | ✅ する | バグ修正 |
 | `docs/<topic>` | ✅ 推奨 | ✅ する | ドキュメント更新 |
-
----
-
-## 業種別ワークフローテンプレート
-
-### hotel.json (ホテル向け)
-
-```json
-{
-  "name": "ホテル向けワークフローパック",
-  "workflows": [
-    {
-      "name": "予約確認メール",
-      "description": "予約時に確認メールを自動送信",
-      "trigger": "webhook"
-    },
-    {
-      "name": "チェックイン前日リマインダー",
-      "description": "チェックイン前日に案内メール送信",
-      "trigger": "schedule"
-    },
-    {
-      "name": "レビュー依頼",
-      "description": "チェックアウト後にレビュー依頼",
-      "trigger": "webhook"
-    }
-  ]
-}
-```
-
-### restaurant.json (飲食店向け)
-
-```json
-{
-  "name": "飲食店向けワークフローパック",
-  "workflows": [
-    {
-      "name": "予約確認メール",
-      "description": "予約時に確認メールを自動送信",
-      "trigger": "webhook"
-    },
-    {
-      "name": "SNS自動投稿",
-      "description": "本日のメニューを自動投稿",
-      "trigger": "schedule"
-    },
-    {
-      "name": "在庫アラート",
-      "description": "在庫が少なくなったら通知",
-      "trigger": "webhook"
-    }
-  ]
-}
-```
-
-### tour.json (ツアー会社向け)
-
-```json
-{
-  "name": "ツアー会社向けワークフローパック",
-  "workflows": [
-    {
-      "name": "ツアー予約確認",
-      "description": "ツアー予約時に確認メール送信",
-      "trigger": "webhook"
-    },
-    {
-      "name": "天気情報自動配信",
-      "description": "ツアー前日に天気情報を配信",
-      "trigger": "schedule"
-    },
-    {
-      "name": "満足度アンケート",
-      "description": "ツアー後にアンケート送信",
-      "trigger": "webhook"
-    }
-  ]
-}
-```
 
 ---
 

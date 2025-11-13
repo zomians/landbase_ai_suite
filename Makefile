@@ -39,16 +39,6 @@ logs: ## 全サービスのログ表示
 n8n-logs: ## n8nログ表示
 	$(DC) logs -f n8n
 
-.PHONY: n8n-import-workflows
-n8n-import-workflows: ## n8nにサンプルワークフローをインポート
-	@echo "${GREEN}Importing sample workflows into n8n...${NC}"
-	@echo "${YELLOW}Waiting for n8n to be ready...${NC}"
-	@until curl -s http://localhost:${N8N_PORT}/healthz > /dev/null 2>&1; do sleep 2; done
-	@echo "${GREEN}n8n is ready!${NC}"
-	@sleep 3
-	@$(DC) exec -T postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < n8n/import-workflows.sql
-	@echo "${GREEN}Sample workflows imported successfully!${NC}"
-
 .PHONY: postgres-logs
 postgres-logs: ## PostgreSQLログ表示
 	$(DC) logs -f postgres
