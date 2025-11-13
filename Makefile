@@ -184,3 +184,66 @@ remove-client: ## クライアント削除（例: make remove-client CODE=okinaw
 		File.write(file, data.to_yaml); \
 		puts \"✅ クライアント \\\"#{code}\\\" を削除しました\"; \
 	"
+
+# ================================
+# LINE Bot 統合
+# ================================
+
+.PHONY: ngrok
+ngrok: ## ngrokでn8nを公開（LINE Webhook用）
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}🌐 ngrok起動中...${NC}"
+	@echo "${GREEN}========================================${NC}"
+	@if ! command -v ngrok &> /dev/null; then \
+		echo "${RED}❌ ngrokがインストールされていません${NC}"; \
+		echo "${YELLOW}インストール方法: brew install ngrok${NC}"; \
+		exit 1; \
+	fi
+	@echo "${YELLOW}n8n (Port ${N8N_PORT}) を公開します...${NC}"
+	@echo "${YELLOW}LINE Developers ConsoleでWebhook URLを設定してください:${NC}"
+	@echo "${GREEN}  https://<ngrok-url>/webhook/line-webhook${NC}"
+	@echo ""
+	ngrok http ${N8N_PORT}
+
+.PHONY: line-bot-info
+line-bot-info: ## LINE Bot設定情報表示
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}📱 LINE Bot 設定情報${NC}"
+	@echo "${GREEN}========================================${NC}"
+	@echo ""
+	@echo "${YELLOW}LINE Developers Console:${NC}"
+	@echo "  https://developers.line.biz/console/"
+	@echo ""
+	@echo "${YELLOW}必要な設定:${NC}"
+	@echo "  1. Channel Secret → .env.development の LINE_CHANNEL_SECRET に設定"
+	@echo "  2. Channel Access Token → .env.development の LINE_CHANNEL_ACCESS_TOKEN に設定"
+	@echo "  3. Webhook URL → ngrokで取得したURL/webhook/line-webhook"
+	@echo "  4. Webhook送信 → ON"
+	@echo "  5. グループトーク参加 → ON"
+	@echo ""
+	@echo "${YELLOW}現在の環境変数:${NC}"
+	@if [ "$(LINE_CHANNEL_SECRET)" = "your_line_channel_secret_here" ]; then \
+		echo "  LINE_CHANNEL_SECRET: ${RED}未設定${NC}"; \
+	else \
+		echo "  LINE_CHANNEL_SECRET: ${GREEN}設定済み${NC}"; \
+	fi
+	@if [ "$(LINE_CHANNEL_ACCESS_TOKEN)" = "your_line_channel_access_token_here" ]; then \
+		echo "  LINE_CHANNEL_ACCESS_TOKEN: ${RED}未設定${NC}"; \
+	else \
+		echo "  LINE_CHANNEL_ACCESS_TOKEN: ${GREEN}設定済み${NC}"; \
+	fi
+	@echo ""
+	@echo "${YELLOW}ワークフロー:${NC}"
+	@echo "  n8n/workflows/line-to-gdrive.json"
+	@echo ""
+	@echo "${GREEN}========================================${NC}"
+
+.PHONY: line-bot-test
+line-bot-test: ## LINE Bot Webhook接続テスト
+	@echo "${GREEN}LINE Bot Webhook接続テスト${NC}"
+	@echo "${YELLOW}n8nのWebhookエンドポイントをテストします...${NC}"
+	@curl -X POST http://localhost:${N8N_PORT}/webhook/line-webhook \
+		-H "Content-Type: application/json" \
+		-d '{"events":[{"type":"message","message":{"type":"text","text":"test"}}]}' \
+		&& echo "\n${GREEN}✅ Webhook接続成功${NC}" \
+		|| echo "\n${RED}❌ Webhook接続失敗${NC}"
