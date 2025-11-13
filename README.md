@@ -203,7 +203,7 @@ cd landbase_ai_suite
 make up
 
 # 3. Platform n8n 初期化
-make setup-platform
+make init
 
 # 4. サンプルワークフローインポート（オプション）
 make n8n-import-workflows
@@ -352,7 +352,7 @@ make list-clients          # クライアント一覧
 make remove-client         # クライアント削除
 
 # プラットフォーム初期化
-make setup-platform        # n8n オーナー作成 + Mattermost 手動セットアップ案内
+make init                  # n8n オーナー作成 + Mattermost 手動セットアップ案内
 ```
 
 ### スクリプト詳細
