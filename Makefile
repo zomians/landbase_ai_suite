@@ -125,8 +125,14 @@ init: ## 初回セットアップ（n8n自動構成）
 # ================================
 
 .PHONY: add-client
-add-client: ## クライアント追加（例: make add-client CODE=okinawa_hotel_a NAME="沖縄ホテルA" INDUSTRY=hotel EMAIL=info@hotel.com）
+add-client: ## クライアント追加とプロビジョニング（例: make add-client CODE=okinawa_hotel_a NAME="沖縄ホテルA" INDUSTRY=hotel EMAIL=info@hotel.com）
 	@ruby ./scripts/add_client.rb "$(CODE)" "$(NAME)" "$(INDUSTRY)" "$(EMAIL)"
+	@if [ $$? -eq 0 ]; then \
+		echo ""; \
+		echo "${GREEN}クライアント登録完了。プロビジョニングを開始します...${NC}"; \
+		echo ""; \
+		./scripts/provision_client.sh $(CODE); \
+	fi
 
 .PHONY: list-clients
 list-clients: ## クライアント一覧表示
@@ -152,9 +158,40 @@ list-clients: ## クライアント一覧表示
 	"
 	@echo ""
 
-.PHONY: provision-client
-provision-client: ## クライアント環境プロビジョニング（例: make provision-client CODE=okinawa_hotel_a）
-	@./scripts/provision_client.sh $(CODE)
+.PHONY: start-client
+start-client: ## クライアントコンテナ起動（例: make start-client CODE=okinawa_hotel_a）
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}▶️  クライアントコンテナ起動${NC}"
+	@echo "${GREEN}========================================${NC}"
+	@if [ ! -f "compose.client.$(CODE).yaml" ]; then \
+		echo "${RED}❌ エラー: compose.client.$(CODE).yaml が見つかりません${NC}"; \
+		echo "${YELLOW}make add-client でクライアントを追加してください${NC}"; \
+		exit 1; \
+	fi
+	@docker compose -f compose.client.$(CODE).yaml up -d
+	@echo ""
+	@echo "${GREEN}✅ クライアント '$(CODE)' のコンテナを起動しました${NC}"
+
+.PHONY: stop-client
+stop-client: ## クライアントコンテナ停止（例: make stop-client CODE=okinawa_hotel_a）
+	@echo "${YELLOW}========================================${NC}"
+	@echo "${YELLOW}⏸️  クライアントコンテナ停止${NC}"
+	@echo "${YELLOW}========================================${NC}"
+	@if [ ! -f "compose.client.$(CODE).yaml" ]; then \
+		echo "${RED}❌ エラー: compose.client.$(CODE).yaml が見つかりません${NC}"; \
+		exit 1; \
+	fi
+	@docker compose -f compose.client.$(CODE).yaml down
+	@echo ""
+	@echo "${GREEN}✅ クライアント '$(CODE)' のコンテナを停止しました${NC}"
+
+.PHONY: client-logs
+client-logs: ## クライアントn8nログ表示（例: make client-logs CODE=okinawa_hotel_a）
+	@if [ ! -f "compose.client.$(CODE).yaml" ]; then \
+		echo "${RED}❌ エラー: compose.client.$(CODE).yaml が見つかりません${NC}"; \
+		exit 1; \
+	fi
+	@docker compose -f compose.client.$(CODE).yaml logs -f n8n
 
 .PHONY: remove-client
 remove-client: ## クライアント削除（例: make remove-client CODE=okinawa_hotel_a）
