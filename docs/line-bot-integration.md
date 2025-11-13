@@ -38,10 +38,13 @@ https://developers.line.biz/console/
 
 ### 2. 環境変数設定
 
-`.env.development` に LINE Bot の認証情報を設定:
+`.env.local` に LINE Bot の認証情報を設定:
 
 ```bash
-# .env.development を編集
+# .env.local.example をコピー
+cp .env.local.example .env.local
+
+# .env.local を編集
 LINE_CHANNEL_SECRET=your_actual_channel_secret
 LINE_CHANNEL_ACCESS_TOKEN=your_actual_channel_access_token
 ```

@@ -17,7 +17,7 @@ echo ""
 
 # 環境変数読み込み
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/../.env.development"
+source "${SCRIPT_DIR}/../.env"
 
 # n8nが起動しているか確認
 echo -e "${YELLOW}⏳ n8nの起動を待っています...${NC}"

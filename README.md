@@ -164,7 +164,8 @@ landbase_development/
 
 ```
 landbase_ai_suite/
-├── .env.development              # 環境変数設定
+├── .env                          # 環境変数設定（共通）
+├── .env.local.example            # 機密情報テンプレート
 ├── compose.development.yaml      # Platform サービス定義
 ├── compose.client.*.yaml         # クライアント専用 n8n 定義（自動生成）
 ├── Makefile                      # 統一コマンドインターフェース
@@ -221,7 +222,7 @@ make init
 
 #### Platform n8n (社内管理用)
 - URL: http://localhost:5678
-- 認証情報: `.env.development` の `N8N_OWNER_*` を参照
+- 認証情報: `.env` の `N8N_OWNER_*` を参照
 
 #### Mattermost
 - URL: http://localhost:8065
@@ -457,7 +458,7 @@ FATAL: password authentication failed
 **解決策**:
 ```bash
 # 環境変数確認
-grep POSTGRES .env.development
+grep POSTGRES .env
 
 # PostgreSQL ログ確認
 make postgres-logs
