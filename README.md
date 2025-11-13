@@ -161,7 +161,7 @@ landbase_ai_suite/
 ├── Makefile                      # 統一コマンドインターフェース
 │
 ├── config/                       # 設定ファイル
-│   └── clients.yml               # クライアントレジストリ（マスターデータ）
+│   └── client_list.yaml          # クライアントレジストリ（マスターデータ）
 │
 ├── scripts/                      # 自動化スクリプト
 │   ├── add_client.rb             # クライアント登録
@@ -276,15 +276,18 @@ make list-clients
 
 ```bash
 make remove-client CODE=hotel_sunrise
-
-# 注意: これは clients.yml からの削除のみ
-# Docker コンテナは手動で停止・削除が必要
-docker compose -f compose.client.hotel_sunrise.yaml down
 ```
+
+**自動実行される処理:**
+1. Docker コンテナの停止・削除（ボリュームも含む）
+2. 生成された Docker Compose ファイルの削除
+3. `client_list.yaml` からクライアント情報の削除
+
+**注意:** この操作により、クライアントの n8n ワークフローデータも完全に削除されます。
 
 ### クライアントデータ構造
 
-`config/clients.yml` の構造:
+`config/client_list.yaml` の構造:
 
 ```yaml
 clients:
@@ -349,7 +352,7 @@ make init                  # n8n オーナー作成 + Mattermost 手動セット
 
 #### 1. `scripts/add_client.rb`
 
-**目的**: クライアント情報を `clients.yml` に追加
+**目的**: クライアント情報を `client_list.yaml` に追加
 
 **主要機能**:
 - 引数バリデーション
@@ -368,7 +371,7 @@ ruby scripts/add_client.rb hotel_sunrise "Sunrise Hotel" hotel info@hotel.com
 **目的**: クライアント専用 Docker Compose ファイル生成
 
 **主要機能**:
-- `clients.yml` から設定読み込み
+- `client_list.yaml` から設定読み込み
 - n8n コンテナ定義生成
 - 専用ボリューム作成
 - プラットフォームネットワークへの接続
@@ -670,7 +673,7 @@ docker ps
 docker stop <container_id>
 ```
 
-### 問題: clients.yml が破損した
+### 問題: client_list.yaml が破損した
 
 **症状**:
 ```
@@ -680,10 +683,10 @@ docker stop <container_id>
 **解決策**:
 ```bash
 # Git で元に戻す
-git checkout config/clients.yml
+git checkout config/client_list.yaml
 
 # または main ブランチから復元
-git checkout main -- config/clients.yml
+git checkout main -- config/client_list.yaml
 ```
 
 ### 問題: PostgreSQL 接続エラー
