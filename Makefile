@@ -110,3 +110,77 @@ clean: ## クリーンアップ（全削除）
 .PHONY: build
 build: ## サービスビルド（キャッシュ無効）
 	$(DC) build --no-cache
+
+# ================================
+# プラットフォーム初期セットアップ
+# ================================
+
+.PHONY: setup-platform
+setup-platform: ## 初回セットアップ（n8n自動構成）
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}🚀 LandBase AI Suite 初回セットアップ${NC}"
+	@echo "${GREEN}========================================${NC}"
+	@./scripts/setup_n8n_owner.sh
+	@echo ""
+	@echo "${YELLOW}📋 Mattermost 手動セットアップ:${NC}"
+	@echo "  1. ブラウザで http://localhost:${MATTERMOST_PORT} にアクセス"
+	@echo "  2. 管理者アカウントを作成してください"
+	@echo ""
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}✅ プラットフォームセットアップ完了!${NC}"
+	@echo "${GREEN}========================================${NC}"
+
+# ================================
+# クライアント管理
+# ================================
+
+.PHONY: add-client
+add-client: ## クライアント追加（例: make add-client CODE=okinawa_hotel_a NAME="沖縄ホテルA" INDUSTRY=hotel EMAIL=info@hotel.com）
+	@ruby ./scripts/add_client.rb "$(CODE)" "$(NAME)" "$(INDUSTRY)" "$(EMAIL)"
+
+.PHONY: list-clients
+list-clients: ## クライアント一覧表示
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}📋 登録クライアント一覧${NC}"
+	@echo "${GREEN}========================================${NC}"
+	@ruby -ryaml -e " \
+		data = YAML.load_file('config/clients.yml'); \
+		if data['clients'].empty?; \
+			puts '⚠️  登録されているクライアントはありません'; \
+		else; \
+			data['clients'].each_with_index do |c, i|; \
+				puts ''; \
+				puts \"#{i+1}. #{c['code']}\"; \
+				puts \"   名前: #{c['name']}\"; \
+				puts \"   業種: #{c['industry']}\"; \
+				puts \"   状態: #{c['status']}\"; \
+				puts \"   Email: #{c['contact']['email']}\"; \
+				puts \"   n8n Port: #{c.dig('services', 'n8n', 'port')}\"; \
+				puts \"   n8n URL: http://localhost:#{c.dig('services', 'n8n', 'port')}\"; \
+			end; \
+		end \
+	"
+	@echo ""
+
+.PHONY: provision-client
+provision-client: ## クライアント環境プロビジョニング（例: make provision-client CODE=okinawa_hotel_a）
+	@./scripts/provision_client.sh $(CODE)
+
+.PHONY: remove-client
+remove-client: ## クライアント削除（例: make remove-client CODE=okinawa_hotel_a）
+	@echo "${RED}========================================${NC}"
+	@echo "${RED}⚠️  クライアント削除${NC}"
+	@echo "${RED}========================================${NC}"
+	@ruby -ryaml -e " \
+		code = '$(CODE)'; \
+		file = 'config/clients.yml'; \
+		data = YAML.load_file(file); \
+		client = data['clients'].find { |c| c['code'] == code }; \
+		if client.nil?; \
+			puts '❌ クライアント \"#{code}\" が見つかりません'; \
+			exit 1; \
+		end; \
+		data['clients'].reject! { |c| c['code'] == code }; \
+		File.write(file, data.to_yaml); \
+		puts \"✅ クライアント \\\"#{code}\\\" を削除しました\"; \
+	"

@@ -1,0 +1,21 @@
+{
+  "name": "ツアー事業者向けワークフローパック",
+  "description": "ツアー予約、天候確認、リマインダー",
+  "workflows": [
+    {
+      "name": "ツアー予約確認",
+      "description": "ツアー予約時に確認と案内を送信",
+      "trigger": "webhook"
+    },
+    {
+      "name": "天候確認アラート",
+      "description": "ツアー前日に天候をチェックして通知",
+      "trigger": "schedule"
+    },
+    {
+      "name": "リマインダー送信",
+      "description": "ツアー前日にリマインダーを送信",
+      "trigger": "schedule"
+    }
+  ]
+}
