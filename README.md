@@ -536,6 +536,8 @@ feature/shrimp-shells/
 
 ### ブランチ作成例
 
+#### 1. クライアント用ブランチ（分離運用・PRなし）
+
 ```bash
 # 新しいクライアント用ブランチ
 git checkout -b feature/hotel_sunrise
@@ -551,6 +553,122 @@ git add .
 git commit -m "Add Hotel Sunrise client configuration"
 git push origin feature/hotel_sunrise
 ```
+
+**重要:** クライアント用ブランチは **main にマージしない** でください。
+- 理由: main はテンプレート状態を維持（clients.yml は空配列）
+- 運用: クライアント毎にブランチを分離して管理
+- デプロイ: feature/<client_code> ブランチから直接デプロイ
+
+#### 2. 新機能開発ブランチ（PR経由で main にマージ）
+
+新機能やコア機能の改善は、プルリクエスト（PR）経由で main にマージします。
+
+```bash
+# main ブランチから最新を取得
+git checkout main
+git pull origin main
+
+# 新機能ブランチ作成
+git checkout -b feature/workflow-auto-import
+
+# 機能実装
+# ... コード変更 ...
+
+# コミット
+git add .
+git commit -m "Add automatic workflow import for clients
+
+- Implement n8n API integration for workflow creation
+- Add industry-specific template processing
+- Update provision_client.sh to call API endpoints"
+
+# リモートに push
+git push origin feature/workflow-auto-import
+```
+
+#### 3. プルリクエスト作成
+
+GitHub CLI を使用する場合:
+
+```bash
+# PR 作成
+gh pr create \
+  --title "Add automatic workflow import for clients" \
+  --body "$(cat <<'EOF'
+## 概要
+クライアント環境プロビジョニング時に、業種別ワークフローを自動的にインポートする機能を実装しました。
+
+## 変更内容
+- n8n REST API 統合を追加
+- `config/templates/*.json` からワークフロー定義を読み込み
+- `provision_client.sh` でワークフロー作成 API を呼び出し
+
+## テスト方法
+1. `make add-client CODE=test_hotel NAME="Test Hotel" INDUSTRY=hotel`
+2. `make provision-client CODE=test_hotel`
+3. http://localhost:5680 でワークフローが自動作成されていることを確認
+
+## 影響範囲
+- `scripts/provision_client.sh`: Step 4 の実装追加
+- `config/templates/*.json`: テンプレート構造の確認
+
+## チェックリスト
+- [x] 既存のクライアントプロビジョニングが動作することを確認
+- [x] 新規クライアント追加でワークフローが正しく作成されることを確認
+- [x] README.md を更新
+EOF
+)" \
+  --base main \
+  --head feature/workflow-auto-import
+```
+
+Web UI を使用する場合:
+1. GitHub リポジトリページにアクセス
+2. "Pull requests" タブをクリック
+3. "New pull request" ボタンをクリック
+4. Base: `main`, Compare: `feature/workflow-auto-import` を選択
+5. タイトルと説明を記入
+6. "Create pull request" をクリック
+
+#### 4. PR レビューとマージ
+
+```bash
+# レビュー後、main にマージされる
+# （GitHub UI で Merge ボタンをクリック）
+
+# ローカルの main を更新
+git checkout main
+git pull origin main
+
+# 作業ブランチを削除
+git branch -d feature/workflow-auto-import
+git push origin --delete feature/workflow-auto-import
+```
+
+#### 5. 全クライアントブランチへの反映
+
+main にマージされた新機能を、各クライアントブランチに反映:
+
+```bash
+# Shrimp Shells ブランチに反映
+git checkout feature/shrimp-shells
+git merge main -m "Merge workflow auto-import feature from main"
+git push origin feature/shrimp-shells
+
+# Hotel Sunrise ブランチに反映
+git checkout feature/hotel_sunrise
+git merge main -m "Merge workflow auto-import feature from main"
+git push origin feature/hotel_sunrise
+```
+
+### プルリクエストの使い分け
+
+| ブランチタイプ | PR作成 | mainへのマージ | 用途 |
+|--------------|--------|---------------|------|
+| `feature/<client_code>` | ❌ 不要 | ❌ しない | クライアント固有データ管理 |
+| `feature/<feature_name>` | ✅ 必須 | ✅ する | コア機能開発・改善 |
+| `bugfix/<issue_name>` | ✅ 必須 | ✅ する | バグ修正 |
+| `docs/<topic>` | ✅ 推奨 | ✅ する | ドキュメント更新 |
 
 ---
 
