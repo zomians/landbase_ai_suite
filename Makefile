@@ -1,7 +1,7 @@
 # LandBase AI Suite Development Lifecycle Automation
 # Mattermost + n8n + Rails 8 + Next.js 15 + Flutter 3 + PostgreSQL
 
-include .env.development
+include .env
 export
 
 # Colors for output
@@ -11,7 +11,7 @@ RED := \033[1;31m
 NC := \033[0m # No Color
 
 # Docker Compose command
-DC := docker compose -f compose.development.yaml --env-file .env.development
+DC := docker compose -f compose.development.yaml --env-file .env
 
 .PHONY: help
 help: ## ヘルプ表示
@@ -232,8 +232,8 @@ line-bot-info: ## LINE Bot設定情報表示
 	@echo "  https://developers.line.biz/console/"
 	@echo ""
 	@echo "${YELLOW}必要な設定:${NC}"
-	@echo "  1. Channel Secret → .env.development の LINE_CHANNEL_SECRET に設定"
-	@echo "  2. Channel Access Token → .env.development の LINE_CHANNEL_ACCESS_TOKEN に設定"
+	@echo "  1. Channel Secret → .env.local の LINE_CHANNEL_SECRET に設定"
+	@echo "  2. Channel Access Token → .env.local の LINE_CHANNEL_ACCESS_TOKEN に設定"
 	@echo "  3. Webhook URL → ngrokで取得したURL/webhook/line-webhook"
 	@echo "  4. Webhook送信 → ON"
 	@echo "  5. グループトーク参加 → ON"
