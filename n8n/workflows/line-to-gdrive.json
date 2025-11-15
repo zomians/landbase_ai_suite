@@ -19,7 +19,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{ $json.events[0].message.type }}",
+              "value1": "={{ $json.body.events[0].message.type }}",
               "operation": "equals",
               "value2": "image"
             }
@@ -35,7 +35,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "=https://api-data.line.me/v2/bot/message/{{ $json.events[0].message.id }}/content",
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $json.body.events[0].message.id }}/content",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "responseFormat": "file",
@@ -57,7 +57,7 @@
       "parameters": {
         "operation": "upload",
         "fileContent": "={{ $binary.data }}",
-        "name": "={{ $now.format('yyyy-MM-dd_HHmmss') }}_{{ $('Webhook').item.json.events[0].source.groupId || 'direct' }}.jpg",
+        "name": "={{ $now.format('yyyy-MM-dd_HHmmss') }}_{{ $('Webhook').item.json.body.events[0].source.groupId || $('Webhook').item.json.body.events[0].source.userId }}.jpg",
         "driveId": {
           "__rl": true,
           "value": "My Drive",
