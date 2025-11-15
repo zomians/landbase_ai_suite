@@ -12,6 +12,8 @@ RUN apt-get update -qq \
         libyaml-dev \
         libpq-dev \
         postgresql-client \
+        shared-mime-info \
+        libvips42 \
         ca-certificates \
         curl \
         gnupg \
@@ -34,9 +36,17 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
     && corepack enable \
     && corepack prepare yarn@${YARN_VERSION} --activate
 
+# GemバイナリをPATHに追加（全ステージで有効）
+ENV GEM_HOME=/usr/local/bundle
+ENV PATH="/usr/local/bundle/bin:${PATH}"
+
 # 開発環境イメージ
 FROM base AS development
 
 ## Railsインストール
 ARG RAILS_VERSION
-RUN gem install rails -v ${RAILS_VERSION} --no-document
+RUN gem install rails -v ${RAILS_VERSION} --no-document \
+    && gem install foreman --no-document
+
+# GemバイナリをPATHに追加
+ENV PATH="/usr/local/bundle/bin:${PATH}"

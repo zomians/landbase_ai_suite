@@ -102,6 +102,41 @@ nextjs-new: ## 新規Next.jsアプリ作成
 nextjs-logs: ## Next.jsログ表示
 	$(DC) logs -f nextjs
 
+.PHONY: shrimpshells-new
+shrimpshells-new: ## Shrimp Shells EC: Railsアプリ新規作成
+	@[ -d rails/${SHRIMP_SHELLS_APP_NAME} ] && echo "${YELLOW}Rails application 'rails/${SHRIMP_SHELLS_APP_NAME}' already exists.${NC}" || \
+		$(DC) run --rm -e HOME=/tmp -e XDG_CACHE_HOME=/tmp shrimpshells-ec bash -lc " \
+			/usr/local/bundle/bin/rails new /$$SHRIMP_SHELLS_APP_NAME \
+			  --database=postgresql \
+			  --javascript=esbuild \
+			  --css=tailwind \
+			  --skip-docker \
+		"
+
+.PHONY: shrimpshells-solidus-install
+shrimpshells-solidus-install: ## Shrimp Shells EC: Solidus導入（Gem追加とインストール）
+	$(DC) run --rm shrimpshells-ec bash -lc " \
+		cd /$$SHRIMP_SHELLS_APP_NAME && \
+		bundle add solidus -v '~> 4.5' solidus_auth_devise solidus_support && \
+		bundle install && \
+		bin/rails g solidus:install || bin/rails g spree:install && \
+		bin/rails db:prepare && \
+		bin/rails db:seed \
+	"
+
+.PHONY: shrimpshells-up
+shrimpshells-up: ## Shrimp Shells EC: サービス起動
+	$(DC) up -d shrimpshells-ec
+	@echo "${GREEN}Shrimp Shells EC is running at http://localhost:${SHRIMP_SHELLS_PORT}${NC}"
+
+.PHONY: shrimpshells-logs
+shrimpshells-logs: ## Shrimp Shells EC: ログ表示
+	$(DC) logs -f shrimpshells-ec
+
+.PHONY: shrimpshells-shell
+shrimpshells-shell: ## Shrimp Shells EC: コンテナにシェル接続
+	$(DC) run --rm --service-ports shrimpshells-ec bash
+
 .PHONY: clean
 clean: ## クリーンアップ（全削除）
 	$(DC) down --rmi all --volumes --remove-orphans
