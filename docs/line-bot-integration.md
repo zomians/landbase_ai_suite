@@ -70,6 +70,100 @@ make ngrok
 # Forwarding https://xxxx-xxxx-xxxx.ngrok-free.app -> http://localhost:5678
 ```
 
+### 3.1 ngrok 認証設定（推奨）
+
+**重要**: ngrok は無料版でも認証することで機能制限が大幅に緩和されます。
+
+#### **無料版の機能比較**
+
+| 項目 | 未認証 | 認証済み（authtoken設定） |
+|------|--------|-------------------------|
+| セッション時間 | 2時間 | 8時間 |
+| トンネル数 | 1本 | 1本 |
+| リクエスト数/分 | 20 | 40 |
+| HTTPSサポート | ✅ | ✅ |
+| カスタムドメイン | ❌ | ❌ (有料プランのみ) |
+| 固定URL | ❌ | ❌ (有料プランのみ) |
+
+#### **authtoken の設定方法**
+
+1. **ngrok アカウント作成**:
+   ```bash
+   # ngrok サインアップページにアクセス
+   open https://dashboard.ngrok.com/signup
+   ```
+
+2. **authtoken を取得**:
+   - サインアップ後、Dashboard で authtoken を確認
+   - または: https://dashboard.ngrok.com/get-started/your-authtoken
+
+3. **authtoken を設定**:
+   ```bash
+   # コマンドで設定（推奨）
+   ngrok config add-authtoken <your-authtoken>
+
+   # 設定ファイルの場所確認
+   # macOS: ~/.config/ngrok/ngrok.yml
+   # Linux: ~/.config/ngrok/ngrok.yml
+   # Windows: %USERPROFILE%\AppData\Local\ngrok\ngrok.yml
+   ```
+
+4. **設定ファイルの確認**:
+   ```bash
+   cat ~/.config/ngrok/ngrok.yml
+   ```
+
+   **出力例**:
+   ```yaml
+   version: "2"
+   authtoken: <your-authtoken>
+   ```
+
+5. **ngrok再起動**:
+   ```bash
+   # 既存のngrokを終了
+   pkill -f "ngrok http"
+
+   # 再起動
+   make ngrok
+   ```
+
+#### **高度な設定（オプション）**
+
+`~/.config/ngrok/ngrok.yml` で追加設定が可能：
+
+```yaml
+version: "2"
+authtoken: <your-authtoken>
+
+# カスタム設定
+tunnels:
+  n8n:
+    proto: http
+    addr: 5678
+    # 基本認証を追加（セキュリティ強化）
+    auth: "username:password"
+    # カスタムサブドメイン（有料プランのみ）
+    # subdomain: my-landbase-n8n
+
+# ログレベル設定
+log_level: info
+log_format: json
+log: /tmp/ngrok.log
+
+# リージョン指定（レイテンシ最適化）
+region: jp  # 日本リージョン (ap も可)
+```
+
+**利用可能なリージョン**:
+- `us` - アメリカ
+- `eu` - ヨーロッパ
+- `ap` - アジア太平洋
+- `au` - オーストラリア
+- `sa` - 南アメリカ
+- `jp` - 日本
+- `in` - インド
+
 ### 4. LINE Webhook URL 設定
 
 LINE Developers Console で Webhook URL を設定:
@@ -218,6 +312,249 @@ make n8n-logs
 # LINE Developers Console で以下を確認:
 # 1. グループトーク参加が ON になっているか
 # 2. Bot が Blocked 状態になっていないか
+```
+
+---
+
+## 本番運用時の推奨構成
+
+ngrok は開発・テスト環境には最適ですが、本番運用では以下の代替案を検討してください。
+
+### オプション A: Cloudflare Tunnel（推奨・無料）
+
+**メリット**:
+- ✅ 完全無料
+- ✅ セッション時間無制限
+- ✅ 固定URL
+- ✅ DDoS保護
+- ✅ WAF（Web Application Firewall）
+- ✅ カスタムドメイン対応
+
+**デメリット**:
+- ⚠️ Cloudflareアカウント必要
+- ⚠️ DNSをCloudflareに移管（カスタムドメイン利用時）
+
+#### **セットアップ手順**
+
+1. **Cloudflare Tunnel インストール**:
+   ```bash
+   brew install cloudflare/cloudflare/cloudflared
+   ```
+
+2. **Cloudflare ログイン**:
+   ```bash
+   cloudflared tunnel login
+   ```
+   - ブラウザでCloudflareアカウントにログイン
+   - サイトを選択（またはカスタムドメイン追加）
+
+3. **Tunnel 作成**:
+   ```bash
+   cloudflared tunnel create landbase-n8n
+   ```
+   - Tunnel ID が表示される（保存しておく）
+
+4. **設定ファイル作成**:
+   ```bash
+   mkdir -p ~/.cloudflared
+   cat > ~/.cloudflared/config.yml <<EOF
+   tunnel: <your-tunnel-id>
+   credentials-file: /Users/<username>/.cloudflared/<your-tunnel-id>.json
+
+   ingress:
+     - hostname: n8n.yourdomain.com
+       service: http://localhost:5678
+     - service: http_status:404
+   EOF
+   ```
+
+5. **DNS レコード作成**:
+   ```bash
+   cloudflared tunnel route dns landbase-n8n n8n.yourdomain.com
+   ```
+
+6. **Tunnel 起動**:
+   ```bash
+   cloudflared tunnel run landbase-n8n
+   ```
+
+7. **systemd サービス化（Linux）または launchd（macOS）**:
+   ```bash
+   # macOS の場合
+   sudo cloudflared service install
+   ```
+
+**Webhook URL**:
+```
+https://n8n.yourdomain.com/webhook/line-webhook
+```
+
+---
+
+### オプション B: ngrok 有料プラン
+
+**料金**: $8/月〜
+
+**メリット**:
+- ✅ 固定URL（例: https://landbase.ngrok.app）
+- ✅ セッション時間無制限
+- ✅ ブラウザ警告なし
+- ✅ カスタムドメイン対応
+- ✅ IP制限・認証機能
+
+**プラン比較**:
+
+| プラン | 料金 | トンネル数 | カスタムドメイン | エージェント数 |
+|--------|------|-----------|----------------|-------------|
+| Free | $0 | 1本 | ❌ | 1 |
+| Personal | $8/月 | 3本 | ✅ 1個 | 2 |
+| Pro | $20/月 | 10本 | ✅ 3個 | 5 |
+| Business | $58/月 | 無制限 | ✅ 無制限 | 無制限 |
+
+#### **セットアップ手順**
+
+1. **有料プランに登録**:
+   ```bash
+   open https://dashboard.ngrok.com/billing/subscription
+   ```
+
+2. **固定ドメイン取得**:
+   - Dashboard → Domains → Reserve Domain
+   - 例: `landbase.ngrok.app`
+
+3. **ngrok.yml を更新**:
+   ```yaml
+   version: "2"
+   authtoken: <your-authtoken>
+
+   tunnels:
+     n8n:
+       proto: http
+       addr: 5678
+       domain: landbase.ngrok.app  # 固定ドメイン
+   ```
+
+4. **起動**:
+   ```bash
+   ngrok start n8n
+   ```
+
+**Webhook URL**:
+```
+https://landbase.ngrok.app/webhook/line-webhook
+```
+
+---
+
+### オプション C: VPS + Nginx リバースプロキシ（完全コントロール）
+
+**料金**: $5〜10/月（VPS代）
+
+**メリット**:
+- ✅ 完全コントロール
+- ✅ 固定IP/ドメイン
+- ✅ 他のサービスも同一サーバーで運用可能
+- ✅ Let's Encrypt で無料SSL
+
+**デメリット**:
+- ⚠️ サーバー管理が必要
+- ⚠️ セキュリティ対策が必要
+- ⚠️ メンテナンス負担
+
+#### **アーキテクチャ**
+
+```
+[LINE Server]
+      ↓
+[VPS Public IP]
+      ↓
+[Nginx (443)]
+      ↓ SSH Tunnel / WireGuard VPN
+[ローカル n8n (5678)]
+```
+
+#### **セットアップ手順（概要）**
+
+1. **VPS 契約**:
+   - DigitalOcean, Linode, Vultr 等
+   - Ubuntu 22.04 推奨
+
+2. **Nginx インストール**:
+   ```bash
+   ssh user@your-vps-ip
+   sudo apt update
+   sudo apt install nginx certbot python3-certbot-nginx
+   ```
+
+3. **SSL証明書取得**:
+   ```bash
+   sudo certbot --nginx -d n8n.yourdomain.com
+   ```
+
+4. **Nginx 設定**:
+   ```nginx
+   # /etc/nginx/sites-available/n8n
+   server {
+       listen 443 ssl http2;
+       server_name n8n.yourdomain.com;
+
+       ssl_certificate /etc/letsencrypt/live/n8n.yourdomain.com/fullchain.pem;
+       ssl_certificate_key /etc/letsencrypt/live/n8n.yourdomain.com/privkey.pem;
+
+       location / {
+           proxy_pass http://localhost:5678;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+   }
+   ```
+
+5. **ローカル → VPS SSH トンネル**:
+   ```bash
+   # ローカルMacから実行
+   ssh -R 5678:localhost:5678 user@your-vps-ip -N
+   ```
+
+   **または WireGuard VPN** で常時接続（推奨）
+
+6. **systemd サービス化**:
+   ```bash
+   # SSH トンネル自動起動設定
+   sudo systemctl enable ssh-tunnel
+   sudo systemctl start ssh-tunnel
+   ```
+
+**Webhook URL**:
+```
+https://n8n.yourdomain.com/webhook/line-webhook
+```
+
+---
+
+### 推奨フロー
+
+**開発環境**:
+```
+ngrok（無料・認証済み）
+  ↓ 動作確認OK
+```
+
+**ステージング環境**:
+```
+Cloudflare Tunnel（無料）
+  ↓ 本番想定テスト
+```
+
+**本番環境**:
+```
+Cloudflare Tunnel（無料・推奨）
+または
+ngrok Pro（$20/月）
+または
+VPS + Nginx（$5-10/月 + 管理コスト）
 ```
 
 ---
