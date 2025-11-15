@@ -3,8 +3,6 @@ name: landbase_ai_suite_development
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
-    env_file:
-      - .env.development
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
@@ -17,8 +15,6 @@ services:
 
   mattermost:
     image: mattermost/mattermost-team-edition:${MATTERMOST_VERSION}
-    env_file:
-      - .env.development
     ports:
       - "${MATTERMOST_PORT}:8065"
     volumes:
@@ -29,8 +25,6 @@ services:
 
   n8n:
     image: n8nio/n8n:${N8N_VERSION}
-    env_file:
-      - .env.development
     environment:
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
@@ -55,8 +49,6 @@ services:
         - NODE_VERSION=${NODE_VERSION}
         - YARN_VERSION=${YARN_VERSION}
         - RAILS_VERSION=${RAILS_VERSION}
-    env_file:
-      - .env.development
     ports:
       - "${RAILS_PORT}:3000"
     volumes:
@@ -109,8 +101,6 @@ services:
       args:
         - NODE_VERSION=${NODE_VERSION}
         - NEXTJS_VERSION=${NEXTJS_VERSION}
-    env_file:
-      - .env.development
     ports:
       - "${NEXTJS_PORT}:3000"
     volumes:
