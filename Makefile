@@ -259,6 +259,58 @@ ngrok: ## ngrokでn8nを公開（LINE Webhook用）
 	@echo ""
 	ngrok http ${N8N_PORT}
 
+.PHONY: ngrok-stop
+ngrok-stop: ## ngrokを停止
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}🛑 ngrok停止中...${NC}"
+	@echo "${GREEN}========================================${NC}"
+	@if pgrep -f "ngrok http" > /dev/null; then \
+		pkill -f "ngrok http"; \
+		sleep 1; \
+		if pgrep -f "ngrok http" > /dev/null; then \
+			echo "${RED}❌ ngrokの停止に失敗しました${NC}"; \
+			exit 1; \
+		else \
+			echo "${GREEN}✅ ngrokを停止しました${NC}"; \
+		fi \
+	else \
+		echo "${YELLOW}⚠️  ngrokは起動していません${NC}"; \
+	fi
+	@echo ""
+
+.PHONY: ngrok-restart
+ngrok-restart: ## ngrokを再起動
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}🔄 ngrok再起動中...${NC}"
+	@echo "${GREEN}========================================${NC}"
+	@$(MAKE) ngrok-stop
+	@sleep 1
+	@echo "${YELLOW}ngrokを起動します...${NC}"
+	@echo ""
+	@$(MAKE) ngrok
+
+.PHONY: ngrok-status
+ngrok-status: ## ngrokの状態確認
+	@echo "${GREEN}========================================${NC}"
+	@echo "${GREEN}📊 ngrok状態${NC}"
+	@echo "${GREEN}========================================${NC}"
+	@if pgrep -f "ngrok http" > /dev/null; then \
+		echo "${GREEN}✅ ngrok: 起動中${NC}"; \
+		echo ""; \
+		echo "${YELLOW}プロセス情報:${NC}"; \
+		ps aux | grep "ngrok http" | grep -v grep | awk '{print "  PID: " $$2 " | CPU: " $$3 "% | MEM: " $$4 "% | START: " $$9}'; \
+		echo ""; \
+		if command -v curl &> /dev/null && curl -s http://localhost:4040/api/tunnels > /dev/null 2>&1; then \
+			echo "${YELLOW}Tunnel情報:${NC}"; \
+			curl -s http://localhost:4040/api/tunnels | python3 -c "import sys, json; data = json.load(sys.stdin); [print(f\"  Public URL: {t['public_url']}\") for t in data.get('tunnels', [])]" 2>/dev/null || echo "  情報取得失敗"; \
+			echo ""; \
+			echo "${YELLOW}Web UI:${NC} http://localhost:4040"; \
+		fi; \
+	else \
+		echo "${RED}❌ ngrok: 停止中${NC}"; \
+	fi
+	@echo ""
+
 .PHONY: line-bot-info
 line-bot-info: ## LINE Bot設定情報表示
 	@echo "${GREEN}========================================${NC}"
