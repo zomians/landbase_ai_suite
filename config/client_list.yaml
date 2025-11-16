@@ -1,2 +1,24 @@
 ---
-clients: []
+clients:
+- code: shrimp_shells
+  name: Shrimp Shells
+  industry: restaurant
+  subdomain: shrimp-shells
+  contact:
+    email: info@shrimpshells.com
+  services:
+    n8n:
+      enabled: true
+      port: 5679
+      owner_email: admin-shrimp-shells@landbase.ai
+      owner_password: KFsegssdUKmx5SAR
+      db_schema: n8n_shrimp_shells
+      workflows: []
+    mattermost:
+      enabled: true
+      team_name: Shrimp Shells Team
+      admin_username: shrimp_shells_admin
+      admin_email: info@shrimpshells.com
+      admin_password: KFsegssdUKmx5SAR
+  status: trial
+  created_at: '2025-11-13 14:00:57 +0900'
