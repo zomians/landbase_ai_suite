@@ -146,7 +146,7 @@ landbase_ai_suite/
 #### Platform n8n (社内管理用)
 
 - URL: http://localhost:5678
-- 認証情報: `.env` の `N8N_OWNER_*` を参照
+- 初回アクセス時に管理者アカウントを作成
 
 #### Mattermost
 
