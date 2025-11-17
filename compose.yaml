@@ -29,6 +29,9 @@ services:
     image: n8nio/n8n:${N8N_VERSION}
     env_file: .env
     environment:
+      - DB_POSTGRESDB_DATABASE=landbase_development
+      - DB_POSTGRESDB_USER=landbase
+      - DB_POSTGRESDB_PASSWORD=landbase_dev_password
       - DB_POSTGRESDB_SCHEMA=n8n_platform
     ports:
       - "${N8N_PORT}:5678"
