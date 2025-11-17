@@ -94,7 +94,7 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 | 技術     | 用途                                                                    |
 | -------- | ----------------------------------------------------------------------- |
 | **Ruby** | YAML 操作、データ処理 (add_client.rb, generate_client_compose.rb)       |
-| **Bash** | Docker 操作、プロビジョニング (provision_client.sh, setup_n8n_owner.sh) |
+| **Bash** | Docker 操作、プロビジョニング (provision_client.sh) |
 
 ---
 
@@ -118,7 +118,6 @@ landbase_ai_suite/
 │   ├── add_client.rb             # クライアント登録
 │   ├── generate_client_compose.rb # Docker Compose生成
 │   ├── provision_client.sh       # クライアント環境構築
-│   └── setup_n8n_owner.sh        # Platform n8n 初期化
 │
 ├── n8n/                          # n8n関連
 │   └── workflows/                # ワークフロー定義
@@ -286,8 +285,7 @@ make provision-client      # クライアント環境構築
 make list-clients          # クライアント一覧
 make remove-client         # クライアント削除
 
-# プラットフォーム初期化
-make init                  # n8n オーナー作成 + Mattermost 手動セットアップ案内
+
 ```
 
 ### スクリプト概要
@@ -297,7 +295,7 @@ make init                  # n8n オーナー作成 + Mattermost 手動セット
 | `add_client.rb`              | クライアント情報を `client_list.yaml` に登録 | `make add-client`                  |
 | `generate_client_compose.rb` | クライアント専用 Docker Compose ファイル生成 | `make provision-client` で自動実行 |
 | `provision_client.sh`        | クライアント環境の完全自動構築               | `make provision-client`            |
-| `setup_n8n_owner.sh`         | Platform n8n の初回セットアップ              | `make init`                        |
+ 
 
 詳細は各スクリプトのコメントを参照してください。
 
