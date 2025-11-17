@@ -1,6 +1,6 @@
 # LandBase AI Suite
 
-**AIドリブン経営支援プラットフォーム**
+**AI ドリブン経営支援プラットフォーム**
 沖縄県北部の観光業向けマルチテナント自動化スイート
 
 ---
@@ -21,41 +21,45 @@
 
 ## 概要
 
-LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲食店、ツアー会社など）向けに開発された **SaaS型マルチテナントプラットフォーム** です。各クライアント（法人・個人事業主）に対して、専用の自動化環境とコミュニケーションツールを提供します。
+LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲食店、ツアー会社など）向けに開発された **SaaS 型マルチテナントプラットフォーム** です。各クライアント（法人・個人事業主）に対して、専用の自動化環境とコミュニケーションツールを提供します。
 
 ### 主な特徴
 
-- 🏢 **マルチテナントアーキテクチャ**: 1つのプラットフォームで100+クライアントを管理
-- 🤖 **n8n自動化**: クライアント毎に独立したn8nコンテナで業務自動化
-- 💬 **Mattermost統合**: チームコミュニケーション基盤
-- 📊 **PostgreSQL共有**: スキーマ分離によるデータ隔離
-- 🚀 **自動プロビジョニング**: makeコマンド1つでクライアント環境を構築
+- 🏢 **マルチテナントアーキテクチャ**: 1 つのプラットフォームで 100+クライアントを管理
+- 🤖 **n8n 自動化**: クライアント毎に独立した n8n コンテナで業務自動化
+- 💬 **Mattermost 統合**: チームコミュニケーション基盤
+- 📊 **PostgreSQL 共有**: スキーマ分離によるデータ隔離
+- 🚀 **自動プロビジョニング**: make コマンド 1 つでクライアント環境を構築
 
 ---
 
 ## ビジネスコンテキスト
 
 ### 企業情報
-- **会社名**: 株式会社AI.LandBase
-- **事業内容**: AIドリブン経営コンサルティング
+
+- **会社名**: 株式会社 AI.LandBase
+- **事業内容**: AI ドリブン経営コンサルティング
 - **対象地域**: 沖縄県北部（やんばる地域）
 - **対象業種**: 観光業（ホテル、飲食店、ツアー会社）
 
 ### 課題と解決策
 
 #### 課題
-- 小規模事業者（従業員~10名）が多く、IT投資余力が限定的
-- 予約管理、SNS投稿、在庫管理などの手作業が負担
+
+- 小規模事業者（従業員~10 名）が多く、IT 投資余力が限定的
+- 予約管理、SNS 投稿、在庫管理などの手作業が負担
 - 個別にシステム導入するとコストが高い
 
 #### 解決策
-- **SaaS型提供**: 初期投資を抑えたサブスクリプションモデル
+
+- **SaaS 型提供**: 初期投資を抑えたサブスクリプションモデル
 - **業種別テンプレート**: ホテル・飲食店・ツアー向けの事前設定ワークフロー
 - **段階的導入**: トライアル → 本格運用へのスムーズな移行
 
 ### スケール目標
-- **Phase 1**: 5-10クライアント（Proof of Concept）
-- **Phase 2**: 50クライアント
+
+- **Phase 1**: 5-10 クライアント（Proof of Concept）
+- **Phase 2**: 50 クライアント
 - **Phase 3**: 100+クライアント
 
 ---
@@ -63,30 +67,34 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 ## 技術スタック
 
 ### インフラストラクチャ層
-| 技術 | バージョン | 用途 |
-|------|-----------|------|
-| **Docker** | - | コンテナ化 |
-| **Docker Compose** | - | マルチコンテナ管理 |
-| **PostgreSQL** | 16-alpine | データベース |
+
+| 技術               | バージョン | 用途               |
+| ------------------ | ---------- | ------------------ |
+| **Docker**         | -          | コンテナ化         |
+| **Docker Compose** | -          | マルチコンテナ管理 |
+| **PostgreSQL**     | 16-alpine  | データベース       |
 
 ### 自動化・コミュニケーション層
-| 技術 | バージョン | 用途 |
-|------|-----------|------|
-| **n8n** | 1.119.2 | ワークフロー自動化エンジン |
-| **Mattermost** | 9.11 | チームコミュニケーション |
+
+| 技術           | バージョン | 用途                       |
+| -------------- | ---------- | -------------------------- |
+| **n8n**        | 1.119.2    | ワークフロー自動化エンジン |
+| **Mattermost** | 9.11       | チームコミュニケーション   |
 
 ### アプリケーション層（将来実装）
-| 技術 | バージョン | 用途 |
-|------|-----------|------|
-| **Ruby on Rails** | 8.0.2.1 | API Backend |
-| **Next.js** | 15.1.6 | Marketing Site |
-| **Flutter** | 3.32.5 | Mobile/Web App |
+
+| 技術              | バージョン | 用途           |
+| ----------------- | ---------- | -------------- |
+| **Ruby on Rails** | 8.0.2.1    | API Backend    |
+| **Next.js**       | 15.1.6     | Marketing Site |
+| **Flutter**       | 3.32.5     | Mobile/Web App |
 
 ### スクリプト・自動化
-| 技術 | 用途 |
-|------|------|
-| **Ruby** | YAML操作、データ処理 (add_client.rb, generate_client_compose.rb) |
-| **Bash** | Docker操作、プロビジョニング (provision_client.sh, setup_n8n_owner.sh) |
+
+| 技術     | 用途                                                                    |
+| -------- | ----------------------------------------------------------------------- |
+| **Ruby** | YAML 操作、データ処理 (add_client.rb, generate_client_compose.rb)       |
+| **Bash** | Docker 操作、プロビジョニング (provision_client.sh, setup_n8n_owner.sh) |
 
 ---
 
@@ -105,8 +113,6 @@ landbase_ai_suite/
 │   └── client_list.yaml          # クライアントレジストリ（マスターデータ）
 │
 ├── docs/                         # 詳細ドキュメント
-│   ├── line-bot-integration.md   # LINE Bot統合ガイド
-│   └── roadmap.md                # 開発ロードマップ
 │
 ├── scripts/                      # 自動化スクリプト
 │   ├── add_client.rb             # クライアント登録
@@ -130,6 +136,7 @@ landbase_ai_suite/
 ## セットアップ手順
 
 ### 前提条件
+
 - Docker Desktop インストール済み
 - Ruby 3.x インストール済み
 - macOS または Linux 環境
@@ -151,10 +158,12 @@ make init
 ### アクセス情報
 
 #### Platform n8n (社内管理用)
+
 - URL: http://localhost:5678
 - 認証情報: `.env` の `N8N_OWNER_*` を参照
 
 #### Mattermost
+
 - URL: http://localhost:8065
 - 初回アクセス時に管理者アカウントを作成
 
@@ -225,6 +234,7 @@ make remove-client CODE=hotel_sunrise
 ```
 
 **自動実行される処理:**
+
 1. Docker コンテナの停止・削除（ボリュームも含む）
 2. 生成された Docker Compose ファイルの削除
 3. `client_list.yaml` からクライアント情報の削除
@@ -237,18 +247,18 @@ make remove-client CODE=hotel_sunrise
 
 ```yaml
 clients:
-  - code: shrimp_shells              # 一意識別子（スネークケース）
-    name: Shrimp Shells              # 表示名
-    industry: restaurant             # 業種 (hotel/restaurant/tour)
-    subdomain: shrimp-shells         # 将来のサブドメイン用（ケバブケース）
+  - code: shrimp_shells # 一意識別子（スネークケース）
+    name: Shrimp Shells # 表示名
+    industry: restaurant # 業種 (hotel/restaurant/tour)
+    subdomain: shrimp-shells # 将来のサブドメイン用（ケバブケース）
     contact:
-      email: info@shrimpshells.com   # 連絡先
+      email: info@shrimpshells.com # 連絡先
     services:
       n8n:
         enabled: true
-        port: 5679                   # 自動割り当て（5679から開始）
+        port: 5679 # 自動割り当て（5679から開始）
         owner_email: admin-shrimp-shells@landbase.ai
-        owner_password: KFsegssdUKmx5SAR  # 自動生成
+        owner_password: KFsegssdUKmx5SAR # 自動生成
         db_schema: n8n_shrimp_shells
         workflows: []
       mattermost:
@@ -257,8 +267,8 @@ clients:
         admin_username: shrimp_shells_admin
         admin_email: info@shrimpshells.com
         admin_password: KFsegssdUKmx5SAR
-    status: trial                    # trial/active/suspended
-    created_at: '2025-11-13 14:00:57 +0900'
+    status: trial # trial/active/suspended
+    created_at: "2025-11-13 14:00:57 +0900"
 ```
 
 ---
@@ -296,12 +306,12 @@ make init                  # n8n オーナー作成 + Mattermost 手動セット
 
 ### スクリプト概要
 
-| スクリプト | 用途 | Makeコマンド |
-|-----------|------|-------------|
-| `add_client.rb` | クライアント情報を `client_list.yaml` に登録 | `make add-client` |
+| スクリプト                   | 用途                                         | Make コマンド                      |
+| ---------------------------- | -------------------------------------------- | ---------------------------------- |
+| `add_client.rb`              | クライアント情報を `client_list.yaml` に登録 | `make add-client`                  |
 | `generate_client_compose.rb` | クライアント専用 Docker Compose ファイル生成 | `make provision-client` で自動実行 |
-| `provision_client.sh` | クライアント環境の完全自動構築 | `make provision-client` |
-| `setup_n8n_owner.sh` | Platform n8n の初回セットアップ | `make init` |
+| `provision_client.sh`        | クライアント環境の完全自動構築               | `make provision-client`            |
+| `setup_n8n_owner.sh`         | Platform n8n の初回セットアップ              | `make init`                        |
 
 詳細は各スクリプトのコメントを参照してください。
 
@@ -312,6 +322,7 @@ make init                  # n8n オーナー作成 + Mattermost 手動セット
 ### 問題: n8n コンテナが起動しない
 
 **症状**:
+
 ```
 Error: ENOTDIR: not a directory
 ```
@@ -319,6 +330,7 @@ Error: ENOTDIR: not a directory
 **原因**: カスタムファイルマウントの設定ミス
 
 **解決策**:
+
 ```bash
 # compose ファイルを確認
 cat compose.yaml | grep -A 5 "n8n:"
@@ -330,11 +342,13 @@ make down && make up
 ### 問題: ポートが既に使用されている
 
 **症状**:
+
 ```
 Error: bind: address already in use
 ```
 
 **解決策**:
+
 ```bash
 # ポート使用状況確認
 lsof -i :5678
@@ -351,11 +365,13 @@ docker stop <container_id>
 ### 問題: client_list.yaml が破損した
 
 **症状**:
+
 ```
 ❌ エラー: YAML parse error
 ```
 
 **解決策**:
+
 ```bash
 # Git で元に戻す
 git checkout config/client_list.yaml
@@ -367,11 +383,13 @@ git checkout main -- config/client_list.yaml
 ### 問題: PostgreSQL 接続エラー
 
 **症状**:
+
 ```
 FATAL: password authentication failed
 ```
 
 **解決策**:
+
 ```bash
 # 環境変数確認
 grep POSTGRES .env
@@ -424,12 +442,12 @@ landbase_ai_suite/
 
 ## ライセンス
 
-All rights reserved. © 株式会社AI.LandBase
+All rights reserved. © 株式会社 AI.LandBase
 
 ---
 
 ## 連絡先
 
-- **会社**: 株式会社AI.LandBase
+- **会社**: 株式会社 AI.LandBase
 - **GitHub**: https://github.com/zomians/landbase_ai_suite
 - **Issues**: https://github.com/zomians/landbase_ai_suite/issues
