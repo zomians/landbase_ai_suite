@@ -141,20 +141,6 @@ landbase_ai_suite/
 - Ruby 3.x インストール済み
 - macOS または Linux 環境
 
-### 初回セットアップ
-
-```bash
-# 1. リポジトリクローン
-git clone https://github.com/zomians/landbase_ai_suite.git
-cd landbase_ai_suite
-
-# 2. プラットフォームサービス起動
-make up
-
-# 3. Platform n8n 初期化
-make init
-```
-
 ### アクセス情報
 
 #### Platform n8n (社内管理用)
