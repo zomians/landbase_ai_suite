@@ -9,17 +9,13 @@
 
 - [概要](#概要)
 - [ビジネスコンテキスト](#ビジネスコンテキスト)
-- [システムアーキテクチャ](#システムアーキテクチャ)
 - [技術スタック](#技術スタック)
-- [ディレクトリ構成](#ディレクトリ構成)
 - [セットアップ手順](#セットアップ手順)
 - [クライアント管理](#クライアント管理)
 - [開発ワークフロー](#開発ワークフロー)
-- [LINE Bot 統合](#line-bot-統合)
 - [トラブルシューティング](#トラブルシューティング)
-- [今後の開発ロードマップ](#今後の開発ロードマップ)
+- [プロジェクト構成](#プロジェクト構成)
 - [ライセンス](#ライセンス)
-- [連絡先](#連絡先)
 
 ---
 
@@ -61,72 +57,6 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 - **Phase 1**: 5-10クライアント（Proof of Concept）
 - **Phase 2**: 50クライアント
 - **Phase 3**: 100+クライアント
-
----
-
-## システムアーキテクチャ
-
-### 全体構成図
-
-```
-┌──────────────────────────────────────────────────────────┐
-│               LandBase AI Suite (Docker Compose)          │
-└──────────────────────────────────────────────────────────┘
-
-[Platform Layer - 内部管理用]
-  ┌─────────────────┐
-  │ n8n             │ Port: 5678
-  │ (Platform)      │ Schema: public
-  └─────────────────┘
-
-  ┌─────────────────┐
-  │ Mattermost      │ Port: 8065
-  └─────────────────┘
-
-[Client Layer - クライアント専用環境]
-  ┌─────────────────┐
-  │ n8n (Client 1)  │ Port: 5679, Schema: n8n_client1
-  └─────────────────┘
-
-  ┌─────────────────┐
-  │ n8n (Client 2)  │ Port: 5680, Schema: n8n_client2
-  └─────────────────┘
-
-  ┌─────────────────┐
-  │ n8n (Client N)  │ Port: 5679+N, Schema: n8n_clientN
-  └─────────────────┘
-
-[Database Layer - 共通データベース]
-  ┌─────────────────────────────────────────────────────────┐
-  │ PostgreSQL (Port 5432)                                   │
-  │ Database: landbase_development                           │
-  │ Schemas: public, n8n_client1, n8n_client2, ...          │
-  └─────────────────────────────────────────────────────────┘
-```
-
-### マルチテナント設計
-
-#### ポート方式によるコンテナ分離
-- **Platform n8n**: `localhost:5678` (社内管理用)
-- **Client n8n**: `localhost:5679+` (クライアント毎に自動割り当て)
-  - Shrimp Shells: 5679
-  - 次のクライアント: 5680
-  - ...
-
-#### データベーススキーマ分離
-```sql
--- PostgreSQL スキーマ構成
-landbase_development/
-  ├── public (Platform n8n)
-  ├── n8n_shrimp_shells (Shrimp Shells専用)
-  ├── n8n_hotel_a (Hotel A専用)
-  └── n8n_tour_b (Tour B専用)
-```
-
-**メリット:**
-- データ完全分離（セキュリティ）
-- PostgreSQL 1インスタンスで管理（運用コスト削減）
-- バックアップ・リストアが容易
 
 ---
 
@@ -377,20 +307,6 @@ make init                  # n8n オーナー作成 + Mattermost 手動セット
 
 ---
 
-## LINE Bot 統合
-
-LINE Bot と n8n を連携して、LINE グループに投稿された画像を自動的に Google Drive に保存するワークフローを実装できます。
-
-**主な機能:**
-- LINE グループでの画像自動保存
-- マルチグループ対応
-- ngrok による Webhook 受信
-
-**詳細な手順:**
-→ [LINE Bot 統合ガイド](docs/line-bot-integration.md)
-
----
-
 ## トラブルシューティング
 
 ### 問題: n8n コンテナが起動しない
@@ -470,19 +386,39 @@ make up
 
 ---
 
-## 今後の開発ロードマップ
+## プロジェクト構成
 
-**開発アプローチ:** 実用機能ファースト - AI機能などの具体的な価値提供機能を作りながら、必要に応じてコア機能を段階的に完成させていくアプローチを採用します。
-
-**計画中の主要機能:**
-- 🎯 AIワークフロー自動生成
-- 📸 現場報告自動仕分けサービス
-- 📱 SNS自動投稿AI
-- 📦 在庫最適化アラート
-- 🖥️ マルチクライアント管理画面
-
-**詳細なロードマップ:**
-→ [開発ロードマップ](docs/roadmap.md)
+```
+landbase_ai_suite/
+├── .env                          # 環境変数設定（共通）
+├── .env.local.example            # 機密情報テンプレート
+├── compose.yaml                  # Platform サービス定義
+├── compose.client.*.yaml         # クライアント専用 n8n 定義（自動生成）
+├── Makefile                      # 統一コマンドインターフェース
+├── README.md                     # プロジェクトドキュメント
+│
+├── config/                       # 設定ファイル
+│   └── client_list.yaml          # クライアントレジストリ（マスターデータ）
+│
+├── docs/                         # 詳細ドキュメント
+│   └── sns-marketing-trends-2025.md
+│
+├── scripts/                      # 自動化スクリプト
+│   ├── add_client.rb             # クライアント登録
+│   ├── generate_client_compose.rb # Docker Compose生成
+│   ├── provision_client.sh       # クライアント環境構築
+│   └── setup_n8n_owner.sh        # Platform n8n 初期化
+│
+├── n8n/                          # n8n関連
+│   └── workflows/                # ワークフロー定義
+│       └── line-to-gdrive.json   # LINE Bot → Google Drive
+│
+├── rails/                        # Rails 開発環境
+│   └── Dockerfile                # Rails 用 Dockerfile
+│
+└── nextjs/                       # Next.js 開発環境
+    └── Dockerfile                # Next.js 用 Dockerfile
+```
 
 ---
 
