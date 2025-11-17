@@ -8,11 +8,10 @@
 ## 📋 目次
 
 - [概要](#概要)
-- [ビジネスコンテキスト](#ビジネスコンテキスト)
+- [プロジェクト構成](#プロジェクト構成)
 - [技術スタック](#技術スタック)
 - [クライアント管理](#クライアント管理)
 - [開発ワークフロー](#開発ワークフロー)
-- [プロジェクト構成](#プロジェクト構成)
 - [ライセンス](#ライセンス)
 
 ---
@@ -31,34 +30,32 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 
 ---
 
-## ビジネスコンテキスト
+## プロジェクト構成
 
-### 企業情報
-
-- **会社名**: 株式会社 AI.LandBase
-- **事業内容**: AI ドリブン経営コンサルティング
-- **対象地域**: 沖縄県北部（やんばる地域）
-- **対象業種**: 観光業（ホテル、飲食店、ツアー会社）
-
-### 課題と解決策
-
-#### 課題
-
-- 小規模事業者（従業員~10 名）が多く、IT 投資余力が限定的
-- 予約管理、SNS 投稿、在庫管理などの手作業が負担
-- 個別にシステム導入するとコストが高い
-
-#### 解決策
-
-- **SaaS 型提供**: 初期投資を抑えたサブスクリプションモデル
-- **業種別テンプレート**: ホテル・飲食店・ツアー向けの事前設定ワークフロー
-- **段階的導入**: トライアル → 本格運用へのスムーズな移行
-
-### スケール目標
-
-- **Phase 1**: 5-10 クライアント（Proof of Concept）
-- **Phase 2**: 50 クライアント
-- **Phase 3**: 100+クライアント
+```
+landbase_ai_suite/
+├── config/
+│   └── client_list.yaml          # クライアントレジストリ
+├── docs/
+│   ├── company-overview.md       # 会社概要
+│   └── sns-marketing-trends-2025.md
+├── n8n/
+│   └── workflows/
+├── nextjs/
+│   └── Dockerfile
+├── rails/
+│   └── Dockerfile
+├── scripts/
+│   ├── add_client.rb             # クライアント登録
+│   ├── generate_client_compose.rb # Docker Compose生成
+│   └── provision_client.sh       # クライアント環境構築
+├── .env                          # 環境変数設定
+├── .env.local.example            # 機密情報テンプレート
+├── compose.yaml                  # Platform サービス定義
+├── compose.client.*.yaml         # クライアント専用 n8n（自動生成）
+├── Makefile
+└── README.md
+```
 
 ---
 
@@ -93,40 +90,6 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 | -------- | ----------------------------------------------------------------------- |
 | **Ruby** | YAML 操作、データ処理 (add_client.rb, generate_client_compose.rb)       |
 | **Bash** | Docker 操作、プロビジョニング (provision_client.sh) |
-
----
-
-## ディレクトリ構成
-
-```
-landbase_ai_suite/
-├── .env                          # 環境変数設定（共通）
-├── .env.local.example            # 機密情報テンプレート
-├── compose.yaml                  # Platform サービス定義
-├── compose.client.*.yaml         # クライアント専用 n8n 定義（自動生成）
-├── Makefile                      # 統一コマンドインターフェース
-├── README.md                     # プロジェクトドキュメント
-│
-├── config/                       # 設定ファイル
-│   └── client_list.yaml          # クライアントレジストリ（マスターデータ）
-│
-├── docs/                         # 詳細ドキュメント
-│
-├── scripts/                      # 自動化スクリプト
-│   ├── add_client.rb             # クライアント登録
-│   ├── generate_client_compose.rb # Docker Compose生成
-│   ├── provision_client.sh       # クライアント環境構築
-│
-├── n8n/                          # n8n関連
-│   └── workflows/                # ワークフロー定義
-│       └── line-to-gdrive.json   # LINE Bot → Google Drive
-│
-├── rails/                        # Rails 開発環境
-│   └── Dockerfile                # Rails 用 Dockerfile
-│
-└── nextjs/                       # Next.js 開発環境
-    └── Dockerfile                # Next.js 用 Dockerfile
-```
 
 ---
 
@@ -274,42 +237,6 @@ make remove-client         # クライアント削除
  
 
 詳細は各スクリプトのコメントを参照してください。
-
----
-
-## プロジェクト構成
-
-```
-landbase_ai_suite/
-├── .env                          # 環境変数設定（共通）
-├── .env.local.example            # 機密情報テンプレート
-├── compose.yaml                  # Platform サービス定義
-├── compose.client.*.yaml         # クライアント専用 n8n 定義（自動生成）
-├── Makefile                      # 統一コマンドインターフェース
-├── README.md                     # プロジェクトドキュメント
-│
-├── config/                       # 設定ファイル
-│   └── client_list.yaml          # クライアントレジストリ（マスターデータ）
-│
-├── docs/                         # 詳細ドキュメント
-│   └── sns-marketing-trends-2025.md
-│
-├── scripts/                      # 自動化スクリプト
-│   ├── add_client.rb             # クライアント登録
-│   ├── generate_client_compose.rb # Docker Compose生成
-│   ├── provision_client.sh       # クライアント環境構築
-│   └── setup_n8n_owner.sh        # Platform n8n 初期化
-│
-├── n8n/                          # n8n関連
-│   └── workflows/                # ワークフロー定義
-│       └── line-to-gdrive.json   # LINE Bot → Google Drive
-│
-├── rails/                        # Rails 開発環境
-│   └── Dockerfile                # Rails 用 Dockerfile
-│
-└── nextjs/                       # Next.js 開発環境
-    └── Dockerfile                # Next.js 用 Dockerfile
-```
 
 ---
 
