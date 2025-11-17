@@ -10,10 +10,8 @@
 - [概要](#概要)
 - [ビジネスコンテキスト](#ビジネスコンテキスト)
 - [技術スタック](#技術スタック)
-- [セットアップ手順](#セットアップ手順)
 - [クライアント管理](#クライアント管理)
 - [開発ワークフロー](#開発ワークフロー)
-- [トラブルシューティング](#トラブルシューティング)
 - [プロジェクト構成](#プロジェクト構成)
 - [ライセンス](#ライセンス)
 
@@ -29,7 +27,7 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 - 🤖 **n8n 自動化**: クライアント毎に独立した n8n コンテナで業務自動化
 - 💬 **Mattermost 統合**: チームコミュニケーション基盤
 - 📊 **PostgreSQL 共有**: スキーマ分離によるデータ隔離
-- 🚀 **自動プロビジョニング**: make コマンド 1 つでクライアント環境を構築
+- 🚀 **コマンドベースの自動構築**: 標準化されたコマンドでクライアント環境を迅速にプロビジョニング
 
 ---
 
@@ -81,7 +79,7 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 | **n8n**        | 1.119.2    | ワークフロー自動化エンジン |
 | **Mattermost** | 9.11       | チームコミュニケーション   |
 
-### アプリケーション層（将来実装）
+### アプリケーション層
 
 | 技術              | バージョン | 用途           |
 | ----------------- | ---------- | -------------- |
@@ -129,28 +127,6 @@ landbase_ai_suite/
 └── nextjs/                       # Next.js 開発環境
     └── Dockerfile                # Next.js 用 Dockerfile
 ```
-
----
-
-## セットアップ手順
-
-### 前提条件
-
-- Docker Desktop インストール済み
-- Ruby 3.x インストール済み
-- macOS または Linux 環境
-
-### アクセス情報
-
-#### Platform n8n (社内管理用)
-
-- URL: http://localhost:5678
-- 初回アクセス時に管理者アカウントを作成
-
-#### Mattermost
-
-- URL: http://localhost:8065
-- 初回アクセス時に管理者アカウントを作成
 
 ---
 
@@ -298,93 +274,6 @@ make remove-client         # クライアント削除
  
 
 詳細は各スクリプトのコメントを参照してください。
-
----
-
-## トラブルシューティング
-
-### 問題: n8n コンテナが起動しない
-
-**症状**:
-
-```
-Error: ENOTDIR: not a directory
-```
-
-**原因**: カスタムファイルマウントの設定ミス
-
-**解決策**:
-
-```bash
-# compose ファイルを確認
-cat compose.yaml | grep -A 5 "n8n:"
-
-# 不要なマウントを削除してから再起動
-make down && make up
-```
-
-### 問題: ポートが既に使用されている
-
-**症状**:
-
-```
-Error: bind: address already in use
-```
-
-**解決策**:
-
-```bash
-# ポート使用状況確認
-lsof -i :5678
-lsof -i :5679
-
-# プロセスを停止
-kill -9 <PID>
-
-# または Docker コンテナを停止
-docker ps
-docker stop <container_id>
-```
-
-### 問題: client_list.yaml が破損した
-
-**症状**:
-
-```
-❌ エラー: YAML parse error
-```
-
-**解決策**:
-
-```bash
-# Git で元に戻す
-git checkout config/client_list.yaml
-
-# または main ブランチから復元
-git checkout main -- config/client_list.yaml
-```
-
-### 問題: PostgreSQL 接続エラー
-
-**症状**:
-
-```
-FATAL: password authentication failed
-```
-
-**解決策**:
-
-```bash
-# 環境変数確認
-grep POSTGRES .env
-
-# PostgreSQL ログ確認
-make postgres-logs
-
-# 完全リセット（注意: データ消失）
-make clean
-make up
-```
 
 ---
 
