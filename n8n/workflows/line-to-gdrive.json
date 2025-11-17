@@ -5,7 +5,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "line-webhook",
-        "responseMode": "responseNode",
+        "responseMode": "onReceived",
         "options": {}
       },
       "id": "webhook-node",
@@ -91,28 +91,6 @@
           "name": "Google Drive OAuth2"
         }
       }
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Image uploaded to Google Drive\" } }}"
-      },
-      "id": "response-success-node",
-      "name": "Response Success",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [1050, 200]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"status\": \"ignored\", \"message\": \"Not an image message\" } }}"
-      },
-      "id": "response-ignored-node",
-      "name": "Response Ignored",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1,
-      "position": [650, 400]
     }
   ],
   "connections": {
@@ -135,13 +113,6 @@
             "type": "main",
             "index": 0
           }
-        ],
-        [
-          {
-            "node": "Response Ignored",
-            "type": "main",
-            "index": 0
-          }
         ]
       ]
     },
@@ -150,17 +121,6 @@
         [
           {
             "node": "Google Drive Upload",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Drive Upload": {
-      "main": [
-        [
-          {
-            "node": "Response Success",
             "type": "main",
             "index": 0
           }
