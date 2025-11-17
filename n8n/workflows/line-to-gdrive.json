@@ -17,19 +17,29 @@
     {
       "parameters": {
         "conditions": {
-          "string": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
             {
-              "value1": "={{ $json.body.events[0].message.type }}",
-              "operation": "equals",
-              "value2": "image"
+              "id": "condition-1",
+              "leftValue": "={{ $json.body.events[0].message.type }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
       "id": "if-image-node",
       "name": "IF Image",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "typeVersion": 2,
       "position": [450, 300]
     },
     {
@@ -65,8 +75,8 @@
         },
         "folderId": {
           "__rl": true,
-          "value": "inbox",
-          "mode": "name"
+          "value": "14DA64gF9QX9ZMr0cNg57OkLuku1E4TKw",
+          "mode": "id"
         },
         "options": {}
       },
