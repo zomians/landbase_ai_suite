@@ -33,7 +33,7 @@ n8n_db_schema = "n8n_#{client_code}"
 
 # Docker Compose YAML生成
 compose_data = {
-  'name' => 'landbase_ai_suite_development',
+  'name' => 'landbase_ai_suite',
   'services' => {
     "n8n-#{client_code.gsub('_', '-')}" => {
       'image' => "n8nio/n8n:latest",
@@ -49,7 +49,7 @@ compose_data = {
       ],
       'ports' => ["#{n8n_port}:5678"],
       'volumes' => ["n8n_data_#{client_code}:/home/node/.n8n"],
-      'networks' => ['landbase_ai_suite_development_default'],
+      'networks' => ['landbase_ai_suite_default'],
       'restart' => 'unless-stopped'
     }
   },
@@ -59,7 +59,7 @@ compose_data = {
     }
   },
   'networks' => {
-    'landbase_ai_suite_development_default' => {
+    'landbase_ai_suite_default' => {
       'external' => true
     }
   }

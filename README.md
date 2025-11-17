@@ -166,7 +166,7 @@ landbase_development/
 landbase_ai_suite/
 ├── .env                          # 環境変数設定（共通）
 ├── .env.local.example            # 機密情報テンプレート
-├── compose.development.yaml      # Platform サービス定義
+├── compose.yaml                  # Platform サービス定義
 ├── compose.client.*.yaml         # クライアント専用 n8n 定義（自動生成）
 ├── Makefile                      # 統一コマンドインターフェース
 ├── README.md                     # プロジェクトドキュメント
@@ -405,7 +405,7 @@ Error: ENOTDIR: not a directory
 **解決策**:
 ```bash
 # compose ファイルを確認
-cat compose.development.yaml | grep -A 5 "n8n:"
+cat compose.yaml | grep -A 5 "n8n:"
 
 # 不要なマウントを削除してから再起動
 make down && make up
