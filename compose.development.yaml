@@ -3,6 +3,10 @@ name: landbase_ai_suite_development
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
@@ -32,6 +36,8 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
       - DB_POSTGRESDB_USER=${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_POSTGRESDB_SCHEMA=n8n_platform
+      - N8N_ENCRYPTION_KEY=landbase_dev_encryption_key_change_in_production
     ports:
       - "${N8N_PORT}:5678"
     volumes:
@@ -75,8 +81,6 @@ services:
         - NODE_VERSION=${NODE_VERSION}
         - YARN_VERSION=${YARN_VERSION}
         - RAILS_VERSION=${RAILS_VERSION}
-    env_file:
-      - .env.development
     ports:
       - "${SHRIMP_SHELLS_PORT}:3000"
     volumes:
