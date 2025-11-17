@@ -10,9 +10,6 @@ GREEN := \033[1;32m
 RED := \033[1;31m
 NC := \033[0m # No Color
 
-# Docker Compose command
-DC := docker compose -f compose.development.yaml --env-file .env
-
 .PHONY: help
 help: ## ヘルプ表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -22,44 +19,44 @@ help: ## ヘルプ表示
 .PHONY: up
 up: ## Mattermost, n8n, PostgreSQLを起動
 	@echo "${GREEN}Starting Mattermost, n8n and PostgreSQL...${NC}"
-	$(DC) up -d postgres mattermost n8n
+	docker compose up -d postgres mattermost n8n
 	@echo "${GREEN}Mattermost is running at http://localhost:${MATTERMOST_PORT}${NC}"
 	@echo "${GREEN}n8n is running at http://localhost:${N8N_PORT}${NC}"
 	@echo "${YELLOW}n8n Login: ${N8N_BASIC_AUTH_USER} / ${N8N_BASIC_AUTH_PASSWORD}${NC}"
 
 .PHONY: down
 down: ## サービス停止
-	$(DC) down
+	docker compose down
 
 .PHONY: logs
 logs: ## 全サービスのログ表示
-	$(DC) logs --follow
+	docker compose logs --follow
 
 .PHONY: n8n-logs
 n8n-logs: ## n8nログ表示
-	$(DC) logs -f n8n
+	docker compose logs -f n8n
 
 .PHONY: postgres-logs
 postgres-logs: ## PostgreSQLログ表示
-	$(DC) logs -f postgres
+	docker compose logs -f postgres
 
 .PHONY: postgres-shell
 postgres-shell: ## PostgreSQLシェル接続
-	$(DC) exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+	docker compose exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 
 .PHONY: mattermost-logs
 mattermost-logs: ## Mattermostログ表示
-	$(DC) logs -f mattermost
+	docker compose logs -f mattermost
 
 .PHONY: rails-shell
 rails-shell: ## Railsコンテナにシェル接続
-	$(DC) run --rm --service-ports rails bash
+	docker compose run --rm --service-ports rails bash
 
 .PHONY: rails-new
 rails-new: ## 新規Railsアプリ作成（PostgreSQL対応）
 	@echo "${GREEN}Creating new Rails application with PostgreSQL...${NC}"
 	@[ -d ${RAILS_APP_NAME} ] && echo "${YELLOW}Rails application '${RAILS_APP_NAME}' already exists.${NC}" || \
-		$(DC) run --rm --service-ports rails bash -c " \
+		docker compose run --rm --service-ports rails bash -c " \
 			rails new ${RAILS_APP_NAME} \
 				--database=postgresql \
 				--javascript=esbuild \
@@ -68,17 +65,17 @@ rails-new: ## 新規Railsアプリ作成（PostgreSQL対応）
 
 .PHONY: rails-logs
 rails-logs: ## Railsログ表示
-	$(DC) logs -f rails
+	docker compose logs -f rails
 
 .PHONY: nextjs-shell
 nextjs-shell: ## Next.jsコンテナにシェル接続
-	$(DC) run --rm --service-ports nextjs bash
+	docker compose run --rm --service-ports nextjs bash
 
 .PHONY: nextjs-new
 nextjs-new: ## 新規Next.jsアプリ作成
 	@echo "${GREEN}Creating new Next.js application...${NC}"
 	@[ -d ${NEXTJS_APP_NAME} ] && echo "${YELLOW}Next.js application '${NEXTJS_APP_NAME}' already exists.${NC}" || \
-		$(DC) run --rm --service-ports nextjs bash -c " \
+		docker compose run --rm --service-ports nextjs bash -c " \
 			cd /app && \
 			npx create-next-app@${NEXTJS_VERSION} ${NEXTJS_APP_NAME} \
 				--typescript \
@@ -90,12 +87,12 @@ nextjs-new: ## 新規Next.jsアプリ作成
 
 .PHONY: nextjs-logs
 nextjs-logs: ## Next.jsログ表示
-	$(DC) logs -f nextjs
+	docker compose logs -f nextjs
 
 .PHONY: shrimpshells-new
 shrimpshells-new: ## Shrimp Shells EC: Railsアプリ新規作成
 	@[ -d rails/${SHRIMP_SHELLS_APP_NAME} ] && echo "${YELLOW}Rails application 'rails/${SHRIMP_SHELLS_APP_NAME}' already exists.${NC}" || \
-		$(DC) run --rm -e HOME=/tmp -e XDG_CACHE_HOME=/tmp shrimpshells-ec bash -lc " \
+		docker compose run --rm -e HOME=/tmp -e XDG_CACHE_HOME=/tmp shrimpshells-ec bash -lc " \
 			/usr/local/bundle/bin/rails new /$$SHRIMP_SHELLS_APP_NAME \
 			  --database=postgresql \
 			  --javascript=esbuild \
@@ -105,7 +102,7 @@ shrimpshells-new: ## Shrimp Shells EC: Railsアプリ新規作成
 
 .PHONY: shrimpshells-solidus-install
 shrimpshells-solidus-install: ## Shrimp Shells EC: Solidus導入（Gem追加とインストール）
-	$(DC) run --rm shrimpshells-ec bash -lc " \
+	docker compose run --rm shrimpshells-ec bash -lc " \
 		cd /$$SHRIMP_SHELLS_APP_NAME && \
 		bundle add solidus -v '~> 4.5' solidus_auth_devise solidus_support && \
 		bundle install && \
@@ -116,25 +113,25 @@ shrimpshells-solidus-install: ## Shrimp Shells EC: Solidus導入（Gem追加と�
 
 .PHONY: shrimpshells-up
 shrimpshells-up: ## Shrimp Shells EC: サービス起動
-	$(DC) up -d shrimpshells-ec
+	docker compose up -d shrimpshells-ec
 	@echo "${GREEN}Shrimp Shells EC is running at http://localhost:${SHRIMP_SHELLS_PORT}${NC}"
 
 .PHONY: shrimpshells-logs
 shrimpshells-logs: ## Shrimp Shells EC: ログ表示
-	$(DC) logs -f shrimpshells-ec
+	docker compose logs -f shrimpshells-ec
 
 .PHONY: shrimpshells-shell
 shrimpshells-shell: ## Shrimp Shells EC: コンテナにシェル接続
-	$(DC) run --rm --service-ports shrimpshells-ec bash
+	docker compose run --rm --service-ports shrimpshells-ec bash
 
 .PHONY: clean
 clean: ## クリーンアップ（全削除）
-	$(DC) down --rmi all --volumes --remove-orphans
+	docker compose down --rmi all --volumes --remove-orphans
 	@echo "${GREEN}Cleaned up all Docker resources.${NC}"
 
 .PHONY: build
 build: ## サービスビルド（キャッシュ無効）
-	$(DC) build --no-cache
+	docker compose build --no-cache
 
 # ================================
 # クライアント管理

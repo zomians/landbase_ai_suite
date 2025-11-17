@@ -1,5 +1,5 @@
 ---
-name: landbase_ai_suite_development
+name: landbase_ai_suite
 services:
   n8n-shrimp-shells:
     image: n8nio/n8n:latest
@@ -17,11 +17,11 @@ services:
     volumes:
     - n8n_data_shrimp_shells:/home/node/.n8n
     networks:
-    - landbase_ai_suite_development_default
+    - landbase_ai_suite_default
     restart: unless-stopped
 volumes:
   n8n_data_shrimp_shells:
     driver: local
 networks:
-  landbase_ai_suite_development_default:
+  landbase_ai_suite_default:
     external: true
