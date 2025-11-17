@@ -3,10 +3,7 @@ name: landbase_ai_suite
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+    env_file: .env
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
@@ -19,6 +16,7 @@ services:
 
   mattermost:
     image: mattermost/mattermost-team-edition:${MATTERMOST_VERSION}
+    env_file: .env
     ports:
       - "${MATTERMOST_PORT}:8065"
     volumes:
@@ -29,15 +27,9 @@ services:
 
   n8n:
     image: n8nio/n8n:${N8N_VERSION}
+    env_file: .env
     environment:
-      - DB_TYPE=postgresdb
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=${POSTGRES_USER}
-      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_POSTGRESDB_SCHEMA=n8n_platform
-      - N8N_ENCRYPTION_KEY=landbase_dev_encryption_key_change_in_production
     ports:
       - "${N8N_PORT}:5678"
     volumes:
@@ -98,26 +90,6 @@ services:
       postgres:
         condition: service_healthy
 
-  nextjs:
-    build:
-      context: ./nextjs
-      target: development
-      args:
-        - NODE_VERSION=${NODE_VERSION}
-        - NEXTJS_VERSION=${NEXTJS_VERSION}
-    ports:
-      - "${NEXTJS_PORT}:3000"
-    volumes:
-      - ./${NEXTJS_APP_NAME}:/app/${NEXTJS_APP_NAME}
-      - nextjs_node_modules:/app/${NEXTJS_APP_NAME}/node_modules
-    command: >
-      bash -c "
-        cd /app/${NEXTJS_APP_NAME} &&
-        npm run dev
-      "
-    stdin_open: true
-    tty: true
-
 volumes:
   postgres_data:
     driver: local
@@ -128,6 +100,4 @@ volumes:
   bundle_cache:
     driver: local
   yarn_global_cache:
-    driver: local
-  nextjs_node_modules:
     driver: local
