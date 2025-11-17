@@ -38,14 +38,9 @@ compose_data = {
     "n8n-#{client_code.gsub('_', '-')}" => {
       'image' => "n8nio/n8n:latest",
       'container_name' => "n8n_#{client_code}",
+      'env_file' => '.env',
       'environment' => [
-        'DB_TYPE=postgresdb',
-        'DB_POSTGRESDB_HOST=postgres',
-        'DB_POSTGRESDB_PORT=5432',
-        "DB_POSTGRESDB_DATABASE=landbase_development",
-        "DB_POSTGRESDB_SCHEMA=#{n8n_db_schema}",
-        'DB_POSTGRESDB_USER=landbase',
-        'DB_POSTGRESDB_PASSWORD=landbase_dev_password'
+        "DB_POSTGRESDB_SCHEMA=#{n8n_db_schema}"
       ],
       'ports' => ["#{n8n_port}:5678"],
       'volumes' => ["n8n_data_#{client_code}:/home/node/.n8n"],
