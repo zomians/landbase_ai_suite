@@ -48,47 +48,6 @@ postgres-shell: ## PostgreSQLシェル接続
 mattermost-logs: ## Mattermostログ表示
 	docker compose logs -f mattermost
 
-.PHONY: rails-shell
-rails-shell: ## Railsコンテナにシェル接続
-	docker compose run --rm --service-ports rails bash
-
-.PHONY: rails-new
-rails-new: ## 新規Railsアプリ作成（PostgreSQL対応）
-	@echo "${GREEN}Creating new Rails application with PostgreSQL...${NC}"
-	@[ -d ${RAILS_APP_NAME} ] && echo "${YELLOW}Rails application '${RAILS_APP_NAME}' already exists.${NC}" || \
-		docker compose run --rm --service-ports rails bash -c " \
-			rails new ${RAILS_APP_NAME} \
-				--database=postgresql \
-				--javascript=esbuild \
-				--css=tailwind \
-		"
-
-.PHONY: rails-logs
-rails-logs: ## Railsログ表示
-	docker compose logs -f rails
-
-.PHONY: nextjs-shell
-nextjs-shell: ## Next.jsコンテナにシェル接続
-	docker compose run --rm --service-ports nextjs bash
-
-.PHONY: nextjs-new
-nextjs-new: ## 新規Next.jsアプリ作成
-	@echo "${GREEN}Creating new Next.js application...${NC}"
-	@[ -d ${NEXTJS_APP_NAME} ] && echo "${YELLOW}Next.js application '${NEXTJS_APP_NAME}' already exists.${NC}" || \
-		docker compose run --rm --service-ports nextjs bash -c " \
-			cd /app && \
-			npx create-next-app@${NEXTJS_VERSION} ${NEXTJS_APP_NAME} \
-				--typescript \
-				--tailwind \
-				--app \
-				--src-dir \
-				--import-alias '@/*' \
-		"
-
-.PHONY: nextjs-logs
-nextjs-logs: ## Next.jsログ表示
-	docker compose logs -f nextjs
-
 .PHONY: shrimpshells-new
 shrimpshells-new: ## Shrimp Shells EC: Railsアプリ新規作成
 	@[ -d rails/${SHRIMP_SHELLS_APP_NAME} ] && echo "${YELLOW}Rails application 'rails/${SHRIMP_SHELLS_APP_NAME}' already exists.${NC}" || \
@@ -100,8 +59,8 @@ shrimpshells-new: ## Shrimp Shells EC: Railsアプリ新規作成
 			  --skip-docker \
 		"
 
-.PHONY: shrimpshells-solidus-install
-shrimpshells-solidus-install: ## Shrimp Shells EC: Solidus導入（Gem追加とインストール）
+.PHONY: rails-solidus-install
+rails-solidus-install: ## RailsアプリにSolidus導入（Gem追加とインストール）
 	docker compose run --rm shrimpshells-ec bash -lc " \
 		cd /$$SHRIMP_SHELLS_APP_NAME && \
 		bundle add solidus -v '~> 4.5' solidus_auth_devise solidus_support && \
@@ -125,9 +84,9 @@ shrimpshells-shell: ## Shrimp Shells EC: コンテナにシェル接続
 	docker compose run --rm --service-ports shrimpshells-ec bash
 
 .PHONY: clean
-clean: ## クリーンアップ（全削除）
-	docker compose down --rmi all --volumes --remove-orphans
-	@echo "${GREEN}Cleaned up all Docker resources.${NC}"
+clean: ## クリーンアップ（コンテナ・ボリューム・プロジェクトイメージ削除）
+	docker compose down --rmi local --volumes --remove-orphans
+	@echo "${GREEN}Cleaned up Docker resources.${NC}"
 
 .PHONY: build
 build: ## サービスビルド（キャッシュ無効）
