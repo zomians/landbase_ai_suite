@@ -23,10 +23,9 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 ### 主な特徴
 
 - 🏢 **マルチテナントアーキテクチャ**: 1 つのプラットフォームで 100+クライアントを管理
-- 🤖 **n8n 自動化**: クライアント毎に独立した n8n コンテナで業務自動化
+- 🤖 **n8n 自動化**: 単一のn8nインスタンスでプロジェクト機能を使用して業務自動化
 - 💬 **Mattermost 統合**: チームコミュニケーション基盤
-- 📊 **PostgreSQL 共有**: スキーマ分離によるデータ隔離
-- 🚀 **コマンドベースの自動構築**: 標準化されたコマンドでクライアント環境を迅速にプロビジョニング
+- 📊 **PostgreSQL 共有**: 効率的なデータ管理
 
 ---
 
@@ -40,19 +39,14 @@ landbase_ai_suite/
 │   ├── company-overview.md       # 会社概要
 │   └── sns-marketing-trends-2025.md
 ├── n8n/
-│   └── workflows/
+│   └── workflows/                # n8nワークフローテンプレート
 ├── nextjs/
 │   └── Dockerfile
 ├── rails/
 │   └── Dockerfile
-├── scripts/
-│   ├── add_client.rb             # クライアント登録
-│   ├── generate_client_compose.rb # Docker Compose生成
-│   └── provision_client.sh       # クライアント環境構築
 ├── .env                          # 環境変数設定
 ├── .env.local.example            # 機密情報テンプレート
 ├── compose.yaml                  # Platform サービス定義
-├── compose.client.*.yaml         # クライアント専用 n8n（自動生成）
 ├── Makefile
 └── README.md
 ```
@@ -84,115 +78,42 @@ landbase_ai_suite/
 | **Next.js**       | 15.1.6     | Marketing Site |
 | **Flutter**       | 3.32.5     | Mobile/Web App |
 
-### スクリプト・自動化
-
-| 技術     | 用途                                                                    |
-| -------- | ----------------------------------------------------------------------- |
-| **Ruby** | YAML 操作、データ処理 (add_client.rb, generate_client_compose.rb)       |
-| **Bash** | Docker 操作、プロビジョニング (provision_client.sh) |
-
 ---
 
 ## クライアント管理
 
-### クライアント追加フロー
+### n8nプロジェクト機能によるクライアント管理
 
-```bash
-# 1. クライアント登録
-make add-client \
-  CODE=hotel_sunrise \
-  NAME="Sunrise Beach Hotel" \
-  INDUSTRY=hotel \
-  EMAIL=info@sunrise-hotel.com
+LandBase AI Suiteでは、単一のn8nインスタンス（Platform n8n）で全クライアントを管理します。クライアント毎の分離には、n8nの**プロジェクト機能**を使用します。
 
-# 出力例:
-# ✅ クライアント追加成功!
-# 📋 クライアント情報:
-#   コード: hotel_sunrise
-#   名前: Sunrise Beach Hotel
-#   業種: hotel
-#   n8n Port: 5680
-#   n8n Email: admin-hotel-sunrise@landbase.ai
-#   パスワード: Xyz9Abc3Def7Ghi2
+**運用フロー:**
 
-# 2. 環境プロビジョニング
-make provision-client CODE=hotel_sunrise
-
-# 自動実行される処理:
-# - Docker Compose ファイル生成
-# - n8n コンテナ起動 (Port 5680)
-# - n8n オーナー作成
-```
-
-### クライアント一覧表示
-
-```bash
-make list-clients
-
-# 出力例:
-# ========================================
-# 📋 登録クライアント一覧
-# ========================================
-#
-# 1. shrimp_shells
-#    名前: Shrimp Shells
-#    業種: restaurant
-#    状態: trial
-#    Email: info@shrimpshells.com
-#    n8n Port: 5679
-#    n8n URL: http://localhost:5679
-#
-# 2. hotel_sunrise
-#    名前: Sunrise Beach Hotel
-#    業種: hotel
-#    状態: trial
-#    Email: info@sunrise-hotel.com
-#    n8n Port: 5680
-#    n8n URL: http://localhost:5680
-```
-
-### クライアント削除
-
-```bash
-make remove-client CODE=hotel_sunrise
-```
-
-**自動実行される処理:**
-
-1. Docker コンテナの停止・削除（ボリュームも含む）
-2. 生成された Docker Compose ファイルの削除
-3. `client_list.yaml` からクライアント情報の削除
-
-**注意:** この操作により、クライアントの n8n ワークフローデータも完全に削除されます。
+1. Platform n8n（`http://localhost:5678`）にアクセス
+2. 新規プロジェクトを作成（例: "Shrimp Shells"）
+3. プロジェクト内でクライアント専用のワークフローを作成
+4. クレデンシャルもプロジェクト単位で管理
 
 ### クライアントデータ構造
 
-`config/client_list.yaml` の構造:
+`config/client_list.yaml` でクライアント情報を管理します:
 
 ```yaml
 clients:
-  - code: shrimp_shells # 一意識別子（スネークケース）
-    name: Shrimp Shells # 表示名
-    industry: restaurant # 業種 (hotel/restaurant/tour)
-    subdomain: shrimp-shells # 将来のサブドメイン用（ケバブケース）
+  - code: shrimp_shells          # 一意識別子（スネークケース）
+    name: Shrimp Shells          # 表示名
+    industry: restaurant         # 業種 (hotel/restaurant/tour)
+    subdomain: shrimp-shells     # 将来のサブドメイン用（ケバブケース）
     contact:
-      email: info@shrimpshells.com # 連絡先
+      email: info@shrimpshells.com
     services:
-      n8n:
-        enabled: true
-        port: 5679 # 自動割り当て（5679から開始）
-        owner_email: admin-shrimp-shells@landbase.ai
-        owner_password: KFsegssdUKmx5SAR # 自動生成
-        db_schema: n8n_shrimp_shells
-        workflows: []
       mattermost:
         enabled: true
         team_name: Shrimp Shells Team
         admin_username: shrimp_shells_admin
         admin_email: info@shrimpshells.com
-        admin_password: KFsegssdUKmx5SAR
-    status: trial # trial/active/suspended
+    status: trial                # trial/active/suspended
     created_at: "2025-11-13 14:00:57 +0900"
+    # n8nはPlatformインスタンスでプロジェクト機能を使用して管理
 ```
 
 ---
@@ -217,26 +138,7 @@ make mattermost-logs       # Mattermost ログ表示
 # PostgreSQL 管理
 make postgres-logs         # PostgreSQL ログ表示
 make postgres-shell        # PostgreSQL シェル接続
-
-# クライアント管理
-make add-client            # クライアント追加
-make provision-client      # クライアント環境構築
-make list-clients          # クライアント一覧
-make remove-client         # クライアント削除
-
-
 ```
-
-### スクリプト概要
-
-| スクリプト                   | 用途                                         | Make コマンド                      |
-| ---------------------------- | -------------------------------------------- | ---------------------------------- |
-| `add_client.rb`              | クライアント情報を `client_list.yaml` に登録 | `make add-client`                  |
-| `generate_client_compose.rb` | クライアント専用 Docker Compose ファイル生成 | `make provision-client` で自動実行 |
-| `provision_client.sh`        | クライアント環境の完全自動構築               | `make provision-client`            |
- 
-
-詳細は各スクリプトのコメントを参照してください。
 
 ---
 
