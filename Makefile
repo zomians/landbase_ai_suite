@@ -14,7 +14,7 @@ NC := \033[0m # No Color
 help: ## ヘルプ表示
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| cut -d: -f2- \
-		| awk 'BEGIN {FS = ":.*?## "}; {printf " ${GREEN}%-15s${NC} %s\n", $$1, $$2}'
+		| awk 'BEGIN {FS = ":.*?## "}; {printf " ${GREEN}%-22s${NC} %s\n", $$1, $$2}'
 
 .PHONY: up
 up: ## Mattermost, n8n, PostgreSQLを起動
