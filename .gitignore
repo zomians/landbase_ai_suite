@@ -22,7 +22,3 @@
 # Temporary files
 tmp/
 temp/
-
-# Rails applications (managed separately)
-rails/*/
-!rails/Dockerfile

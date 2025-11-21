@@ -41,32 +41,6 @@ services:
       postgres:
         condition: service_healthy
 
-  rails:
-    build:
-      context: ./rails
-      target: development
-      args:
-        - RUBY_VERSION=${RUBY_VERSION}
-        - NODE_VERSION=${NODE_VERSION}
-        - YARN_VERSION=${YARN_VERSION}
-        - RAILS_VERSION=${RAILS_VERSION}
-    ports:
-      - "${RAILS_PORT}:3000"
-    volumes:
-      - ./${RAILS_APP_NAME}:/${RAILS_APP_NAME}
-      - bundle_cache:/usr/local/bundle
-      - yarn_global_cache:/root/.yarn/berry/cache
-    command: >
-      bash -c "
-        cd /${RAILS_APP_NAME} &&
-        bin/dev
-      "
-    stdin_open: true
-    tty: true
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   shrimpshells-ec:
     build:
       context: ./rails
