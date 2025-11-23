@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_23_092404) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_23_094030) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -508,10 +508,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_23_092404) do
     t.string "meta_title"
     t.datetime "discontinue_on", precision: nil
     t.integer "primary_taxon_id"
+    t.string "shrimp_origin", comment: "エビの原産地（例：インドネシア、ベトナム、タイ）"
+    t.string "shrimp_size", comment: "エビのサイズ区分"
+    t.integer "expiry_days", comment: "製造日からの賞味期限（日数）"
+    t.integer "best_before_months", comment: "製造日からの賞味期限（月数）"
+    t.decimal "storage_temperature", precision: 5, scale: 2, comment: "推奨保管温度（℃）"
+    t.text "allergens", comment: "アレルゲン情報（甲殻類、調味料など）"
+    t.jsonb "nutritional_info", default: {}, comment: "栄養成分情報（カロリー、タンパク質、脂質など）"
+    t.text "cooking_instructions", comment: "調理方法・解凍方法"
+    t.text "serving_suggestions", comment: "提供・盛り付けの提案"
+    t.decimal "net_weight", precision: 10, scale: 2, comment: "内容量（g）"
+    t.decimal "gross_weight", precision: 10, scale: 2, comment: "総重量（g）"
+    t.string "package_dimensions", comment: "パッケージ寸法"
+    t.string "catch_method", comment: "漁獲方法（養殖、天然など）"
+    t.date "processing_date", comment: "加工日"
+    t.boolean "halal_certified", default: false, null: false, comment: "ハラール認証の有無"
+    t.boolean "organic_certified", default: false, null: false, comment: "オーガニック認証の有無"
     t.index ["available_on"], name: "index_spree_products_on_available_on"
     t.index ["deleted_at"], name: "index_spree_products_on_deleted_at"
     t.index ["name"], name: "index_spree_products_on_name"
     t.index ["primary_taxon_id"], name: "index_spree_products_on_primary_taxon_id"
+    t.index ["processing_date"], name: "index_spree_products_on_processing_date"
+    t.index ["shrimp_origin"], name: "index_spree_products_on_shrimp_origin"
+    t.index ["shrimp_size"], name: "index_spree_products_on_shrimp_size"
     t.index ["slug"], name: "index_spree_products_on_slug", unique: true
   end
 
