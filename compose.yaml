@@ -50,6 +50,13 @@ services:
         - NODE_VERSION=${NODE_VERSION}
         - YARN_VERSION=${YARN_VERSION}
         - RAILS_VERSION=${RAILS_VERSION}
+    environment:
+      - RAILS_ENV=development
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/shrimp_shells_ec_development
     ports:
       - "${SHRIMP_SHELLS_PORT}:3000"
     volumes:
@@ -59,6 +66,7 @@ services:
     command: >
       bash -c "
         cd /${SHRIMP_SHELLS_APP_NAME} &&
+        bin/rails db:create db:migrate &&
         bin/dev
       "
     stdin_open: true
