@@ -9,3 +9,24 @@
 #   end
 Spree::Core::Engine.load_seed
 Spree::Auth::Engine.load_seed
+
+# カスタムシードデータの読み込み
+puts "\n=== Loading custom seed data ==="
+
+seed_files = [
+  'products.rb',
+  'stock_items.rb',
+  'orders.rb'
+]
+
+seed_files.each do |file|
+  seed_file = Rails.root.join('db', 'seeds', file)
+  if File.exist?(seed_file)
+    puts "\nLoading #{file}..."
+    load seed_file
+  else
+    puts "Skipping #{file} (file not found)"
+  end
+end
+
+puts "\n=== Custom seed data loaded ==="
