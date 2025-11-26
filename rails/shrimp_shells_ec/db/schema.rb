@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_23_094030) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_26_114848) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -922,7 +922,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_23_094030) do
     t.datetime "updated_at"
     t.boolean "backorderable", default: false
     t.datetime "deleted_at", precision: nil
+    t.string "lot_number", comment: "ロット番号（製造バッチ識別）"
+    t.date "manufacturing_date", comment: "製造日"
+    t.date "expiry_date", comment: "賞味期限"
+    t.decimal "storage_temperature_actual", precision: 5, scale: 2, comment: "実際の保管温度（℃）"
+    t.datetime "temperature_check_at", comment: "最終温度チェック日時"
+    t.date "received_date", comment: "入荷日"
+    t.string "supplier_name", comment: "仕入先名"
+    t.decimal "purchase_price", precision: 10, scale: 2, comment: "仕入価格（原価）"
+    t.string "quality_status", default: "good", null: false, comment: "品質ステータス（good/warning/discard）"
+    t.date "inspection_date", comment: "品質検査日"
+    t.text "inventory_notes", comment: "在庫メモ（特記事項）"
+    t.integer "priority_order", comment: "出荷優先順位"
     t.index ["deleted_at"], name: "index_spree_stock_items_on_deleted_at"
+    t.index ["expiry_date"], name: "index_spree_stock_items_on_expiry_date"
+    t.index ["lot_number"], name: "index_spree_stock_items_on_lot_number"
+    t.index ["priority_order"], name: "index_spree_stock_items_on_priority_order"
+    t.index ["quality_status"], name: "index_spree_stock_items_on_quality_status"
     t.index ["stock_location_id", "variant_id"], name: "stock_item_by_loc_and_var_id"
     t.index ["stock_location_id"], name: "index_spree_stock_items_on_stock_location_id"
     t.index ["variant_id", "stock_location_id"], name: "index_spree_stock_items_on_variant_id_and_stock_location_id", unique: true, where: "(deleted_at IS NULL)"
