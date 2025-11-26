@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_26_114848) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_26_121111) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -362,13 +362,32 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_26_114848) do
     t.boolean "frontend_viewable", default: true, null: false
     t.jsonb "customer_metadata", default: {}
     t.jsonb "admin_metadata", default: {}
+    t.date "preferred_delivery_date", comment: "希望配送日"
+    t.string "preferred_delivery_time", comment: "希望配送時間帯"
+    t.integer "redelivery_count", default: 0, comment: "再配達回数"
+    t.decimal "packing_temperature", precision: 5, scale: 2, comment: "梱包時温度(℃)"
+    t.integer "ice_pack_count", default: 0, comment: "保冷剤数量"
+    t.boolean "temperature_alert", default: false, comment: "温度異常フラグ"
+    t.datetime "temperature_recorded_at", comment: "温度記録日時"
+    t.date "scheduled_ship_date", comment: "出荷予定日"
+    t.datetime "picking_completed_at", comment: "ピッキング完了日時"
+    t.string "inspector_name", comment: "検品担当者名"
+    t.string "carrier_code", comment: "配送業者コード"
+    t.string "tracking_number", comment: "追跡番号"
+    t.text "order_notes", comment: "受注メモ"
+    t.text "internal_memo", comment: "社内メモ"
     t.index ["approver_id"], name: "index_spree_orders_on_approver_id"
     t.index ["bill_address_id"], name: "index_spree_orders_on_bill_address_id"
     t.index ["completed_at"], name: "index_spree_orders_on_completed_at"
     t.index ["created_by_id"], name: "index_spree_orders_on_created_by_id"
     t.index ["guest_token"], name: "index_spree_orders_on_guest_token"
     t.index ["number"], name: "index_spree_orders_on_number"
+    t.index ["picking_completed_at"], name: "index_spree_orders_on_picking_completed_at"
+    t.index ["preferred_delivery_date"], name: "index_spree_orders_on_preferred_delivery_date"
+    t.index ["scheduled_ship_date"], name: "index_spree_orders_on_scheduled_ship_date"
     t.index ["ship_address_id"], name: "index_spree_orders_on_ship_address_id"
+    t.index ["temperature_alert"], name: "index_spree_orders_on_temperature_alert"
+    t.index ["tracking_number"], name: "index_spree_orders_on_tracking_number"
     t.index ["user_id", "created_by_id"], name: "index_spree_orders_on_user_id_and_created_by_id"
     t.index ["user_id"], name: "index_spree_orders_on_user_id"
   end
