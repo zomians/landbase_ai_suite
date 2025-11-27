@@ -1,0 +1,16 @@
+<!-- replace "erb[loud]:contains('link_to')" -->
+<%= link_to product.name, object_url(product), class: "btn btn-link text-start" %>
+<% if product.storage_temperature.present? && product.storage_temperature < 0 %>
+  <span class="frozen-badge">🧊 冷凍</span>
+<% end %>
+<% if product.storage_temperature.present? %>
+  <div class="temp-info">保存温度: <%= product.storage_temperature %>℃</div>
+<% end %>
+<% if product.expiry_days.present? %>
+  <div class="<%= product.expiry_days < 180 ? 'shelf-life-warning' : 'shelf-life-ok' %>">
+    賞味期限: <%= product.expiry_days %>日
+  </div>
+<% end %>
+<% if product.shrimp_origin.present? %>
+  <div class="temp-info">原産地: <%= product.shrimp_origin %></div>
+<% end %>

@@ -1,0 +1,106 @@
+<% content_for :page_actions do %>
+  <%= button_link_to t('spree.new_product'), new_object_url, { class: "btn-success", icon: 'add', id: 'admin_new_product' } %>
+<% end if can? :create, Spree::Product %>
+
+<% content_for :table_filter do %>
+  <div data-hook="admin_products_index_search">
+    <%= search_form_for [:admin, @search] do |f| %>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="form-group">
+            <%= label_tag :q_name_cont, t('spree.name') %>
+            <%= f.text_field :name_cont, class: 'form-control', placeholder: t('spree.product_name') %>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="form-group">
+            <%= label_tag :q_frozen_product_eq, t('spree.frozen_product') %>
+            <%= f.select :frozen_product_eq, 
+                options_for_select([
+                  [t('spree.all'), ''],
+                  [t('spree.frozen'), true],
+                  [t('spree.not_frozen'), false]
+                ], @search.frozen_product_eq), 
+                {}, 
+                class: 'form-select' %>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="form-group">
+            <%= label_tag :q_origin_country_cont, t('spree.origin_country') %>
+            <%= f.text_field :origin_country_cont, class: 'form-control' %>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="form-group">
+            <%= label_tag nil, '&nbsp;'.html_safe %>
+            <%= button t('spree.search'), class: 'btn btn-primary w-100' %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<%= paginate @collection, theme: 'solidus_admin' %>
+
+<table class="table" id="listing_products" data-hook>
+  <thead>
+    <tr data-hook="admin_products_index_headers">
+      <th><%= sort_link @search, :name, t('spree.name') %></th>
+      <th><%= t('spree.sku') %></th>
+      <th class="text-center"><%= t('spree.price') %></th>
+      <th class="text-center"><%= t('spree.frozen_product') %></th>
+      <th class="text-center"><%= t('spree.storage_temperature') %></th>
+      <th class="text-center"><%= t('spree.origin_country') %></th>
+      <th class="text-center"><%= t('spree.available_on') %></th>
+      <th data-hook="admin_products_index_header_actions" class="actions"></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @collection.each do |product| %>
+      <tr id="<%= spree_dom_id product %>" data-hook="admin_products_index_rows" class="<%= cycle('odd', 'even') %>">
+        <td class="align-middle">
+          <%= link_to product.name, edit_admin_product_path(product), class: 'font-weight-bold' %>
+          <% if product.description.present? %>
+            <br>
+            <small class="text-muted"><%= truncate(strip_tags(product.description), length: 100) %></small>
+          <% end %>
+        </td>
+        <td class="align-middle"><%= product.sku %></td>
+        <td class="align-middle text-center">
+          <%= product.display_price.to_html %>
+        </td>
+        <td class="align-middle text-center">
+          <% if product.frozen_product? %>
+            <span class="badge bg-info">❄️ <%= t('spree.frozen') %></span>
+          <% else %>
+            <span class="badge bg-secondary"><%= t('spree.not_frozen') %></span>
+          <% end %>
+        </td>
+        <td class="align-middle text-center">
+          <% if product.storage_temperature %>
+            <%= number_with_precision(product.storage_temperature, precision: 1) %>℃
+          <% else %>
+            <span class="text-muted">-</span>
+          <% end %>
+        </td>
+        <td class="align-middle text-center">
+          <%= product.origin_country || '-' %>
+        </td>
+        <td class="align-middle text-center">
+          <%= product.available_on&.to_date || '-' %>
+        </td>
+        <td class="actions align-middle text-end" data-hook="admin_products_index_row_actions">
+          <%= link_to_edit product, no_text: true, class: 'btn btn-sm btn-outline-secondary' if can?(:edit, product) %>
+          <%= link_to_delete product, no_text: true, class: 'btn btn-sm btn-outline-danger' if can?(:destroy, product) %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<%= paginate @collection, theme: 'solidus_admin' %>
