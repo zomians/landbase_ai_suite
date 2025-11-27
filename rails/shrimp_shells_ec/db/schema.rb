@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_27_094454) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_27_101809) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -543,7 +543,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_094454) do
     t.date "processing_date", comment: "加工日"
     t.boolean "halal_certified", default: false, null: false, comment: "ハラール認証の有無"
     t.boolean "organic_certified", default: false, null: false, comment: "オーガニック認証の有無"
+    t.decimal "calories", precision: 6, scale: 2, comment: "エネルギー(kcal)"
+    t.decimal "protein", precision: 5, scale: 2, comment: "たんぱく質(g)"
+    t.decimal "fat", precision: 5, scale: 2, comment: "脂質(g)"
+    t.decimal "carbohydrate", precision: 5, scale: 2, comment: "炭水化物(g)"
+    t.decimal "sodium", precision: 6, scale: 2, comment: "食塩相当量(g)"
     t.index ["available_on"], name: "index_spree_products_on_available_on"
+    t.index ["calories"], name: "index_spree_products_on_calories"
     t.index ["deleted_at"], name: "index_spree_products_on_deleted_at"
     t.index ["name"], name: "index_spree_products_on_name"
     t.index ["primary_taxon_id"], name: "index_spree_products_on_primary_taxon_id"

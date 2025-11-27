@@ -1,0 +1,16 @@
+ja:
+  spree:
+    frozen_product_info: "冷凍食品情報"
+    frozen_product: "冷凍食品"
+    frozen_product_description: "冷凍保存が必要な商品の場合チェック"
+    storage_temperature: "保存温度"
+    shelf_life_days: "賞味期限"
+    supplier_code: "仕入先コード"
+    origin_country: "原産国"
+    allergens: "アレルゲン"
+    allergens_description: "該当するアレルゲンをカンマ区切りで入力"
+    nutrition_info: "栄養成分表示"
+    cooking_instructions: "調理方法・注意事項"
+    frozen: "冷凍"
+    not_frozen: "通常"
+    all: "すべて"
