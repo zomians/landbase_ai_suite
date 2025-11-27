@@ -31,6 +31,13 @@ module Spree
       base.scope :warning_quality, -> { where(quality_status: 'warning') }
       base.scope :by_priority, -> { order(priority_order: :asc, expiry_date: :asc) }
       base.scope :requires_inspection, -> { where('inspection_date IS NULL OR inspection_date < ?', 30.days.ago) }
+      
+      # インスタンスメソッドとして expiring_soon? を定義
+      base.define_method(:expiring_soon?) do
+        return false unless expiry_date.present?
+        days_left = (expiry_date - Date.current).to_i
+        days_left >= 0 && days_left <= 30
+      end
     end
     
     # 冷凍商品かどうかを判定
@@ -48,6 +55,9 @@ module Spree
     def expired?
       expiry_date.present? && expiry_date < Date.current
     end
+    
+    # エイリアス（ビューで使用）
+    alias_method :is_expired?, :expired?
     
     # 賞味期限まで残り日数
     def days_until_expiry
