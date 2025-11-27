@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_26_121111) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_27_094454) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -1226,10 +1226,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_26_121111) do
     t.datetime "confirmed_at", precision: nil
     t.datetime "confirmation_sent_at", precision: nil
     t.string "unconfirmed_email"
+    t.string "company_name", comment: "会社名/屋号"
+    t.date "birth_date", comment: "生年月日"
+    t.string "gender", comment: "性別"
+    t.string "emergency_contact", comment: "緊急連絡先"
+    t.string "line_id", comment: "LINE ID"
+    t.string "customer_rank", default: "bronze", comment: "顧客ランク"
+    t.decimal "total_purchase_amount", precision: 12, scale: 2, default: "0.0", comment: "累計購入金額"
+    t.integer "total_purchase_count", default: 0, comment: "累計購入回数"
+    t.date "last_purchase_date", comment: "最終購入日"
+    t.boolean "dm_allowed", default: true, comment: "DM送付可否"
+    t.boolean "newsletter_subscribed", default: false, comment: "メルマガ購読"
+    t.text "staff_memo", comment: "担当者メモ"
+    t.boolean "attention_flag", default: false, comment: "要注意フラグ"
+    t.boolean "vip_flag", default: false, comment: "VIPフラグ"
+    t.index ["attention_flag"], name: "index_spree_users_on_attention_flag"
+    t.index ["company_name"], name: "index_spree_users_on_company_name"
+    t.index ["customer_rank"], name: "index_spree_users_on_customer_rank"
     t.index ["deleted_at"], name: "index_spree_users_on_deleted_at"
     t.index ["email"], name: "email_idx_unique", unique: true
+    t.index ["last_purchase_date"], name: "index_spree_users_on_last_purchase_date"
     t.index ["reset_password_token"], name: "index_spree_users_on_reset_password_token_solidus_auth_devise", unique: true
     t.index ["spree_api_key"], name: "index_spree_users_on_spree_api_key"
+    t.index ["vip_flag"], name: "index_spree_users_on_vip_flag"
   end
 
   create_table "spree_variant_property_rule_conditions", id: :serial, force: :cascade do |t|
