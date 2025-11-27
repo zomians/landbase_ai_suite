@@ -16,6 +16,7 @@ puts "\n=== Loading custom seed data ==="
 seed_files = [
   'products.rb',
   'stock_items.rb',
+  'customers.rb',
   'orders.rb'
 ]
 
