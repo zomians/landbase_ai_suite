@@ -1,0 +1,452 @@
+{
+  "name": "LINE経理自動化（領収書処理）",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "line-webhook",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "LINE Messaging APIからのWebhook受信"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.body.events[0].message.type }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-image-node",
+      "name": "IF Image",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "notes": "画像メッセージのみ処理"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_MASTER_CONFIG_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "line_user_id",
+              "lookupValue": "={{ $('Webhook').item.json.body.events[0].source.userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "lookup-user-config",
+      "name": "顧客マスター参照",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [650, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "LINEユーザーIDから顧客設定を取得"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-user-exists",
+              "leftValue": "={{ $json.line_user_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-user-exists",
+      "name": "IF ユーザー登録済み",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 300],
+      "notes": "未登録ユーザーはエラー処理へ"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api-data.line.me/v2/bot/message/{{ $('Webhook').item.json.body.events[0].message.id }}/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "responseFormat": "file",
+        "options": {}
+      },
+      "id": "get-image-node",
+      "name": "Get LINE Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-bot-auth",
+          "name": "LINE Bot Auth"
+        }
+      },
+      "notes": "LINE APIから画像バイナリを取得"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "fileContent": "={{ $binary.data }}",
+        "name": "={{ $now.format('yyyyMMdd_HHmmss') }}_{{ $('顧客マスター参照').item.json.line_user_id }}.jpg",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $('顧客マスター参照').item.json.drive_folder_id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "gdrive-upload-node",
+      "name": "Google Drive Upload",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1250, 200],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gdrive-oauth",
+          "name": "Google Drive OAuth2"
+        }
+      },
+      "notes": "顧客別フォルダに保存（動的振り分け）"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "あなたは経理の専門家AIです。アップロードされた領収書画像からJSONデータを抽出してください。\n\n# ルール\n1. **transaction_date**: 日付を YYYY-MM-DD 形式で抽出。記載がない場合は null。\n2. **merchant**: 店舗名・会社名を正確に抽出。\n3. **amount**: 合計金額（数値のみ）。カンマや円マークは除去。\n4. **tax_amount**: 消費税額（記載があれば）。\n5. **invoice_number**: \"T\"から始まる13桁の登録番号があれば抽出。なければ null。\n6. **description**: 取引の内容（例：駐車場代、飲食代）。画像内の時間情報があればそれも含める。\n7. **category**: 取引内容から適切な勘定科目を推測して選択。\n   - 駐車場・タクシー → \"旅費交通費\"\n   - 飲食（打ち合わせ） → \"会議費\"\n   - 文房具・消耗品 → \"消耗品費\"\n   - 書籍・セミナー → \"研修費\"\n   - その他 → \"雑費\"\n8. **tax_rate**: 消費税率（例：10 または 8）。軽減税率に注意。\n\n# 出力形式\nJSONのみを出力してください。説明文は不要です。\n\n{\n  \"transaction_date\": \"YYYY-MM-DD\",\n  \"merchant\": \"店舗名\",\n  \"amount\": 1000,\n  \"tax_amount\": 100,\n  \"invoice_number\": \"T1234567890123\",\n  \"description\": \"駐車場代（16:02-17:15）\",\n  \"category\": \"旅費交通費\",\n  \"tax_rate\": 10\n}"
+            },
+            {
+              "role": "user",
+              "content": "=この領収書画像から情報を抽出してください。",
+              "imageUrl": "={{ $('Google Drive Upload').item.json.webViewLink }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 500
+        },
+        "requestOptions": {}
+      },
+      "id": "ai-ocr-node",
+      "name": "AI-OCR処理（GPT-4o）",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [1450, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api",
+          "name": "OpenAI API"
+        }
+      },
+      "notes": "gpt-4oで画像から構造化データ抽出"
+    },
+    {
+      "parameters": {
+        "jsCode": "// AI-OCR結果をパース\nconst ocrResult = JSON.parse($input.item.json.message.content);\nconst userConfig = $('顧客マスター参照').item.json;\nconst driveUrl = $('Google Drive Upload').item.json.webViewLink;\n\n// 税区分の判定\nlet taxType = \"\";\nif (ocrResult.invoice_number && ocrResult.invoice_number.startsWith('T')) {\n  taxType = ocrResult.tax_rate === 10 ? \"課10% インボイス\" : \"課8% インボイス\";\n} else {\n  taxType = ocrResult.tax_rate === 10 ? \"課10% 区分記載\" : \"課8% 区分記載\";\n}\n\n// 会計ソフト別CSVフォーマット生成\nlet csvRow = \"\";\nif (userConfig.accounting_soft === \"freee\") {\n  csvRow = [\n    ocrResult.transaction_date,\n    ocrResult.category,\n    ocrResult.amount,\n    taxType,\n    \"現金\",\n    ocrResult.amount,\n    `${ocrResult.merchant}（${ocrResult.description}）`,\n    \"\"\n  ].join(\",\");\n} else if (userConfig.accounting_soft === \"moneyforward\") {\n  csvRow = [\n    ocrResult.transaction_date,\n    ocrResult.category,\n    \"\",\n    ocrResult.amount,\n    \"現金\",\n    \"\",\n    ocrResult.amount,\n    taxType,\n    `${ocrResult.merchant}（${ocrResult.description}）`\n  ].join(\",\");\n}\n\n// 出力データ\nreturn {\n  json: {\n    // OCR結果\n    ...ocrResult,\n    // 追加情報\n    customer_name: userConfig.customer_name,\n    tax_type: taxType,\n    evidence_url: driveUrl,\n    csv_row: csvRow,\n    status: \"Review_Required\",\n    processed_at: new Date().toISOString()\n  }\n};"
+      },
+      "id": "transform-data-node",
+      "name": "データ変換・CSV生成",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 200],
+      "notes": "勘定科目確定・税区分判定・CSV生成"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('顧客マスター参照').item.json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "仕訳台帳",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.processed_at }}",
+            "date": "={{ $json.transaction_date }}",
+            "merchant": "={{ $json.merchant }}",
+            "amount": "={{ $json.amount }}",
+            "debit_account": "={{ $json.category }}",
+            "invoice_number": "={{ $json.invoice_number }}",
+            "drive_link": "={{ $json.evidence_url }}",
+            "status": "={{ $json.status }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "append-sheet-node",
+      "name": "顧客台帳へ記帳",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1850, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "顧客別スプレッドシートに行追加"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "replyToken",
+              "value": "={{ $('Webhook').item.json.body.events[0].replyToken }}"
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"type\":\"text\",\"text\":\"領収書を処理しました✅\\n\\n【処理内容】\\n日付: {{ $json.transaction_date }}\\n支払先: {{ $json.merchant }}\\n金額: ¥{{ $json.amount.toLocaleString() }}\\n科目: {{ $json.category }}\\n\\n証憑: {{ $json.evidence_url }}\"}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "line-reply-success",
+      "name": "LINE返信（成功）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2050, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-bot-auth",
+          "name": "LINE Bot Auth"
+        }
+      },
+      "notes": "処理完了をLINEで通知"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "replyToken",
+              "value": "={{ $('Webhook').item.json.body.events[0].replyToken }}"
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"type\":\"text\",\"text\":\"申し訳ございません。ユーザー登録が確認できませんでした。\\n管理者にお問い合わせください。\"}]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "line-reply-user-error",
+      "name": "LINE返信（未登録ユーザー）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1050, 400],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-bot-auth",
+          "name": "LINE Bot Auth"
+        }
+      },
+      "notes": "未登録ユーザーへのエラー通知"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "IF Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Image": {
+      "main": [
+        [
+          {
+            "node": "顧客マスター参照",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "顧客マスター参照": {
+      "main": [
+        [
+          {
+            "node": "IF ユーザー登録済み",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF ユーザー登録済み": {
+      "main": [
+        [
+          {
+            "node": "Get LINE Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LINE返信（未登録ユーザー）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LINE Image": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Upload": {
+      "main": [
+        [
+          {
+            "node": "AI-OCR処理（GPT-4o）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI-OCR処理（GPT-4o）": {
+      "main": [
+        [
+          {
+            "node": "データ変換・CSV生成",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "データ変換・CSV生成": {
+      "main": [
+        [
+          {
+            "node": "顧客台帳へ記帳",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "顧客台帳へ記帳": {
+      "main": [
+        [
+          {
+            "node": "LINE返信（成功）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true
+  },
+  "versionId": "2",
+  "id": "line-accounting-automation",
+  "meta": {
+    "instanceId": "local"
+  },
+  "tags": [
+    {
+      "name": "経理自動化",
+      "id": "accounting-automation"
+    },
+    {
+      "name": "LINE Bot",
+      "id": "line-bot"
+    }
+  ]
+}
