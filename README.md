@@ -120,6 +120,55 @@ clients:
 
 ## 開発ワークフロー
 
+### Git ワークフロー
+
+このプロジェクトは **[GitHub Flow](https://docs.github.com/ja/get-started/quickstart/github-flow)** を採用しています。
+
+#### ブランチ命名規則
+
+- `feature/{issue番号}-{機能名}` - 新機能開発
+- `bugfix/{issue番号}-{バグ名}` - バグ修正
+- `hotfix/{issue番号}-{修正名}` - 緊急修正
+
+**例**:
+```bash
+feature/45-n8n-accounting-automation
+bugfix/52-fix-login-error
+hotfix/53-critical-security-patch
+```
+
+#### コミットメッセージ規約
+
+**[Conventional Commits](https://www.conventionalcommits.org/)** に準拠：
+
+**フォーマット**:
+```
+<type>(<scope>): <subject> (issue#<番号>)
+```
+
+**Type**:
+- `feat`: 新機能
+- `fix`: バグ修正
+- `docs`: ドキュメント変更
+- `refactor`: リファクタリング
+- `test`: テスト追加・修正
+- `chore`: ビルド・ツール設定変更
+
+**Scope** (オプション):
+- `rails`, `n8n`, `nextjs`, `infra`, `db` など
+
+**例**:
+```bash
+feat(rails): 商品管理画面に冷凍食品用カスタムフィールドを追加 (issue#39)
+fix(n8n): LINE経理自動化でOCRエラー時のリトライ処理を追加 (issue#45)
+docs: Git ワークフローをREADMEに追加 (issue#46)
+```
+
+**注意**:
+- コミットメッセージには「Generated with Claude Code」などのツール署名を含めないでください
+
+---
+
 ### 主要コマンド一覧
 
 ```bash
