@@ -31,3 +31,14 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 end
+
+# 冷凍食品注文管理用カスタムルート
+Spree::Core::Engine.routes.draw do
+  namespace :admin do
+    resources :orders do
+      member do
+        post :mark_picking_complete
+      end
+    end
+  end
+end
