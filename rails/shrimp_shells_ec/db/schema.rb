@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_27_101809) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_03_082633) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -376,17 +376,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_27_101809) do
     t.string "tracking_number", comment: "追跡番号"
     t.text "order_notes", comment: "受注メモ"
     t.text "internal_memo", comment: "社内メモ"
+    t.datetime "picking_started_at", comment: "ピッキング開始日時"
+    t.string "picking_inspector_name", comment: "検品担当者名"
+    t.text "packing_note", comment: "梱包メモ"
+    t.text "delivery_note", comment: "配送メモ"
+    t.boolean "temperature_controlled", default: true, comment: "温度管理必須フラグ"
+    t.boolean "subscription_order", default: false, comment: "定期購入注文フラグ"
+    t.string "instagram_order_id", comment: "Instagram注文ID"
+    t.string "tracking_url", comment: "配送追跡URL"
     t.index ["approver_id"], name: "index_spree_orders_on_approver_id"
     t.index ["bill_address_id"], name: "index_spree_orders_on_bill_address_id"
     t.index ["completed_at"], name: "index_spree_orders_on_completed_at"
     t.index ["created_by_id"], name: "index_spree_orders_on_created_by_id"
     t.index ["guest_token"], name: "index_spree_orders_on_guest_token"
+    t.index ["instagram_order_id"], name: "index_spree_orders_on_instagram_order_id"
     t.index ["number"], name: "index_spree_orders_on_number"
     t.index ["picking_completed_at"], name: "index_spree_orders_on_picking_completed_at"
+    t.index ["picking_started_at"], name: "index_spree_orders_on_picking_started_at"
     t.index ["preferred_delivery_date"], name: "index_spree_orders_on_preferred_delivery_date"
     t.index ["scheduled_ship_date"], name: "index_spree_orders_on_scheduled_ship_date"
     t.index ["ship_address_id"], name: "index_spree_orders_on_ship_address_id"
+    t.index ["subscription_order"], name: "index_spree_orders_on_subscription_order"
     t.index ["temperature_alert"], name: "index_spree_orders_on_temperature_alert"
+    t.index ["temperature_controlled"], name: "index_spree_orders_on_temperature_controlled"
     t.index ["tracking_number"], name: "index_spree_orders_on_tracking_number"
     t.index ["user_id", "created_by_id"], name: "index_spree_orders_on_user_id_and_created_by_id"
     t.index ["user_id"], name: "index_spree_orders_on_user_id"
