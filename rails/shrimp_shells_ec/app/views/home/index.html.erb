@@ -1,5 +1,79 @@
+<!-- Shrimp Shells Hero Section -->
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 80px 20px; text-align: center; color: white; margin-bottom: 40px;">
+  <h1 style="font-size: 3rem; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+    🌺 Shrimp Shells
+  </h1>
+  <p style="font-size: 1.5rem; margin-bottom: 30px; max-width: 800px; margin-left: auto; margin-right: auto;">
+    ハワイのホームパーティ体験を、あなたの食卓に
+  </p>
+  <div style="max-width: 900px; margin: 0 auto; line-height: 1.8; font-size: 1.1rem;">
+    <p style="margin-bottom: 15px;">
+      ハワイで過ごした夏の日々。友人たちと囲んだバーベキュー、波の音を聞きながらのディナー。
+    </p>
+    <p style="margin-bottom: 15px;">
+      その温かい思い出を、日本の家庭にも届けたい。
+    </p>
+    <p style="margin-bottom: 30px;">
+      Shrimp Shellsは、ハワイから直送される最高品質の冷凍エビを通じて、
+      <br>あなたの食卓に「アロハスピリット」をお届けします。
+    </p>
+  </div>
+  <a href="/products" style="display: inline-block; background: white; color: #667eea; padding: 15px 40px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.3s;">
+    🍤 商品を見る
+  </a>
+</div>
+
+<!-- Brand Values -->
+<div style="max-width: 1200px; margin: 0 auto 60px; padding: 0 20px;">
+  <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 40px; color: #333;">
+    私たちの約束
+  </h2>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px;">
+    <div style="text-align: center; padding: 30px; background: #f8f9fa; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+      <div style="font-size: 3rem; margin-bottom: 15px;">🌊</div>
+      <h3 style="font-size: 1.5rem; margin-bottom: 10px; color: #667eea;">ハワイ直送</h3>
+      <p style="color: #666; line-height: 1.6;">
+        太平洋の恵みを、鮮度そのままに。ハワイの海から48時間以内に急速冷凍してお届けします。
+      </p>
+    </div>
+    <div style="text-align: center; padding: 30px; background: #f8f9fa; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+      <div style="font-size: 3rem; margin-bottom: 15px;">✨</div>
+      <h3 style="font-size: 1.5rem; margin-bottom: 10px; color: #667eea;">最高品質</h3>
+      <p style="color: #666; line-height: 1.6;">
+        サイズ、産地、漁法まで選べる。アレルギー情報も完備し、安心してお選びいただけます。
+      </p>
+    </div>
+    <div style="text-align: center; padding: 30px; background: #f8f9fa; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+      <div style="font-size: 3rem; margin-bottom: 15px;">🌺</div>
+      <h3 style="font-size: 1.5rem; margin-bottom: 10px; color: #667eea;">アロハスピリット</h3>
+      <p style="color: #666; line-height: 1.6;">
+        料理のレシピから盛り付けまで。ハワイのホームパーティ文化をお届けします。
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Product Collections -->
 <%= render 'featured_products', { products: @featured_products } if @featured_products.try(:any?) %>
 <%= render 'collection', { title: "Shop Collection", products: @collection_products } if @collection_products.try(:any?) %>
 <%= render 'collections_with_call_to_action', { products: @cta_collection_products[0..1] } if @cta_collection_products.try(:any?) %>
 <%= render 'featured_product_banner', { product: @cta_collection_products[2] } if @cta_collection_products && @cta_collection_products.size > 2 %>
 <%= render 'collection', { title: "New Arrivals", products: @new_arrivals } if @new_arrivals.try(:any?) %>
+
+<!-- Call to Action -->
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 60px 20px; text-align: center; color: white; margin-top: 60px;">
+  <h2 style="font-size: 2.5rem; margin-bottom: 20px;">
+    今日から始める、ハワイスタイルの食卓
+  </h2>
+  <p style="font-size: 1.2rem; margin-bottom: 30px; max-width: 700px; margin-left: auto; margin-right: auto;">
+    新規会員登録で、初回注文時に使える500円クーポンをプレゼント
+  </p>
+  <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+    <a href="/signup" style="display: inline-block; background: white; color: #667eea; padding: 15px 40px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+      会員登録する
+    </a>
+    <a href="/products" style="display: inline-block; background: transparent; border: 2px solid white; color: white; padding: 15px 40px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 1.1rem;">
+      商品を見る
+    </a>
+  </div>
+</div>
