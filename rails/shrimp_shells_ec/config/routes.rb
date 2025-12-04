@@ -1,8 +1,9 @@
 Rails.application.routes.draw do
-  mount SolidusAdmin::Engine, at: '/admin', constraints: ->(req) {
-    req.cookies['solidus_admin'] != 'false' &&
-    req.params['solidus_admin'] != 'false'
-  }
+  # Solidus Admin (新UI) を無効化 - Solidus Backend (従来のUI) を使用
+  # mount SolidusAdmin::Engine, at: '/admin', constraints: ->(req) {
+  #   req.cookies['solidus_admin'] != 'false' &&
+  #   req.params['solidus_admin'] != 'false'
+  # }
   mount SolidusPaypalCommercePlatform::Engine, at: '/solidus_paypal_commerce_platform'
   scope(path: '/') { draw :storefront }
   # This line mounts Solidus's routes at the root of your application.

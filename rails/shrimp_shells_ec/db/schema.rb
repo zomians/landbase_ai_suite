@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_03_082633) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_04_112109) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -1258,12 +1258,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_03_082633) do
     t.text "staff_memo", comment: "担当者メモ"
     t.boolean "attention_flag", default: false, comment: "要注意フラグ"
     t.boolean "vip_flag", default: false, comment: "VIPフラグ"
+    t.text "allergies", comment: "アレルギー食材"
+    t.text "dietary_restrictions", comment: "食事制限"
+    t.text "customer_memo", comment: "顧客メモ"
+    t.string "instagram_handle", comment: "Instagram ID"
+    t.string "line_user_id", comment: "LINE ユーザーID"
+    t.string "preferred_carrier", comment: "希望配送業者"
+    t.string "preferred_delivery_time", comment: "希望配送時間帯"
+    t.text "delivery_memo", comment: "配送メモ"
+    t.string "phone_number"
     t.index ["attention_flag"], name: "index_spree_users_on_attention_flag"
     t.index ["company_name"], name: "index_spree_users_on_company_name"
     t.index ["customer_rank"], name: "index_spree_users_on_customer_rank"
     t.index ["deleted_at"], name: "index_spree_users_on_deleted_at"
     t.index ["email"], name: "email_idx_unique", unique: true
+    t.index ["instagram_handle"], name: "index_spree_users_on_instagram_handle"
     t.index ["last_purchase_date"], name: "index_spree_users_on_last_purchase_date"
+    t.index ["line_user_id"], name: "index_spree_users_on_line_user_id"
     t.index ["reset_password_token"], name: "index_spree_users_on_reset_password_token_solidus_auth_devise", unique: true
     t.index ["spree_api_key"], name: "index_spree_users_on_spree_api_key"
     t.index ["vip_flag"], name: "index_spree_users_on_vip_flag"
