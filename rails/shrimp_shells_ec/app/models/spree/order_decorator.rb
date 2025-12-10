@@ -5,20 +5,20 @@ module Spree
     def self.prepended(base)
       # 配送時間帯の定数
       base.const_set(:DELIVERY_TIME_SLOTS, [
-        '午前中(8-12時)',
-        '12-14時',
-        '14-16時',
-        '16-18時',
-        '18-20時',
-        '19-21時'
+        "午前中(8-12時)",
+        "12-14時",
+        "14-16時",
+        "16-18時",
+        "18-20時",
+        "19-21時"
       ].freeze)
 
       # 配送業者コードの定数
       base.const_set(:CARRIER_CODES, {
-        yamato: 'ヤマト運輸',
-        sagawa: '佐川急便',
-        japan_post: '日本郵便',
-        seino: '西濃運輸'
+        yamato: "ヤマト運輸",
+        sagawa: "佐川急便",
+        japan_post: "日本郵便",
+        seino: "西濃運輸"
       }.freeze)
 
       # バリデーション
@@ -27,26 +27,33 @@ module Spree
       base.validates :ice_pack_count, numericality: { greater_than_or_equal_to: 0 }
       base.validates :packing_temperature, numericality: { less_than_or_equal_to: 0, allow_blank: true }, 
                 if: -> { packing_temperature.present? }
+      
+      # チェックアウト時のバリデーション - payment以降でチェック
+      base.validates :allergies_confirmed, acceptance: { message: :must_be_accepted }, 
+                on: :checkout, if: -> { state.in?(["payment", "confirm", "complete"]) }
+      base.validates :preferred_delivery_date, presence: { message: :required_for_checkout }, 
+                on: :checkout, if: -> { state.in?(["payment", "confirm", "complete"]) }
+      base.validate :delivery_date_not_in_past, if: -> { preferred_delivery_date.present? }
 
       # コールバック
-      base.before_save :calculate_ice_pack_count, if: -> { state == 'complete' && ice_pack_count.zero? }
+      base.before_save :calculate_ice_pack_count, if: -> { state == "complete" && ice_pack_count.zero? }
       base.after_update :alert_temperature_issue, if: -> { saved_change_to_temperature_alert? && temperature_alert? }
-
+      
       # スコープ
       base.scope :delivery_scheduled, -> { where.not(preferred_delivery_date: nil) }
       base.scope :delivery_today, -> { where(preferred_delivery_date: Date.today) }
       base.scope :delivery_tomorrow, -> { where(preferred_delivery_date: Date.tomorrow) }
-      base.scope :requires_shipping, -> { where(state: 'complete').where(picking_completed_at: nil) }
+      base.scope :requires_shipping, -> { where(state: "complete").where(picking_completed_at: nil) }
       base.scope :picking_completed, -> { where.not(picking_completed_at: nil) }
       base.scope :temperature_alerts, -> { where(temperature_alert: true) }
       base.scope :by_carrier, ->(code) { where(carrier_code: code.to_s) }
-      base.scope :redelivery_orders, -> { where('redelivery_count > 0') }
+      base.scope :redelivery_orders, -> { where("redelivery_count > 0") }
       base.scope :by_scheduled_ship_date, ->(date) { where(scheduled_ship_date: date) }
     end
 
     # 出荷準備が完了しているか
     def ready_to_ship?
-      state == 'complete' && 
+      state == "complete" && 
         picking_completed_at.present? && 
         scheduled_ship_date.present? &&
         !temperature_alert?
@@ -82,16 +89,16 @@ module Spree
 
     # 配送ステータスのバッジ
     def delivery_status_badge
-      return '⏳ 配送待ち' if completed? && !picking_completed_at
-      return '📦 ピッキング完了' if picking_completed_at && !shipped?
-      return '🚚 出荷済み' if shipped?
-      return '✅ 配送完了' if delivered?
-      '📝 受注中'
+      return "⏳ 配送待ち" if completed? && !picking_completed_at
+      return "📦 ピッキング完了" if picking_completed_at && !shipped?
+      return "🚚 出荷済み" if shipped?
+      return "✅ 配送完了" if delivered?
+      "📝 受注中"
     end
 
     # 冷凍品の総重量を計算（保冷剤数量の目安）
     def total_frozen_weight
-      line_items.joins(:variant).sum('spree_variants.weight')
+      line_items.joins(:variant).sum("spree_variants.weight")
     end
 
     # 必要な保冷剤数を計算
@@ -139,6 +146,12 @@ module Spree
     def alert_temperature_issue
       # ここで管理者への通知処理を実装
       Rails.logger.warn("Temperature alert for Order ##{number}: #{packing_temperature}℃")
+    end
+
+    def delivery_date_not_in_past
+      if preferred_delivery_date < Date.today + 2.days
+        errors.add(:preferred_delivery_date, :must_be_at_least_two_days_from_today)
+      end
     end
   end
 end

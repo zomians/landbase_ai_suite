@@ -14,3 +14,35 @@ ja:
     frozen: "冷凍"
     not_frozen: "通常"
     all: "すべて"
+    
+    # カート・チェックアウト関連
+    delivery_information: "配送情報"
+    preferred_delivery_date: "配送希望日"
+    preferred_delivery_time: "配送希望時間帯"
+    delivery_date_note: "※配送希望日は注文日の2日後以降を選択してください"
+    select_time_slot: "時間帯を選択してください"
+    carrier: "配送業者"
+    select_carrier: "配送業者を選択してください"
+    allergies_confirmation: "アレルギー情報を確認しました"
+    allergies_confirmation_note: "商品のアレルギー情報を確認し、問題ないことを確認しました"
+    delivery_notes: "配送メモ"
+    delivery_notes_placeholder: "不在時の対応、配送場所の指定など"
+    delivery_notes_example: "例: 不在時は宅配ボックスへ、玄関前に置き配OK など"
+    update_delivery_info: "配送情報を更新"
+    updating: "更新中..."
+    
+    # 注文完了ページ
+    delivery_schedule: "お届け予定"
+    order_confirmation_email_sent: "ご注文確認メールを送信いたしました。"
+    contact_info: "お問い合わせ"
+    
+  activerecord:
+    errors:
+      models:
+        spree/order:
+          attributes:
+            allergies_confirmed:
+              must_be_accepted: "アレルギー情報の確認が必要です"
+            preferred_delivery_date:
+              required_for_checkout: "配送希望日を選択してください"
+              must_be_at_least_two_days_from_today: "配送希望日は注文日の2日後以降を選択してください"

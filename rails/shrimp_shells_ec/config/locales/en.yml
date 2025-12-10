@@ -1,31 +1,40 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  spree:
+    delivery_information: "Delivery Information"
+    preferred_delivery_date: "Preferred Delivery Date"
+    preferred_delivery_time: "Preferred Delivery Time"
+    carrier: "Carrier"
+    allergies_confirmation: "Allergy Confirmation"
+    delivery_notes: "Delivery Notes"
+    i_confirm_allergies: "I confirm that I have checked the ingredients and allergy information"
+    update_delivery_info: "Update Delivery Information"
+    proceed_to_checkout: "Proceed to Checkout"
+    carrier_name:
+      yamato: "Yamato Transport"
+      sagawa: "Sagawa Express"
+      yuupack: "Japan Post"
+      seino: "Seino Transportation"
+    delivery_time_slots:
+      morning: "Morning (8:00-12:00)"
+      14_16: "14:00-16:00"
+      16_18: "16:00-18:00"
+      18_20: "18:00-20:00"
+      19_21: "19:00-21:00"
+      any: "Anytime"
+    order_confirmation_message: "Your order has been successfully completed."
+    order_number: "Order Number"
+    delivery_schedule: "Delivery Schedule"
+    delivery_date: "Delivery Date"
+    delivery_time: "Delivery Time"
+    contact_info: "If you have any questions about your order, please contact our customer support."
+
+  activerecord:
+    errors:
+      models:
+        spree/order:
+          attributes:
+            allergies_confirmed:
+              must_be_accepted: "Please confirm that you have checked the allergy information"
+            preferred_delivery_date:
+              required_for_checkout: "Please select a delivery date"
+              must_be_at_least_two_days_from_today: "Delivery date must be at least 2 days from today"

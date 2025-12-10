@@ -5,6 +5,33 @@
     <%= t('spree.order_summary') %>
   </h2>
 
+  <!-- 配送情報サマリー -->
+  <% if order.preferred_delivery_date.present? %>
+    <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg border border-blue-200 dark:border-blue-700">
+      <h3 class="text-sm font-bold mb-3 text-blue-900 dark:text-blue-100">
+        <%= t('spree.delivery_information') %>
+      </h3>
+      <dl class="text-sm space-y-2 text-blue-900 dark:text-blue-100">
+        <div class="flex justify-between">
+          <dt class="font-medium"><%= t('spree.preferred_delivery_date') %>:</dt>
+          <dd><%= l(order.preferred_delivery_date, format: :long) %></dd>
+        </div>
+        <% if order.preferred_delivery_time.present? %>
+          <div class="flex justify-between">
+            <dt class="font-medium"><%= t('spree.preferred_delivery_time') %>:</dt>
+            <dd><%= order.preferred_delivery_time %></dd>
+          </div>
+        <% end %>
+        <% if order.carrier_code.present? %>
+          <div class="flex justify-between">
+            <dt class="font-medium"><%= t('spree.carrier') %>:</dt>
+            <dd><%= order.carrier_name %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+  <% end %>
+
   <div class="mb-6">
     <% if order.state == 'payment' %>
       <%= render 'orders/coupon_code' %>

@@ -4,9 +4,47 @@
   </h1>
 
   <% if order_just_completed?(@order) %>
-    <p class="order-page__completed mb-6">
-      <%= t('spree.thank_you_for_your_order') %>
-    </p>
+    <div class="order-page__completed mb-6 p-6 bg-green-50 dark:bg-green-900 rounded-lg border border-green-200 dark:border-green-700">
+      <p class="text-lg font-bold text-green-800 dark:text-green-100 mb-4">
+        <%= t('spree.thank_you_for_your_order') %>
+      </p>
+      
+      <div class="space-y-3 text-green-700 dark:text-green-200">
+        <div class="flex items-center gap-2">
+          <span class="font-bold"><%= t('spree.order_number') %>:</span>
+          <span class="text-2xl font-mono"><%= @order.number %></span>
+        </div>
+        
+        <% if @order.preferred_delivery_date.present? %>
+          <div class="pt-4 border-t border-green-200 dark:border-green-700">
+            <p class="font-bold mb-2"><%= t('spree.delivery_schedule') %></p>
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-bold"><%= l(@order.preferred_delivery_date, format: :long) %></span>
+              <% if @order.preferred_delivery_time.present? %>
+                <span class="text-lg"><%= @order.preferred_delivery_time %></span>
+              <% end %>
+            </div>
+            <% if @order.carrier_name.present? %>
+              <p class="mt-2 text-sm">
+                <%= t('spree.carrier') %>: <span class="font-medium"><%= @order.carrier_name %></span>
+              </p>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="pt-4 border-t border-green-200 dark:border-green-700">
+          <p class="text-sm">
+            <%= t('spree.order_confirmation_email_sent') %>
+          </p>
+          <p class="text-sm mt-1">
+            <%= t('spree.contact_info') %>: 
+            <a href="mailto:info@shrimpshells.com" class="underline hover:text-green-900 dark:hover:text-green-50">
+              info@shrimpshells.com
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
   <% end %>
 
   <fieldset class="order-page__info" id="order_summary">

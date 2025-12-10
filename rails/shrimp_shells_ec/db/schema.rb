@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_04_112109) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_09_190445) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -384,6 +384,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_04_112109) do
     t.boolean "subscription_order", default: false, comment: "定期購入注文フラグ"
     t.string "instagram_order_id", comment: "Instagram注文ID"
     t.string "tracking_url", comment: "配送追跡URL"
+    t.string "preferred_carrier"
+    t.boolean "allergies_confirmed"
     t.index ["approver_id"], name: "index_spree_orders_on_approver_id"
     t.index ["bill_address_id"], name: "index_spree_orders_on_bill_address_id"
     t.index ["completed_at"], name: "index_spree_orders_on_completed_at"
