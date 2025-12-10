@@ -22,6 +22,11 @@ class CartsController < StoreController
 
   def update
     authorize! :update, @order, cookies.signed[:guest_token]
+    
+    # 配送情報を先に保存
+    delivery_params = order_params.slice(:preferred_delivery_date, :preferred_delivery_time, :carrier_code, :allergies_confirmed, :special_instructions)
+    @order.update(delivery_params) if delivery_params.present?
+    
     if @order.contents.update_cart(order_params)
       @order.next if params.key?(:checkout) && @order.cart?
 
@@ -60,7 +65,14 @@ class CartsController < StoreController
 
   def order_params
     if params[:order]
-      params[:order].permit(*permitted_order_attributes)
+      params[:order].permit(
+        *permitted_order_attributes,
+        :preferred_delivery_date,
+        :preferred_delivery_time,
+        :carrier_code,
+        :allergies_confirmed,
+        :special_instructions
+      )
     else
       {}
     end

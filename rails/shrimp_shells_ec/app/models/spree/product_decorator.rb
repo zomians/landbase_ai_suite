@@ -99,6 +99,36 @@ module Spree
         certifications: certification_badges
       }.compact
     end
+    
+    # 類似商品を取得（同じカテゴリーまたは産地の商品）
+    def similar_products(limit = 4)
+      similar = Spree::Product.available
+        .where.not(id: id)
+        .limit(limit)
+      
+      # 同じ産地の商品を優先
+      if shrimp_origin.present?
+        similar = similar.by_shrimp_origin(shrimp_origin)
+      end
+      
+      # 同じサイズの商品を優先
+      if similar.count < limit && shrimp_size.present?
+        additional = Spree::Product.available
+          .where.not(id: id)
+          .by_shrimp_size(shrimp_size)
+          .limit(limit - similar.count)
+        similar = similar.or(additional)
+      end
+      
+      # それでも足りなければ他の商品を追加
+      if similar.count < limit
+        similar = Spree::Product.available
+          .where.not(id: id)
+          .limit(limit)
+      end
+      
+      similar
+    end
   end
 end
 

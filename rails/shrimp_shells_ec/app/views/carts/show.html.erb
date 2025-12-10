@@ -21,6 +21,18 @@
     
     <div class="col-span-full flex flex-col justify-between gap-y-8 p-6 bg-gray-50 h-full text-black dark:bg-gray-800 dark:text-sand lg:flex-col lg:col-span-3 2xl:col-start-10">
       <%= render 'orders/coupon_code' %>
+      
+      <%= form_for @order, url: cart_path, html: {
+        id: 'delivery-info-form',
+        class: 'mb-6'
+      } do |order_form| %>
+        <%= render 'carts/cart_delivery_info', order_form: order_form %>
+        <%= order_form.button t('spree.update_delivery_info'),
+          type: 'submit',
+          class: 'button-secondary w-full',
+          data: { disable_with: t('spree.updating') } %>
+      <% end %>
+
       <%= form_for @order, url: cart_path, html: {
         id: 'checkout-button-form',
       } do |order_form| %>
