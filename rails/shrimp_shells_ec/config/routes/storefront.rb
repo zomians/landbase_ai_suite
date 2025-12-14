@@ -30,6 +30,9 @@ end
 
 resource :account, controller: 'users'
 
+# マイページ：配送先住所管理
+resources :user_addresses, path: 'account/addresses'
+
 resources :products, only: [:index, :show]
 
 resources :autocomplete_results, only: :index
