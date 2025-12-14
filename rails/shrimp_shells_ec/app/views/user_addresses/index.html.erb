@@ -1,0 +1,81 @@
+<div class="wrapper grid-container py-12 space-y-10 md:space-y-14">
+  <div class="col-span-full space-y-4">
+    <h1 class="font-serif text-h4 md:text-h3"><%= t('spree.my_account') %></h1>
+    <div class="flex flex-wrap flex-auto gap-4">
+      <%= @user.email %>
+      <%= form_with(url: logout_path, method: Devise.sign_out_via, local: true) do %>
+        <%= button_tag(t("spree.logout"), class: 'transition-all duration-300 text-black hover:!text-red-500 dark:text-sand underline') %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="col-span-full grid-container">
+    <%= render 'users/users_menu' %>
+
+    <div class="col-span-full md:col-span-10 md:col-start-3">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="font-serif text-h4 md:text-h4"><%= t('spree.address_book') %></h2>
+        <%= link_to t('spree.add_new_address'), new_user_address_path, 
+            class: 'inline-block py-3 px-6 rounded-full text-body-sm font-bold leading-none uppercase whitespace-nowrap bg-red-500 text-white hover:bg-red-700 transition-colors duration-200' %>
+      </div>
+
+      <% if @addresses.present? %>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <% @addresses.each do |address| %>
+            <div class="bg-white rounded-xl border border-gray-300 p-6 dark:bg-black dark:border-gray-700 relative">
+              <%# デフォルト配送先バッジ %>
+              <% if @user.ship_address_id == address.id %>
+                <div class="absolute top-4 right-4 bg-green-500 text-white text-xs px-3 py-1 rounded-full">
+                  <%= t('spree.default_address') %>
+                </div>
+              <% end %>
+              <% if @user.bill_address_id == address.id && @user.ship_address_id != address.id %>
+                <div class="absolute top-4 right-4 bg-blue-500 text-white text-xs px-3 py-1 rounded-full">
+                  <%= t('spree.bill_address') %>
+                </div>
+              <% end %>
+
+              <div class="space-y-2 mb-4">
+                <h3 class="font-bold text-lg">
+                  <%= address.name %>
+                  <% if address.company.present? %>
+                    <span class="text-sm text-gray-500">(<%= address.company %>)</span>
+                  <% end %>
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400">
+                  〒<%= address.zipcode %>
+                </p>
+                <p class="text-gray-600 dark:text-gray-400">
+                  <%= address.state_text %><%= address.city %><%= address.address1 %>
+                  <% if address.address2.present? %>
+                    <br><%= address.address2 %>
+                  <% end %>
+                </p>
+                <p class="text-gray-600 dark:text-gray-400">
+                  📞 <%= address.phone %>
+                </p>
+              </div>
+
+              <div class="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <%= link_to t('spree.edit_address'), edit_user_address_path(address),
+                    class: 'flex-1 text-center py-2 px-4 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors' %>
+                <%= button_to t('spree.delete_address'), user_address_path(address),
+                    method: :delete,
+                    data: { confirm: t('spree.confirm_delete_address') },
+                    class: 'flex-1 text-center py-2 px-4 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors' %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-300 dark:border-gray-700 p-12 text-center">
+          <p class="text-gray-600 dark:text-gray-400 mb-6">
+            <%= t('spree.no_addresses_yet') %>
+          </p>
+          <%= link_to t('spree.add_new_address'), new_user_address_path,
+              class: 'inline-block py-3 px-6 rounded-full text-body-sm font-bold leading-none uppercase whitespace-nowrap bg-red-500 text-white hover:bg-red-700 transition-colors duration-200' %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,50 @@
+<%# 住所フォームのパーシャル %>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div class="text-input md:col-span-2">
+    <%= f.label :name, "氏名<span class='text-red-500'>*</span>".html_safe %>
+    <%= f.text_field :name, required: true, placeholder: '山田 太郎' %>
+  </div>
+
+  <div class="text-input md:col-span-2">
+    <%= f.label :company, "会社名（任意）" %>
+    <%= f.text_field :company, placeholder: '株式会社〇〇' %>
+  </div>
+
+  <div class="text-input">
+    <%= f.label :zipcode, "郵便番号<span class='text-red-500'>*</span>".html_safe %>
+    <%= f.text_field :zipcode, required: true, placeholder: '100-0001', pattern: '\d{3}-?\d{4}' %>
+    <p class="text-sm text-gray-500 mt-1">※ ハイフンなしでも入力可能です</p>
+  </div>
+
+  <div class="text-input">
+    <%= f.label :state_name, "都道府県<span class='text-red-500'>*</span>".html_safe %>
+    <%= f.text_field :state_name, required: true, placeholder: '東京都' %>
+  </div>
+
+  <div class="text-input md:col-span-2">
+    <%= f.label :city, "市区町村<span class='text-red-500'>*</span>".html_safe %>
+    <%= f.text_field :city, required: true, placeholder: '千代田区千代田' %>
+  </div>
+
+  <div class="text-input md:col-span-2">
+    <%= f.label :address1, "番地<span class='text-red-500'>*</span>".html_safe %>
+    <%= f.text_field :address1, required: true, placeholder: '1-1' %>
+  </div>
+
+  <div class="text-input md:col-span-2">
+    <%= f.label :address2, "建物名・部屋番号（任意）" %>
+    <%= f.text_field :address2, placeholder: '〇〇マンション 101号室' %>
+  </div>
+
+  <div class="text-input">
+    <%= f.label :phone, "電話番号<span class='text-red-500'>*</span>".html_safe %>
+    <%= f.text_field :phone, required: true, placeholder: '03-1234-5678', type: 'tel' %>
+  </div>
+
+  <div class="text-input">
+    <%= f.label :alternative_phone, "予備電話番号（任意）" %>
+    <%= f.text_field :alternative_phone, placeholder: '090-1234-5678', type: 'tel' %>
+  </div>
+</div>
+
+<%= f.hidden_field :country_id, value: Spree::Country.find_by(iso: 'JP')&.id %>
