@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_09_190445) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_14_010320) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -84,6 +84,43 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_09_190445) do
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
     t.integer "paypal_funding_source"
+  end
+
+  create_table "solidus_stripe_customers", force: :cascade do |t|
+    t.integer "payment_method_id", null: false
+    t.string "source_type"
+    t.integer "source_id"
+    t.string "stripe_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["payment_method_id", "source_type", "source_id"], name: "payment_method_and_source", unique: true
+    t.index ["stripe_id"], name: "index_solidus_stripe_customers_on_stripe_id"
+  end
+
+  create_table "solidus_stripe_payment_intents", force: :cascade do |t|
+    t.string "stripe_intent_id"
+    t.integer "order_id", null: false
+    t.integer "payment_method_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_solidus_stripe_payment_intents_on_order_id"
+    t.index ["payment_method_id"], name: "index_solidus_stripe_payment_intents_on_payment_method_id"
+  end
+
+  create_table "solidus_stripe_payment_sources", force: :cascade do |t|
+    t.integer "payment_method_id"
+    t.string "stripe_payment_method_id"
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+  end
+
+  create_table "solidus_stripe_slug_entries", force: :cascade do |t|
+    t.integer "payment_method_id", null: false
+    t.string "slug", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
+    t.index ["payment_method_id"], name: "index_solidus_stripe_slug_entries_on_payment_method_id"
+    t.index ["slug"], name: "index_solidus_stripe_slug_entries_on_slug", unique: true
   end
 
   create_table "spree_addresses", id: :serial, force: :cascade do |t|
@@ -1367,6 +1404,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_09_190445) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "solidus_stripe_customers", "spree_payment_methods", column: "payment_method_id"
+  add_foreign_key "solidus_stripe_payment_intents", "spree_orders", column: "order_id"
+  add_foreign_key "solidus_stripe_payment_intents", "spree_payment_methods", column: "payment_method_id"
+  add_foreign_key "solidus_stripe_slug_entries", "spree_payment_methods", column: "payment_method_id"
   add_foreign_key "spree_addresses", "spree_countries", column: "country_id", on_delete: :restrict
   add_foreign_key "spree_addresses", "spree_states", column: "state_id", on_delete: :restrict
   add_foreign_key "spree_adjustments", "spree_adjustment_reasons", column: "adjustment_reason_id", on_delete: :restrict

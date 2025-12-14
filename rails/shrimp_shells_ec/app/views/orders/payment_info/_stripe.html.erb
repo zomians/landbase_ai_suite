@@ -1,0 +1,32 @@
+<%
+  stripe_payment_method = payment.source.stripe_payment_method
+
+  # https://stripe.com/docs/api/payment_methods/object#payment_method_object-type
+  partial_base = "checkouts/existing_payment/stripe"
+  payment_type = stripe_payment_method.type
+
+  # Fallback on the default partial if a specialized partial is not available.
+  payment_type = 'default' if lookup_context.find_all("#{partial_base}/_#{payment_type}").none?
+%>
+
+<%= render(
+  "#{partial_base}/#{payment_type}",
+  stripe_payment_method: stripe_payment_method,
+  partial_base: partial_base,
+  payment_type: payment_type
+) %>
+
+<% if current_order&.confirm? %>
+  <% stripe_intent =
+    SolidusStripe::PaymentIntent.prepare_for_payment(payment).stripe_intent %>
+
+  <input
+    type="hidden"
+    data-controller="solidus-stripe-confirm"
+    data-solidus-stripe-confirm-publishable-key-value="<%= payment.payment_method.preferred_publishable_key %>"
+    data-solidus-stripe-confirm-client-secret-value="<%= stripe_intent.client_secret %>"
+    data-solidus-stripe-confirm-return-url-value="<%= solidus_stripe.after_confirmation_url(payment.payment_method.slug) %>"
+    data-solidus-stripe-confirm-error-base-url-value="<%= solidus_stripe.after_confirmation_url(payment.payment_method.slug, payment_intent: stripe_intent.id) %>"
+    data-action="submit@window->solidus-stripe-confirm#confirm"
+  >
+<% end %>
