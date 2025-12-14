@@ -1,0 +1,36 @@
+<%# マイページのサイドナビゲーションメニュー %>
+<nav class="col-span-full md:col-span-2 space-y-2 md:sticky md:top-20 h-fit">
+  <div class="bg-white rounded-xl border border-gray-300 p-4 dark:bg-black dark:border-gray-700">
+    <ul class="space-y-1">
+      <%= content_tag(:li, class: current_page?(account_path) ? 'font-bold' : '') do %>
+        <%= link_to account_path, class: 'block px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-800' do %>
+          <span class="inline-block w-6">📋</span>
+          <span><%= t('spree.my_orders') %></span>
+        <% end %>
+      <% end %>
+
+      <%= content_tag(:li, class: current_page?(edit_account_path) ? 'font-bold' : '') do %>
+        <%= link_to edit_account_path, class: 'block px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-800' do %>
+          <span class="inline-block w-6">⚙️</span>
+          <span><%= t('spree.account_settings') %></span>
+        <% end %>
+      <% end %>
+
+      <%= content_tag(:li, class: current_page?(user_addresses_path) ? 'font-bold' : '') do %>
+        <%= link_to user_addresses_path, class: 'block px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-800' do %>
+          <span class="inline-block w-6">📍</span>
+          <span><%= t('spree.address_book') %></span>
+        <% end %>
+      <% end %>
+
+      <li class="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+        <%= form_with(url: logout_path, method: Devise.sign_out_via, local: true, class: 'inline') do %>
+          <%= button_tag class: 'w-full text-left px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20' do %>
+            <span class="inline-block w-6">🚪</span>
+            <span><%= t("spree.logout") %></span>
+          <% end %>
+        <% end %>
+      </li>
+    </ul>
+  </div>
+</nav>
