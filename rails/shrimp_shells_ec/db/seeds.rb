@@ -31,3 +31,4 @@ seed_files.each do |file|
 end
 
 puts "\n=== Custom seed data loaded ==="
+SolidusStripe::Engine.load_seed
