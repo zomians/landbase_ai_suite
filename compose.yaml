@@ -3,7 +3,9 @@ name: landbase_ai_suite
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
-    env_file: .env
+    env_file:
+      - .env
+      - .env.local
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
@@ -16,7 +18,9 @@ services:
 
   mattermost:
     image: mattermost/mattermost-team-edition:${MATTERMOST_VERSION}
-    env_file: .env
+    env_file:
+      - .env
+      - .env.local
     ports:
       - "${MATTERMOST_PORT}:8065"
     volumes:
@@ -27,7 +31,9 @@ services:
 
   n8n:
     image: n8nio/n8n:${N8N_VERSION}
-    env_file: .env
+    env_file:
+      - .env
+      - .env.local
     environment:
       - DB_POSTGRESDB_DATABASE=landbase_development
       - DB_POSTGRESDB_USER=landbase
@@ -50,6 +56,9 @@ services:
         - NODE_VERSION=${NODE_VERSION}
         - YARN_VERSION=${YARN_VERSION}
         - RAILS_VERSION=${RAILS_VERSION}
+    env_file:
+      - .env
+      - .env.local
     environment:
       - RAILS_ENV=development
       - POSTGRES_HOST=postgres
@@ -57,6 +66,9 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/shrimp_shells_ec_development
+      
+     
+      
     ports:
       - "${SHRIMP_SHELLS_PORT}:3000"
     volumes:
