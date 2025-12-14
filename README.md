@@ -72,8 +72,23 @@ cd landbase_ai_suite
 
 ```bash
 cp .env.local.example .env.local
-# .env.local を編集（PostgreSQLパスワード、APIキー等を設定）
+# .env.local を編集（以下の情報を設定）
+# - LINE Bot 認証情報（LINE Developers Consoleで取得）
+# - Stripe APIキー（Stripe Dashboardで取得）
+#   - テストモード: sk_test_xxx, pk_test_xxx
+#   - 本番モード: sk_live_xxx, pk_live_xxx
 ```
+
+**Stripe決済を使用する場合**:
+
+1. [Stripe Dashboard](https://dashboard.stripe.com/)でアカウント作成
+2. 開発者用 > APIキー でテストキーを取得
+3. `.env.local` に以下を設定:
+   ```
+   SOLIDUS_STRIPE_API_KEY=sk_test_xxxxx
+   SOLIDUS_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxx
+   SOLIDUS_STRIPE_WEBHOOK_SIGNING_SECRET=whsec_xxxxx
+   ```
 
 #### 3. サービス起動
 

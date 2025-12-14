@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  mount SolidusStripe::Engine, at: '/solidus_stripe'
   # Solidus Admin (新UI) を無効化 - Solidus Backend (従来のUI) を使用
   # mount SolidusAdmin::Engine, at: '/admin', constraints: ->(req) {
   #   req.cookies['solidus_admin'] != 'false' &&
