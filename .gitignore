@@ -22,3 +22,17 @@
 # Temporary files
 tmp/
 temp/
+
+# Node modules and build artifacts
+node_modules/
+/rails/*/app/assets/builds/*
+!/rails/*/app/assets/builds/.keep
+
+# Yarn Berry (Yarn 2+)
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
