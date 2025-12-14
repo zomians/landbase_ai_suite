@@ -1,5 +1,6 @@
 en:
   spree:
+    # Cart & Checkout
     delivery_information: "Delivery Information"
     preferred_delivery_date: "Preferred Delivery Date"
     preferred_delivery_time: "Preferred Delivery Time"
@@ -27,6 +28,55 @@ en:
     delivery_date: "Delivery Date"
     delivery_time: "Delivery Time"
     contact_info: "If you have any questions about your order, please contact our customer support."
+
+    # My Account - Edit
+    basic_information: "Basic Information"
+    leave_blank_to_keep_current: "Leave blank to keep current password"
+    allergy_information: "Allergy & Dietary Information"
+    allergies: "Allergies"
+    allergies_placeholder: "e.g., shrimp, crab, wheat, egg, milk"
+    allergies_help: "Enter any food allergies separated by commas"
+    dietary_restrictions: "Dietary Restrictions"
+    dietary_restrictions_placeholder: "e.g., Vegetarian, Vegan, Halal"
+    dietary_restrictions_help: "Enter any dietary restrictions for religious or health reasons"
+    default_delivery_settings: "Default Delivery Settings"
+    preferred_carrier: "Preferred Carrier"
+    carrier_yamato: "Yamato Transport"
+    carrier_sagawa: "Sagawa Express"
+    carrier_japan_post: "Japan Post"
+    no_preference: "No Preference"
+    time_morning: "Morning (8:00-12:00)"
+    time_afternoon: "Afternoon (12:00-18:00)"
+    time_evening: "Evening (18:00-21:00)"
+    notification_settings: "Notification Settings"
+    subscribe_to_newsletter: "Subscribe To Newsletter"
+    allow_dm: "Allow Dm"
+    customer_memo: "Customer Memo"
+    customer_memo_placeholder: "Special delivery instructions or requests"
+    customer_memo_help: "Customer Memo Help"
+    
+    # My Account - Orders
+    customer_rank: "Customer Rank"
+    current_rank: "Current Rank"
+    purchase_count: "Purchase Count"
+    total_amount: "Total Amount"
+    average_amount: "Average Amount"
+    delivery_info: "Delivery Info"
+    shipped_at: "Shipped At"
+    track_shipment: "Track Shipment"
+    reorder: "Reorder"
+    actions: "Actions"
+    
+    # Address Book
+    address_book: "Address Book"
+    add_new_address: "Add New Address"
+    default_address: "Default"
+    set_as_default: "Set As Default"
+    edit_address: "Edit"
+    delete_address: "Delete"
+    confirm_delete_address: "Are you sure you want to delete this address?"
+    cannot_delete_default_address: "Cannot delete default address"
+    new_address: "New Address"
 
   activerecord:
     errors:

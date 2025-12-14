@@ -1,0 +1,26 @@
+<div class="wrapper grid-container py-12 space-y-10 md:space-y-14">
+  <%= render 'shared/error_messages', target: @address %>
+
+  <div class="col-span-full space-y-4">
+    <h1 class="font-serif text-h4 md:text-h3"><%= t('spree.my_account') %></h1>
+  </div>
+
+  <div class="col-span-full grid-container">
+    <%= render 'users/users_menu' %>
+
+    <div class="col-span-full md:col-span-10 md:col-start-3">
+      <h2 class="font-serif text-h4 md:text-h4 mb-6">新しい配送先住所を追加</h2>
+
+      <div class="bg-white rounded-xl border border-gray-300 p-6 dark:bg-black dark:border-gray-700">
+        <%= form_with model: @address, url: user_addresses_path(@user), local: true, class: 'space-y-6' do |f| %>
+          <%= render 'user_addresses/form', f: f %>
+
+          <div class="flex gap-4">
+            <%= f.submit '住所を保存', class: 'py-3 px-7 rounded-full text-body-sm font-bold leading-none uppercase whitespace-nowrap bg-red-500 text-white hover:bg-red-700 transition-colors duration-200' %>
+            <%= link_to 'キャンセル', user_addresses_path(@user), class: 'py-3 px-7 rounded-full text-body-sm font-bold leading-none uppercase whitespace-nowrap border border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-800 transition-colors duration-200' %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
