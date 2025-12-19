@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_14_010320) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_19_090333) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -895,6 +895,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_14_010320) do
     t.decimal "included_tax_total", precision: 10, scale: 2, default: "0.0", null: false
     t.jsonb "customer_metadata", default: {}
     t.jsonb "admin_metadata", default: {}
+    t.string "carrier_code", comment: "配送業者コード(yamato, sagawa, japan_post, seino)"
+    t.string "tracking_url", comment: "追跡URL"
+    t.date "estimated_delivery_date", comment: "配送予定日"
+    t.datetime "delivered_at", comment: "配送完了日時"
+    t.integer "delivery_attempts", default: 0, comment: "配送試行回数"
+    t.text "delivery_notes", comment: "配送メモ"
+    t.string "recipient_name", comment: "受取人名"
+    t.string "recipient_phone", comment: "受取人電話番号"
+    t.string "delivery_status", comment: "詳細配送ステータス(out_for_delivery, delivered, failed, returned)"
+    t.index ["carrier_code"], name: "index_spree_shipments_on_carrier_code"
+    t.index ["delivered_at"], name: "index_spree_shipments_on_delivered_at"
+    t.index ["delivery_status"], name: "index_spree_shipments_on_delivery_status"
+    t.index ["estimated_delivery_date"], name: "index_spree_shipments_on_estimated_delivery_date"
     t.index ["number"], name: "index_shipments_on_number"
     t.index ["order_id"], name: "index_spree_shipments_on_order_id"
     t.index ["stock_location_id"], name: "index_spree_shipments_on_stock_location_id"
