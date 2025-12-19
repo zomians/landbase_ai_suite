@@ -1,0 +1,152 @@
+{
+  "name": "LINE Follow - Simple Registration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "line-webhook",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-follow",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "line-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-follow-event",
+              "leftValue": "={{ $json.body.events[0].type }}",
+              "rightValue": "follow",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-follow-event",
+      "name": "IF Follow Event",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1dw8XFIp6KnYzYFKSUkIrhhnOpCEpkUsqzajwtc5rOkY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "line_user_id": "={{ $json.body.events[0].source.userId }}",
+            "customer_name": "未設定",
+            "drive_folder_id": "",
+            "sheet_id": "",
+            "accounting_soft": "freee"
+          }
+        },
+        "options": {}
+      },
+      "id": "add-user-to-sheet",
+      "name": "スプレッドシートに追加",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [650, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $('Webhook').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"✅ 友だち追加ありがとうございます！\\n\\n自動登録が完了しました。\\n管理者が設定を完了次第、領収書画像を送信できるようになります。\\n\\nしばらくお待ちください。\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "line-reply-welcome",
+      "name": "LINE返信",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-bot-auth",
+          "name": "LINE Bot Auth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "IF Follow Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Follow Event": {
+      "main": [
+        [
+          {
+            "node": "スプレッドシートに追加",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "スプレッドシートに追加": {
+      "main": [
+        [
+          {
+            "node": "LINE返信",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-12-19T00:00:00.000Z",
+  "versionId": "1"
+}
