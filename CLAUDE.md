@@ -56,7 +56,7 @@
 | レイヤー             | 技術                                  |
 | -------------------- | ------------------------------------- |
 | **基盤**             | Docker Compose, PostgreSQL 16         |
-| **自動化**           | n8n 1.119.2, Mattermost 9.11          |
+| **自動化**           | n8n 2.1.1, Mattermost 9.11          |
 | **アプリ**           | Rails 8.0.2.1, Solidus 4.5, Devise    |
 | **フロント**         | ViewComponent, Tailwind CSS, Stimulus |
 | **バックグラウンド** | Solid Queue, Solid Cache, Solid Cable |
@@ -767,7 +767,7 @@ make up
 
 **A**:
 
-- n8n 1.119.2 で提供される**ワークフロー管理機能**
+- n8n 2.1.1 で提供される**ワークフロー管理機能**
 - Project 単位でワークフロー・クレデンシャルを**完全分離**
 - クライアント毎に Project を作成することで、マルチテナント対応
 
