@@ -1,5 +1,5 @@
 {
-  "name": "LINE Follow - Simple Registration",
+  "name": "LINE Follow - Auto Registration",
   "nodes": [
     {
       "parameters": {
@@ -46,6 +46,70 @@
     },
     {
       "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1dw8XFIp6KnYzYFKSUkIrhhnOpCEpkUsqzajwtc5rOkY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "line_user_id",
+              "lookupValue": "={{ $('Webhook').item.json.body.events[0].source.userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "check-existing-user",
+      "name": "既存ユーザー確認",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [650, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "condition-new-user",
+              "leftValue": "={{ $json.line_user_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-new-user",
+      "name": "IF 新規ユーザー",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
         "operation": "append",
         "documentId": {
           "__rl": true,
@@ -60,20 +124,21 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "line_user_id": "={{ $json.body.events[0].source.userId }}",
+            "line_user_id": "={{ $('Webhook').item.json.body.events[0].source.userId }}",
             "customer_name": "未設定",
             "drive_folder_id": "",
             "sheet_id": "",
-            "accounting_soft": "freee"
+            "accounting_soft": "freee",
+            "registration_date": "={{ $now.toISO() }}"
           }
         },
         "options": {}
       },
       "id": "add-user-to-sheet",
-      "name": "スプレッドシートに追加",
+      "name": "新規ユーザー登録",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
-      "position": [650, 300],
+      "position": [1050, 200],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "gsheet-oauth",
@@ -93,10 +158,33 @@
         "options": {}
       },
       "id": "line-reply-welcome",
-      "name": "LINE返信",
+      "name": "ウェルカムメッセージ",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [850, 300],
+      "position": [1250, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-bot-auth",
+          "name": "LINE Bot Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $('Webhook').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"ℹ️ 既に登録済みです。\\n\\n領収書画像を送信すると、自動で処理されます。\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "line-reply-existing",
+      "name": "既存ユーザーメッセージ",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 400],
       "credentials": {
         "httpHeaderAuth": {
           "id": "line-bot-auth",
@@ -121,18 +209,47 @@
       "main": [
         [
           {
-            "node": "スプレッドシートに追加",
+            "node": "既存ユーザー確認",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "スプレッドシートに追加": {
+    "既存ユーザー確認": {
       "main": [
         [
           {
-            "node": "LINE返信",
+            "node": "IF 新規ユーザー",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF 新規ユーザー": {
+      "main": [
+        [
+          {
+            "node": "新規ユーザー登録",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "既存ユーザーメッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新規ユーザー登録": {
+      "main": [
+        [
+          {
+            "node": "ウェルカムメッセージ",
             "type": "main",
             "index": 0
           }
@@ -147,6 +264,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-12-19T00:00:00.000Z",
-  "versionId": "1"
+  "updatedAt": "2025-12-28T00:00:00.000Z",
+  "versionId": "2"
 }
