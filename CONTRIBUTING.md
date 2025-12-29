@@ -353,6 +353,53 @@ make platform-seed
 
 このプロジェクトは **[GitHub Flow](https://docs.github.com/ja/get-started/quickstart/github-flow)** を採用しています。
 
+### 🚨 重要な原則：ブランチを作ってから作業する
+
+**作業を開始する前に、必ず以下の手順を守ってください：**
+
+1. **❌ main ブランチで直接作業しない**
+   ```bash
+   # ❌ BAD: main ブランチで直接編集
+   git checkout main
+   vim some_file.rb  # 危険！
+   ```
+
+2. **✅ Issue 作成 → ブランチ作成 → 実装の順序を守る**
+   ```bash
+   # ✅ GOOD: 正しい手順
+   # Step 1: Issue 作成（GitHub で実施）
+   # Step 2: main を最新化
+   git checkout main
+   git pull origin main
+
+   # Step 3: 新しいブランチを作成
+   git checkout -b feature/76-knowledge-base-implementation
+
+   # Step 4: 実装開始
+   vim some_file.rb
+   ```
+
+3. **⚠️ 作業中にブランチが間違っていることに気づいた場合**
+   ```bash
+   # 変更を一時保存
+   git stash
+
+   # 正しいブランチに移動（または作成）
+   git checkout main
+   git pull origin main
+   git checkout -b feature/XX-correct-branch
+
+   # 変更を適用
+   git stash pop
+   ```
+
+**なぜこれが重要か？**
+
+- **main ブランチの保護**: main は常に安定した状態を保つ必要があります
+- **変更の追跡**: 各機能・修正が独立したブランチで管理され、レビューが容易
+- **ロールバック**: 問題があった場合、ブランチごと削除すれば main は影響を受けない
+- **並行作業**: 複数の機能を同時進行できる
+
 ### 基本フロー
 
 ```
@@ -576,13 +623,55 @@ Closes #XX
 
 ### 5. マージ
 
-- レビュー承認後、main にマージ
-- マージ後、ローカルブランチを削除
+#### マージ戦略：Squash and Merge 推奨
+
+このプロジェクトでは **Squash and Merge** を推奨します。
+
+**✅ 推奨：Squash and Merge**
 
 ```bash
+# GitHub UIで PR をマージする際、"Squash and merge" を選択
+```
+
+**メリット**:
+- **綺麗な履歴**: main ブランチに 1 PR = 1 コミットとして記録される
+- **読みやすさ**: WIP コミットや修正コミットが main に残らない
+- **Conventional Commits**: PR タイトルがコミットメッセージになる
+- **Issue ベース開発**: 1 Issue = 1 PR = 1 コミット
+
+**例**:
+
+```
+# PR内のコミット履歴（開発中）
+- WIP: 初期実装
+- fix: typo修正
+- refactor: コードレビュー対応
+- test: テスト追加
+
+↓ Squash and Merge
+
+# mainブランチのコミット履歴（綺麗）
+- feat(platform): 清掃基準管理APIを実装 (issue#54)
+```
+
+**他のマージ戦略を使う場合**:
+
+| 戦略 | 使用ケース | 例 |
+|------|----------|-----|
+| **Merge commit** | 複数の独立した機能を含む大きなPR | リリースブランチのマージ |
+| **Rebase and merge** | コミット履歴を保持したい場合 | 詳細な変更履歴が重要な場合 |
+
+**デフォルト**: Squash and Merge
+
+#### マージ後の作業
+
+```bash
+# ローカルブランチを削除
 git checkout main
 git pull origin main
 git branch -d feature/54-cleaning-standards
+
+# リモートブランチは GitHub が自動削除（設定により）
 ```
 
 ---
