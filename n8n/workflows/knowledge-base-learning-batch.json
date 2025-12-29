@@ -1,0 +1,420 @@
+{
+  "name": "勘定科目ナレッジベース学習バッチ",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-node",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300],
+      "notes": "毎日深夜2時（JST）に実行"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "16qhVQNDn_5Y1Ayw_H0ziUw1nu2b70o6IcRn1rr4Pa94",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "options": {
+          "returnAllMatches": true
+        }
+      },
+      "id": "get-all-clients-node",
+      "name": "全クライアント取得",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [450, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "Master_User_Configから全クライアント取得"
+    },
+    {
+      "parameters": {},
+      "id": "loop-over-clients-node",
+      "name": "Loop Over Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [650, 300],
+      "notes": "各クライアント毎に処理"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "仕訳台帳",
+          "mode": "name"
+        },
+        "options": {
+          "returnAllMatches": true
+        }
+      },
+      "id": "get-ledger-node",
+      "name": "仕訳台帳取得（過去30日）",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [850, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "過去30日分の仕訳データを取得"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 仕訳台帳データを取得\nconst ledgerData = $input.all();\n\n// 過去30日のデータをフィルタ\nconst thirtyDaysAgo = new Date();\nthirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);\n\nconst recentData = ledgerData.filter(item => {\n  const date = new Date(item.json.date);\n  return date >= thirtyDaysAgo;\n});\n\n// 店舗×勘定科目の組み合わせを集計\nconst patterns = {};\n\nfor (const item of recentData) {\n  const merchant = item.json.merchant || '';\n  const category = item.json.debit_account || '';\n  \n  if (!merchant || !category) continue;\n  \n  const key = `${merchant}::${category}`;\n  \n  if (!patterns[key]) {\n    patterns[key] = {\n      merchant: merchant,\n      category: category,\n      count: 0\n    };\n  }\n  \n  patterns[key].count++;\n}\n\n// 3回以上出現したパターンのみ抽出\nconst frequentPatterns = Object.values(patterns)\n  .filter(p => p.count >= 3)\n  .map(p => ({\n    merchant_keyword: p.merchant,\n    account_category: p.category,\n    occurrence_count: p.count,\n    confidence_score: 50 // 新規追加の初期スコア\n  }));\n\nreturn frequentPatterns.map(p => ({ json: p }));"
+      },
+      "id": "analyze-patterns-node",
+      "name": "パターン分析",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 300],
+      "notes": "店舗×科目の組み合わせを集計、3回以上を抽出"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Loop Over Clients').item.json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "勘定科目マスター",
+          "mode": "name"
+        },
+        "options": {
+          "returnAllMatches": true
+        }
+      },
+      "id": "get-knowledge-base-node",
+      "name": "勘定科目マスター取得",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1250, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "既存のナレッジベースを取得"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 新規パターンを取得\nconst newPatterns = $('パターン分析').all();\n\n// 既存のナレッジベースを取得\nconst existingKB = $input.all();\n\n// 既存のパターン（店舗×科目）をセット化\nconst existingKeys = new Set();\nfor (const item of existingKB) {\n  const merchant = item.json.merchant_keyword || '';\n  const category = item.json.account_category || '';\n  if (merchant && category) {\n    existingKeys.add(`${merchant}::${category}`);\n  }\n}\n\n// 新規追加すべきパターンをフィルタ\nconst patternsToAdd = [];\n\nfor (const pattern of newPatterns) {\n  const merchant = pattern.json.merchant_keyword;\n  const category = pattern.json.account_category;\n  const key = `${merchant}::${category}`;\n  \n  if (!existingKeys.has(key)) {\n    patternsToAdd.push({\n      merchant_keyword: merchant,\n      description_keyword: '',\n      account_category: category,\n      confidence_score: pattern.json.confidence_score,\n      last_used_date: new Date().toISOString().split('T')[0],\n      usage_count: pattern.json.occurrence_count,\n      auto_learned: true,\n      notes: '自動学習'\n    });\n  }\n}\n\nreturn patternsToAdd.map(p => ({ json: p }));"
+      },
+      "id": "filter-new-patterns-node",
+      "name": "新規パターンフィルタ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 300],
+      "notes": "既存ナレッジベースに存在しないパターンのみ抽出"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-has-patterns",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-has-new-patterns-node",
+      "name": "IF 新規パターンあり",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1650, 300],
+      "notes": "新規パターンが存在する場合のみ追加"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Loop Over Clients').item.json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "勘定科目マスター",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "id": "merchant_keyword",
+              "displayName": "merchant_keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description_keyword",
+              "displayName": "description_keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "account_category",
+              "displayName": "account_category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence_score",
+              "displayName": "confidence_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_used_date",
+              "displayName": "last_used_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usage_count",
+              "displayName": "usage_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "auto_learned",
+              "displayName": "auto_learned",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "value": {
+            "merchant_keyword": "={{ $json.merchant_keyword }}",
+            "description_keyword": "={{ $json.description_keyword }}",
+            "account_category": "={{ $json.account_category }}",
+            "confidence_score": "={{ $json.confidence_score }}",
+            "last_used_date": "={{ $json.last_used_date }}",
+            "usage_count": "={{ $json.usage_count }}",
+            "auto_learned": "={{ $json.auto_learned }}",
+            "notes": "={{ $json.notes }}"
+          },
+          "matchingColumns": []
+        },
+        "options": {}
+      },
+      "id": "append-new-patterns-node",
+      "name": "新規パターン追加",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1850, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "勘定科目マスターに新規パターンを追加"
+    },
+    {
+      "parameters": {},
+      "id": "no-op-node",
+      "name": "No Operation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1850, 400],
+      "notes": "新規パターンなしの場合は何もしない"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "全クライアント取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "全クライアント取得": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Clients": {
+      "main": [
+        [
+          {
+            "node": "仕訳台帳取得（過去30日）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "仕訳台帳取得（過去30日）": {
+      "main": [
+        [
+          {
+            "node": "パターン分析",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "パターン分析": {
+      "main": [
+        [
+          {
+            "node": "勘定科目マスター取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "勘定科目マスター取得": {
+      "main": [
+        [
+          {
+            "node": "新規パターンフィルタ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新規パターンフィルタ": {
+      "main": [
+        [
+          {
+            "node": "IF 新規パターンあり",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF 新規パターンあり": {
+      "main": [
+        [
+          {
+            "node": "新規パターン追加",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true
+  },
+  "versionId": "1",
+  "id": "knowledge-base-learning-batch",
+  "meta": {
+    "instanceId": "local"
+  },
+  "tags": [
+    {
+      "name": "経理自動化",
+      "id": "accounting-automation"
+    },
+    {
+      "name": "学習バッチ",
+      "id": "learning-batch"
+    }
+  ]
+}
