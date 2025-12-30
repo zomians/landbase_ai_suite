@@ -1,8 +1,9 @@
-# n8n経理自動化ワークフロー セットアップガイド
+# n8n LINE Bot 自動化ワークフロー セットアップガイド
 
 ## 📋 目次
 
 - [概要](#概要)
+- [アーキテクチャ](#アーキテクチャ)
 - [前提条件](#前提条件)
 - [セットアップ手順](#セットアップ手順)
 - [テスト方法](#テスト方法)
@@ -12,7 +13,21 @@
 
 ## 概要
 
-このワークフローは、LINE公式アカウント経由で領収書画像を受け取り、以下の処理を自動化します：
+LINE公式アカウント経由で以下の機能を自動化するワークフローシステムです：
+
+### 機能1: 友だち追加時の自動ユーザー登録
+
+```
+LINE友だち追加
+    ↓
+既存ユーザー確認
+    ↓
+新規ユーザー登録（Master_User_Config）
+    ↓
+ウェルカムメッセージ送信
+```
+
+### 機能2: 領収書画像の自動処理
 
 ```
 LINE画像受信
@@ -30,7 +45,48 @@ Spreadsheet記帳
 LINE返信（処理完了通知）
 ```
 
-**ファイル:** `n8n/workflows/line-accounting-automation.json`
+---
+
+## アーキテクチャ
+
+### ワークフロー構成
+
+親-子ワークフローパターンを採用し、イベントタイプごとに処理を分離しています。
+
+```
+┌──────────────────────────────────────────┐
+│  line-webhook-router.json                │
+│  （親ワークフロー: イベント振り分け）     │
+│                                          │
+│  Webhook → Switch Event Type             │
+└────────┬─────────────────────────────────┘
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+┌──────────┐ ┌──────────┐
+│ follow   │ │ image    │
+│ Execute  │ │ Execute  │
+│ Workflow │ │ Workflow │
+└────┬─────┘ └────┬─────┘
+     │            │
+     ▼            ▼
+┌───────────────────┐  ┌──────────────────────┐
+│ line-follow-      │  │ line-image-          │
+│ handler.json      │  │ handler.json         │
+│ (Follow処理)       │  │ (画像OCR処理)         │
+└───────────────────┘  └──────────────────────┘
+```
+
+### ワークフローファイル
+
+| ファイル名 | 役割 | Status |
+|-----------|------|--------|
+| `line-webhook-router.json` | 親ワークフロー（イベント振り分け） | Active |
+| `line-follow-handler.json` | 子ワークフロー（Follow event処理） | Inactive（親から呼び出し） |
+| `line-image-handler.json` | 子ワークフロー（画像OCR処理） | Inactive（親から呼び出し） |
+| `line-accounting-automation.json` | 旧版の画像処理ワークフロー | Inactive（参考用） |
+| `line-user-auto-registration.json` | 旧版のFollow処理ワークフロー | Inactive（参考用） |
 
 ---
 
@@ -47,12 +103,56 @@ LINE返信（処理完了通知）
 
 以下の認証情報をn8nに事前登録してください：
 
-| Credential名 | 種類 | 用途 |
-|---|---|---|
-| `line-bot-auth` | HTTP Header Auth | LINE Messaging API |
-| `gsheet-oauth` | Google Sheets OAuth2 | スプレッドシート読み書き |
-| `gdrive-oauth` | Google Drive OAuth2 | ファイルアップロード |
-| `openai-api` | OpenAI API | GPT-4o OCR処理 |
+#### 2-1. LINE Bot Auth（HTTP Header Auth）
+
+1. n8n Credentials → Create New Credential → HTTP Header Auth
+2. 以下を設定：
+   - **Credential Name**: `line-bot-auth`
+   - **Name**: `authorization`（小文字）
+   - **Value**: `Bearer YOUR_CHANNEL_ACCESS_TOKEN`
+     - `YOUR_CHANNEL_ACCESS_TOKEN` は LINE Developers Console の Messaging API設定 → Channel access token から取得
+3. Save
+
+#### 2-2. Google Sheets OAuth2
+
+1. n8n Credentials → Create New Credential → Google Sheets OAuth2 API
+2. 以下を設定：
+   - **Credential Name**: `gsheet-oauth`
+   - **Auth URI**: `https://accounts.google.com/o/oauth2/auth`
+   - **Token URI**: `https://oauth2.googleapis.com/token`
+   - **Scope**: `https://www.googleapis.com/auth/spreadsheets`
+3. OAuth2 認証フローに従ってGoogleアカウントと連携
+4. Save
+
+#### 2-3. Google Drive OAuth2
+
+1. n8n Credentials → Create New Credential → Google Drive OAuth2 API
+2. 以下を設定：
+   - **Credential Name**: `gdrive-oauth` または `Google Service Account account`
+   - **Auth URI**: `https://accounts.google.com/o/oauth2/auth`
+   - **Token URI**: `https://oauth2.googleapis.com/token`
+   - **Scope**: `https://www.googleapis.com/auth/drive`
+3. OAuth2 認証フローに従ってGoogleアカウントと連携
+4. Save
+
+**注**: Service Account を使う場合は、JSON Key ファイルをアップロードしてください。
+
+#### 2-4. OpenAI API
+
+1. n8n Credentials → Create New Credential → OpenAI API
+2. 以下を設定：
+   - **Credential Name**: `openai-api`
+   - **API Key**: OpenAI Platform から取得したAPIキー（`sk-proj-...` 形式）
+3. Save
+
+**認証情報一覧**:
+
+| Credential名 | 種類 | 用途 | 設定項目 |
+|---|---|---|---|
+| `line-bot-auth` | HTTP Header Auth | LINE Messaging API | name: `authorization`, value: `Bearer {TOKEN}` |
+| `gsheet-oauth` | Google Sheets OAuth2 | スプレッドシート読み書き | OAuth2フロー |
+| `gdrive-oauth` | Google Drive OAuth2 | ファイルアップロード | OAuth2フロー または Service Account |
+| `openai-api` | OpenAI API | GPT-4o OCR処理 | API Key |
 
 ---
 
@@ -66,10 +166,12 @@ LINE返信（処理完了通知）
 
 **シート名:** `Master_User_Config`
 
-| A: line_user_id | B: customer_name | C: drive_folder_id | D: sheet_id | E: accounting_soft |
-|---|---|---|---|---|
-| U1234567890abcdef... | 株式会社サンプル | 1A2B3C4D5E6F... | 1xYzAbCdEfGh... | freee |
-| U9876543210zyxwvu... | 合同会社テスト | 9Z8Y7X6W5V4U... | 9pQrStUvWxYz... | moneyforward |
+| A: line_user_id | B: customer_name | C: drive_folder_id | D: sheet_id | E: accounting_soft | F: registration_date |
+|---|---|---|---|---|---|
+| U1234567890abcdef... | 株式会社サンプル | 1A2B3C4D5E6F... | 1xYzAbCdEfGh... | freee | 2025-12-19T10:30:00 |
+| U9876543210zyxwvu... | 合同会社テスト | 9Z8Y7X6W5V4U... | 9pQrStUvWxYz... | moneyforward | 2025-12-20T14:15:00 |
+
+**重要**: `F列: registration_date` は友だち追加時に自動的に記録されます（ISO 8601形式）。
 
 **取得方法:**
 
@@ -93,37 +195,54 @@ LINE返信（処理完了通知）
 
 ### Step 2: n8nワークフローのインポート
 
+**重要**: 以下の順番でインポートしてください（子→親の順）。
+
 1. n8n管理画面にアクセス: `http://localhost:5678`
 2. 左メニューから「Workflows」を選択
 3. 右上の「Import from File」をクリック
-4. `n8n/workflows/line-accounting-automation.json` を選択
-5. インポート完了後、ワークフローが開きます
+4. **子ワークフローをインポート**:
+   - `n8n/workflows/line-follow-handler.json` を選択してインポート
+   - `n8n/workflows/line-image-handler.json` を選択してインポート
+5. **親ワークフローをインポート**:
+   - `n8n/workflows/line-webhook-router.json` を選択してインポート
+
+**注**: 子ワークフローを先にインポートしないと、親ワークフローの Execute Workflow ノードでエラーが発生します。
 
 ### Step 3: ワークフロー設定の編集
 
-#### 3-1. Master_User_Config のシートID設定
+#### 3-1. line-follow-handler.json の設定
 
-「顧客マスター参照」ノードをクリックし、以下を設定：
+「既存ユーザー確認」ノードと「新規ユーザー登録」ノードで以下を設定：
 
-- **Document ID**: Step 1-1で作成したスプレッドシートのID
+- **Document ID**: Step 1-1で作成したMaster_User_ConfigスプレッドシートのID
 - **Sheet Name**: `Master_User_Config`
+- **Credential**: `gsheet-oauth`
 
-#### 3-2. OpenAI設定の確認
+#### 3-2. line-image-handler.json の設定
 
-「AI-OCR処理（GPT-4o）」ノードをクリックし、以下を確認：
+**「顧客マスター参照」ノード**:
+- **Document ID**: Master_User_ConfigスプレッドシートのID
+- **Sheet Name**: `Master_User_Config`
+- **Credential**: `gsheet-oauth`
 
+**「AI-OCR処理（GPT-4o）」ノード**:
 - **Model**: `gpt-4o`（Vision対応モデル）
 - **Temperature**: `0.2`（一貫性重視）
 - **Max Tokens**: `500`
+- **Credential**: `openai-api`
 
-#### 3-3. Credentialsの紐付け
-
-各ノードで以下のCredentialsを選択：
-
+**Credentialsの紐付け**:
 - 「Get LINE Image」「LINE返信」ノード → `line-bot-auth`
 - 「Google Drive Upload」ノード → `gdrive-oauth`
 - 「顧客マスター参照」「顧客台帳へ記帳」ノード → `gsheet-oauth`
-- 「AI-OCR処理（GPT-4o）」ノード → `openai-api`
+
+#### 3-3. line-webhook-router.json の設定
+
+**Execute Workflow ノードの確認**:
+- 「Execute Follow Handler」ノード → Workflow ID: `line-follow-handler`
+- 「Execute Image Handler」ノード → Workflow ID: `line-image-handler`
+
+**注**: Workflow ID は子ワークフローのファイル名（拡張子なし）と一致している必要があります。
 
 ### Step 4: LINE Messaging API設定
 
@@ -148,35 +267,56 @@ LINE返信（処理完了通知）
 
 ### Step 5: ワークフローの有効化
 
-1. n8n画面右上の「Active」トグルを **ON** に設定
-2. 「Save」をクリック
+**重要**: 親ワークフロー（`line-webhook-router`）のみを有効化してください。
+
+1. `line-webhook-router` ワークフローを開く
+2. 右上の「Active」トグルを **ON** に設定
+3. 「Save」をクリック
+
+**注**: 子ワークフロー（`line-follow-handler`, `line-image-handler`）は **Inactive のまま** にしてください。親ワークフローから Execute Workflow で呼び出されます。
 
 ---
 
 ## テスト方法
 
-### 1. 基本動作テスト
+### 1. 友だち追加テスト（Follow Event）
 
-1. LINEで該当の公式アカウントを友だち追加
-2. 領収書画像を送信
+1. 別のLINEアカウントで公式アカウントを友だち追加
+2. 以下を確認：
+   - ウェルカムメッセージ「✅ 友だち追加ありがとうございます！」が届くか
+   - Master_User_Configに新規行が追加されているか
+   - `customer_name`が「未設定」になっているか
+   - `registration_date`が記録されているか
+
+### 2. 二重登録防止テスト
+
+1. 同じLINEアカウントで一旦ブロック
+2. 再度友だち追加
 3. 以下を確認：
+   - 「ℹ️ 既に登録済みです」メッセージが届くか
+   - Master_User_Configに重複行がないか
+
+### 3. 画像処理テスト（Image Event）
+
+1. 登録済みLINEアカウントで領収書画像を送信
+2. 以下を確認：
    - Google Driveに画像が保存されているか
    - スプレッドシート「仕訳台帳」に行が追加されているか
    - LINEに処理完了メッセージが返信されるか
 
-### 2. エラーケーステスト
+### 4. エラーケーステスト
 
-#### Test 2-1: 未登録ユーザー
+#### Test 4-1: 未登録ユーザーが画像送信
 
 別のLINEアカウント（`Master_User_Config`に未登録）から画像を送信
 → 「ユーザー登録が確認できませんでした」メッセージが返信されるはず
 
-#### Test 2-2: 画像以外のメッセージ
+#### Test 4-2: テキストメッセージ送信
 
 テキストメッセージを送信
 → 無視される（何も起こらない）
 
-### 3. OCR精度テスト
+### 5. OCR精度テスト
 
 以下のような領収書でテスト：
 
@@ -193,16 +333,38 @@ LINE返信（処理完了通知）
 
 ## トラブルシューティング
 
-### 問題1: 「ユーザー登録が確認できませんでした」が常に表示される
+### 問題1: 友だち追加してもウェルカムメッセージが届かない
+
+**原因:** 親ワークフローが有効化されていない、または子ワークフローが見つからない
+
+**解決策:**
+1. `line-webhook-router` が「Active」になっているか確認
+2. `line-follow-handler` がインポートされているか確認
+3. n8nの実行ログ（Executions）で `line-webhook-router` のエラーを確認
+4. Execute Workflow ノードの Workflow ID が正しいか確認
+
+### 問題2: 「ユーザー登録が確認できませんでした」が常に表示される（画像送信時）
 
 **原因:** `Master_User_Config` のLINE User IDが正しくない
 
 **解決策:**
 1. n8nの実行ログ（Executions）を確認
-2. Webhookノードの出力から `body.events[0].source.userId` を確認
+2. `line-webhook-router` の出力から `body.events[0].source.userId` を確認
 3. その値を `Master_User_Config` の `line_user_id` 列に追加
 
-### 問題2: Google Driveにアップロードされない
+### 問題3: 子ワークフローが実行されない
+
+**原因:** Execute Workflow ノードの設定が間違っている、または子ワークフローが存在しない
+
+**解決策:**
+1. 親ワークフロー（`line-webhook-router`）を開く
+2. Execute Workflow ノードの Workflow ID を確認:
+   - `Execute Follow Handler` → `line-follow-handler`
+   - `Execute Image Handler` → `line-image-handler`
+3. 子ワークフローが n8n にインポートされているか確認
+4. 子ワークフローの名前（Name）がファイル名と一致しているか確認
+
+### 問題4: Google Driveにアップロードされない
 
 **原因:** フォルダIDが間違っている、または権限がない
 
@@ -211,7 +373,7 @@ LINE返信（処理完了通知）
 2. Google Drive OAuth2の権限スコープに `https://www.googleapis.com/auth/drive` が含まれているか確認
 3. n8nのサービスアカウントにフォルダの編集権限を付与
 
-### 問題3: AI-OCRが失敗する
+### 問題5: AI-OCRが失敗する
 
 **原因:** OpenAI APIキーが無効、またはgpt-4oの利用制限
 
@@ -220,7 +382,7 @@ LINE返信（処理完了通知）
 2. APIキーの残高・利用制限を確認
 3. モデル名が `gpt-4o` になっているか確認（`gpt-4-vision-preview` ではなく）
 
-### 問題4: スプレッドシートに記帳されない
+### 問題6: スプレッドシートに記帳されない
 
 **原因:** シートIDが間違っている、またはシート名が一致しない
 

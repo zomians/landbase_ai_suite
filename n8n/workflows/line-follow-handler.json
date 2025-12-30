@@ -1,0 +1,325 @@
+{
+  "name": "LINE Follow Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "親ワークフローからデータを受け取る"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1dw8XFIp6KnYzYFKSUkIrhhnOpCEpkUsqzajwtc5rOkY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "line_user_id",
+              "lookupValue": "={{ $json.body.events[0].source.userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "check-existing-user",
+      "name": "既存ユーザー確認",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [450, 300],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleApi": {
+          "id": "uy6NUBl6ciBTlKIZ",
+          "name": "gsheet-oauth"
+        }
+      },
+      "notes": "Master_User_Configから既存ユーザーを検索"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "condition-new-user",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "looseTypeValidation": true
+        }
+      },
+      "id": "if-new-user",
+      "name": "IF 新規ユーザー",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "alwaysOutputData": true,
+      "notes": "新規ユーザーかどうかを判定"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 親ワークフローから受け取ったWebhookデータを使用\nconst webhookData = $input.first().json;\n\nreturn [{\n  json: {\n    line_user_id: webhookData.body.events[0].source.userId,\n    customer_name: \"未設定\",\n    drive_folder_id: \"\",\n    sheet_id: \"\",\n    accounting_soft: \"freee\",\n    registration_date: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 200],
+      "id": "prepare-registration-data",
+      "name": "登録データ準備",
+      "notes": "新規ユーザー登録用のデータを準備"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1dw8XFIp6KnYzYFKSUkIrhhnOpCEpkUsqzajwtc5rOkY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "line_user_id": "={{ $json.line_user_id }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "accounting_soft": "={{ $json.accounting_soft }}",
+            "registration_date": "={{ $json.registration_date }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "line_user_id",
+              "displayName": "line_user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "drive_folder_id",
+              "displayName": "drive_folder_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sheet_id",
+              "displayName": "sheet_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "accounting_soft",
+              "displayName": "accounting_soft",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "registration_date",
+              "displayName": "registration_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "register-new-user",
+      "name": "新規ユーザー登録",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1050, 200],
+      "credentials": {
+        "googleApi": {
+          "id": "uy6NUBl6ciBTlKIZ",
+          "name": "gsheet-oauth"
+        }
+      },
+      "notes": "Master_User_Configに新規ユーザーを追加"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"{{ $('Execute Workflow Trigger').item.json.body.events[0].source.userId }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"✅ 友だち追加ありがとうございます！\\n\\n自動登録が完了しました。\\n管理者が設定を完了次第、領収書画像を送信できるようになります。\\n\\nしばらくお待ちください。\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "send-welcome-message",
+      "name": "ウェルカムメッセージ",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "KEr2eztpZqz2ZOjH",
+          "name": "line-bot-auth"
+        }
+      },
+      "notes": "新規ユーザーにウェルカムメッセージを送信"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"{{ $('Execute Workflow Trigger').item.json.body.events[0].source.userId }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"ℹ️ 既に登録済みです。\\n\\n領収書画像を送信すると、自動で処理されます。\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "send-existing-user-message",
+      "name": "既存ユーザーメッセージ",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 400],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "KEr2eztpZqz2ZOjH",
+          "name": "line-bot-auth"
+        }
+      },
+      "notes": "既存ユーザーに登録済みメッセージを送信"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "既存ユーザー確認",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "既存ユーザー確認": {
+      "main": [
+        [
+          {
+            "node": "IF 新規ユーザー",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF 新規ユーザー": {
+      "main": [
+        [
+          {
+            "node": "登録データ準備",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "既存ユーザーメッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "登録データ準備": {
+      "main": [
+        [
+          {
+            "node": "新規ユーザー登録",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新規ユーザー登録": {
+      "main": [
+        [
+          {
+            "node": "ウェルカムメッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "id": "line-follow-handler",
+  "meta": {
+    "instanceId": "local"
+  },
+  "tags": [
+    {
+      "name": "LINE Bot",
+      "id": "line-bot-tag"
+    },
+    {
+      "name": "Follow Event",
+      "id": "follow-event-tag"
+    }
+  ]
+}

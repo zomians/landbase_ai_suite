@@ -1,0 +1,170 @@
+{
+  "name": "LINE Webhook Router",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "line-webhook",
+        "options": {}
+      },
+      "id": "webhook-router",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "line-webhook",
+      "notes": "LINE Messaging APIからのWebhook受信（全イベント共通エントリーポイント）"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "condition-follow",
+                    "leftValue": "={{ $json.body.events[0].type }}",
+                    "rightValue": "follow",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "follow"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "condition-image",
+                    "leftValue": "={{ $json.body.events[0].message.type }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "image"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "switch-event-type",
+      "name": "Switch Event Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [450, 300],
+      "notes": "イベントタイプ（follow/image）で処理を分岐"
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ \"line-follow-handler\" }}",
+        "options": {}
+      },
+      "id": "execute-follow-handler",
+      "name": "Execute Follow Handler",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [650, 200],
+      "notes": "Follow event処理ワークフローを呼び出し"
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ \"line-image-handler\" }}",
+        "options": {}
+      },
+      "id": "execute-image-handler",
+      "name": "Execute Image Handler",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [650, 400],
+      "notes": "画像処理ワークフローを呼び出し"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 未対応イベントタイプをログ出力\nconst eventType = $json.body.events[0].type;\nconst messageType = $json.body.events[0].message?.type || 'N/A';\n\nconsole.log(`未対応イベント - type: ${eventType}, message.type: ${messageType}`);\n\nreturn {\n  json: {\n    ignored: true,\n    eventType: eventType,\n    messageType: messageType\n  }\n};"
+      },
+      "id": "fallback-handler",
+      "name": "Fallback (未対応イベント)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 600],
+      "notes": "未対応イベントタイプの場合はログ出力のみ"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch Event Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Event Type": {
+      "main": [
+        [
+          {
+            "node": "Execute Follow Handler",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute Image Handler",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback (未対応イベント)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "id": "line-webhook-router",
+  "meta": {
+    "instanceId": "local"
+  },
+  "tags": [
+    {
+      "name": "LINE Bot",
+      "id": "line-bot-tag"
+    }
+  ]
+}
