@@ -6,7 +6,7 @@
 [![Rails](https://img.shields.io/badge/Rails-8.0-red)](https://rubyonrails.org/)
 [![Solidus](https://img.shields.io/badge/Solidus-4.5-blue)](https://solidus.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)](https://www.postgresql.org/)
-[![n8n](https://img.shields.io/badge/n8n-1.119.2-6e1e78)](https://n8n.io/)
+[![n8n](https://img.shields.io/badge/n8n-2.1.1-6e1e78)](https://n8n.io/)
 [![Mattermost](https://img.shields.io/badge/Mattermost-9.11-0058cc)](https://mattermost.com/)
 [![License](https://img.shields.io/badge/License-Proprietary-yellow)](#ライセンス)
 
@@ -202,7 +202,7 @@ landbase_ai_suite/
 
 | 技術           | バージョン | 用途                                      |
 | -------------- | ---------- | ----------------------------------------- |
-| **n8n**        | 1.119.2    | ワークフロー自動化エンジン（OperationAI） |
+| **n8n**        | 2.1.1    | ワークフロー自動化エンジン（OperationAI） |
 | **Mattermost** | 9.11       | チームコミュニケーション                  |
 
 ### アプリケーション層
