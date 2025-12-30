@@ -39,7 +39,7 @@
       "position": [450, 300],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "wqlgnFawkxBp06JZ",
+          "id": "uy6NUBl6ciBTlKIZ",
           "name": "gsheet-oauth"
         }
       },
@@ -280,7 +280,7 @@
       "position": [1850, 200],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "wqlgnFawkxBp06JZ",
+          "id": "uy6NUBl6ciBTlKIZ",
           "name": "gsheet-oauth"
         }
       },
