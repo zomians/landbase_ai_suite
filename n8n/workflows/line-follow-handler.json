@@ -27,7 +27,7 @@
           "values": [
             {
               "lookupColumn": "line_user_id",
-              "lookupValue": "={{ $json.body.events[0].source.userId }}"
+              "lookupValue": "={{ $('Execute Workflow Trigger').item.json.body.events[0].source.userId }}"
             }
           ]
         },
@@ -59,12 +59,11 @@
           "conditions": [
             {
               "id": "condition-new-user",
-              "leftValue": "={{ $input.all().length }}",
+              "leftValue": "={{ !$input.first().json.line_user_id }}",
               "rightValue": "",
               "operator": {
-                "type": "number",
-                "operation": "notExists",
-                "singleValue": true
+                "type": "boolean",
+                "operation": "true"
               }
             }
           ],
@@ -79,12 +78,12 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [650, 300],
-      "alwaysOutputData": true,
+      "alwaysOutputData": false,
       "notes": "新規ユーザーかどうかを判定"
     },
     {
       "parameters": {
-        "jsCode": "// 親ワークフローから受け取ったWebhookデータを使用\nconst webhookData = $input.first().json;\n\nreturn [{\n  json: {\n    line_user_id: webhookData.body.events[0].source.userId,\n    customer_name: \"未設定\",\n    drive_folder_id: \"\",\n    sheet_id: \"\",\n    accounting_soft: \"freee\",\n    registration_date: new Date().toISOString()\n  }\n}];"
+        "jsCode": "// 親ワークフローから受け取ったWebhookデータを使用\nconst webhookData = $('Execute Workflow Trigger').item.json;\n\nreturn [{\n  json: {\n    line_user_id: webhookData.body.events[0].source.userId,\n    customer_name: \"未設定\",\n    drive_folder_id: \"\",\n    sheet_id: \"\",\n    accounting_soft: \"freee\",\n    registration_date: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

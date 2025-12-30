@@ -80,7 +80,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ \"line-follow-handler\" }}",
+        "workflowId": "line-follow-handler",
         "options": {}
       },
       "id": "execute-follow-handler",
@@ -92,7 +92,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ \"line-image-handler\" }}",
+        "workflowId": "line-image-handler",
         "options": {}
       },
       "id": "execute-image-handler",
