@@ -262,7 +262,7 @@
 - [n8n Documentation](https://docs.n8n.io/)
 - [Mattermost Documentation](https://docs.mattermost.com/)
 - [Ruby on Rails Guides](https://guides.rubyonrails.org/)
-- [docs/company-overview.md](../company-overview.md)
+- [docs/business/company-overview.md](../business/company-overview.md)
 
 ## 関連する ADR
 

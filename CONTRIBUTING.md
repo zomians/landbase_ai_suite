@@ -2,17 +2,48 @@
 
 LandBase AI Suite プロジェクトへようこそ！このガイドでは、プロジェクトへの貢献方法と開発ワークフローを説明します。
 
+---
+
+## ドキュメント役割分担
+
+各ドキュメントの役割を明確に分離し、情報の重複を避けています。
+
+| コンテンツ               | README.md | CONTRIBUTING.md | CLAUDE.md | ARCHITECTURE.md |
+| ------------------------ | :-------: | :-------------: | :-------: | :-------------: |
+| **プロジェクト概要**     |     ◎     |        −        |     ○     |        −        |
+| **技術スタック**         |     ◎     |        −        |     ○     |        ◎        |
+| **クイックスタート**     |     ◎     |        −        |     ○     |        −        |
+| **ディレクトリ構成**     |     ◎     |        −        |     ○     |        −        |
+| **よく使うコマンド**     |     ◎     |        −        |     ◎     |        −        |
+| **トラブルシューティング** |     ◎     |        −        |     ○     |        −        |
+| **ドキュメント役割分担** |     −     |        ◎        |     ○     |        −        |
+| **Issue 作成ガイド**     |     −     |        ◎        |     ○     |        −        |
+| **Git ワークフロー**     |     −     |        ◎        |     ○     |        −        |
+| **コミット規約**         |     −     |        ◎        |     ○     |        −        |
+| **PR 作成フロー**        |     −     |        ◎        |     ○     |        −        |
+| **コーディング規約**     |     −     |        ◎        |     −     |        −        |
+| **テスト方針**           |     −     |        ◎        |     −     |        −        |
+| **コードレビュー基準**   |     −     |        ◎        |     −     |        −        |
+| **セキュリティチェック** |     −     |        ◎        |     ○     |        ◎        |
+| **システム設計詳細**     |     −     |        −        |     −     |        ◎        |
+| **データベース設計**     |     −     |        −        |     −     |        ◎        |
+| **API 設計**             |     −     |        −        |     −     |        ◎        |
+| **設計パターン詳細**     |     −     |        −        |     −     |        ◎        |
+| **ADR 参照**             |     ○     |        −        |     −     |        ◎        |
+
+**凡例**: ◎ 詳細に記載 / ○ 簡潔に記載・参照 / − 含まない
+
+---
+
 ## 目次
 
 - [Issue 作成ガイドライン](#issue-作成ガイドライン)
-- [開発環境セットアップ](#開発環境セットアップ)
 - [Git ワークフロー](#git-ワークフロー)
 - [コミット規約](#コミット規約)
 - [PR 作成フロー](#pr作成フロー)
 - [コーディング規約](#コーディング規約)
 - [テスト方針](#テスト方針)
 - [コードレビュー基準](#コードレビュー基準)
-- [トラブルシューティング](#トラブルシューティング)
 
 ---
 
@@ -277,75 +308,6 @@ LandBase AI Suite プロジェクトへようこそ！このガイドでは、�
 - **テスト失敗対応**: バグ修正、リファクタリング
 
 **推奨**: 常に+25%のバッファを含め、0.5時間単位で切り上げ
-
----
-
-## 開発環境セットアップ
-
-### 必要なツール
-
-以下のツールをインストールしてください：
-
-| ツール              | バージョン | 用途                  |
-| ------------------- | ---------- | --------------------- |
-| **Docker**          | 20.10+     | コンテナ実行環境      |
-| **Docker Compose**  | 2.0+       | マルチコンテナ管理    |
-| **Git**             | 2.30+      | バージョン管理        |
-| **GitHub CLI (gh)** | 2.0+       | Issue/PR 管理（推奨） |
-| **Make**            | -          | タスク自動化          |
-
-### セットアップ手順
-
-#### 1. リポジトリクローン
-
-```bash
-git clone https://github.com/zomians/landbase_ai_suite.git
-cd landbase_ai_suite
-```
-
-#### 2. 環境変数設定
-
-```bash
-# .env.local.example をコピー
-cp .env.local.example .env.local
-
-# .env.local を編集（機密情報を設定）
-# - PostgreSQLパスワード
-# - n8n暗号化キー
-# - Mattermost設定
-# - その他APIキー
-```
-
-#### 3. Docker 起動
-
-```bash
-# 全サービス起動
-make up
-
-# 起動確認
-docker compose ps
-```
-
-#### 4. 各サービスアクセス確認
-
-| サービス             | URL                   | 備考                                   |
-| -------------------- | --------------------- | -------------------------------------- |
-| **Platform**         | http://localhost:3001 | プラットフォーム                       |
-| **Shrimp Shells EC** | http://localhost:3002 | Rails 8 + Solidus                      |
-| **n8n**              | http://localhost:5678 | 初回アクセス時にアカウント作成         |
-| **Mattermost**       | http://localhost:8065 | 初回アクセス時にセットアップウィザード |
-
-#### 5. データベース初期化（必要に応じて）
-
-```bash
-# Shrimp Shells EC
-make shrimpshells-migrate
-make shrimpshells-seed
-
-# Platform（実装後）
-make platform-migrate
-make platform-seed
-```
 
 ---
 
@@ -678,77 +640,56 @@ git branch -d feature/54-cleaning-standards
 
 ## コーディング規約
 
-### Rails（Shrimp Shells EC / Platform）
+### Rails
 
-#### 1. Decorator パターン必須
-
-Solidus の拡張は**必ず**Decorator パターンを使用してください。
-
-**✅ DO**: Decorator で拡張
-
-```ruby
-# app/models/spree/product_decorator.rb
-module Spree
-  module ProductDecorator
-    def self.prepended(base)
-      base.validates :shrimp_size, inclusion: { in: SHRIMP_SIZES.keys.map(&:to_s) }
-    end
-
-    def frozen_product?
-      storage_temperature.present? && storage_temperature < 0
-    end
-  end
-end
-
-Spree::Product.prepend(Spree::ProductDecorator)
-```
-
-**❌ DON'T**: Gem ファイルを直接編集
-
-```ruby
-# vendor/bundle/gems/solidus/app/models/spree/product.rb
-# 直接編集は絶対禁止！
-```
-
-#### 2. RuboCop 準拠
-
-```bash
-# チェック
-docker compose run --rm shrimpshells-ec rubocop
-
-# 自動修正
-docker compose run --rm shrimpshells-ec rubocop -a
-```
-
-#### 3. ViewComponent 推奨
-
-再利用可能な UI 部品は ViewComponent で実装：
-
-```ruby
-# app/components/product_card_component.rb
-class ProductCardComponent < ViewComponent::Base
-  def initialize(product:, show_cart: true)
-    @product = product
-    @show_cart = show_cart
-  end
-end
-```
-
-#### 4. Service Object パターン
+#### 1. Service Object パターン
 
 複雑なビジネスロジックは Service Object に抽出：
 
 ```ruby
-# app/services/cleaning_judge_service.rb
-class CleaningJudgeService
-  def initialize(cleaning_session:)
-    @session = cleaning_session
+# app/services/order_service.rb
+class OrderService
+  def initialize(order:)
+    @order = order
   end
 
   def call
     # ビジネスロジック
   end
 end
+```
+
+#### 2. 早期リターン
+
+条件分岐はネストを避け、早期リターンを使用：
+
+```ruby
+# ✅ GOOD: 早期リターン
+def process(order)
+  return if order.nil?
+  return unless order.valid?
+
+  order.save
+end
+
+# ❌ BAD: ネストが深い
+def process(order)
+  if order.present?
+    if order.valid?
+      order.save
+    end
+  end
+end
+```
+
+#### 3. RuboCop 準拠
+
+```bash
+# チェック
+bundle exec rubocop
+
+# 自動修正
+bundle exec rubocop -a
 ```
 
 ### JavaScript（Stimulus）
@@ -782,9 +723,9 @@ export default class extends Controller {
 
 ```ruby
 # タイムスタンプ_動詞_対象_詳細.rb
-20251206_add_phone_number_to_spree_users.rb
-20251206_create_cleaning_standards.rb
-20251206_add_index_to_products_shrimp_size.rb
+20251206_add_phone_number_to_users.rb
+20251206_create_orders.rb
+20251206_add_index_to_products_category_id.rb
 ```
 
 #### 2. ロールバック可能性
@@ -806,8 +747,8 @@ end
 #### 3. カラムコメント必須
 
 ```ruby
-add_column :spree_products, :shrimp_size, :string, comment: "エビのサイズ（XL/L/M/S）"
-add_column :spree_products, :storage_temperature, :decimal, comment: "保管温度（℃）"
+add_column :products, :category, :string, comment: "商品カテゴリ"
+add_column :products, :price, :decimal, comment: "価格（税抜）"
 ```
 
 ---
@@ -821,14 +762,14 @@ add_column :spree_products, :storage_temperature, :decimal, comment: "保管温�
 #### モデルテスト
 
 ```ruby
-# spec/models/spree/product_decorator_spec.rb
+# spec/models/product_spec.rb
 require 'rails_helper'
 
-RSpec.describe Spree::Product, type: :model do
-  describe '#frozen_product?' do
-    it '保管温度が0℃未満の場合trueを返す' do
-      product = build(:product, storage_temperature: -18)
-      expect(product.frozen_product?).to be true
+RSpec.describe Product, type: :model do
+  describe '#active?' do
+    it 'ステータスがactiveの場合trueを返す' do
+      product = build(:product, status: 'active')
+      expect(product.active?).to be true
     end
   end
 end
@@ -837,31 +778,15 @@ end
 #### API テスト（Request Spec）
 
 ```ruby
-# spec/requests/api/v1/cleaning_standards_spec.rb
+# spec/requests/api/v1/orders_spec.rb
 require 'rails_helper'
 
-RSpec.describe 'Api::V1::CleaningStandards', type: :request do
-  describe 'GET /api/v1/cleaning_standards' do
-    it '清掃基準一覧を返す' do
-      get '/api/v1/cleaning_standards'
+RSpec.describe 'Api::V1::Orders', type: :request do
+  describe 'GET /api/v1/orders' do
+    it '注文一覧を返す' do
+      get '/api/v1/orders'
       expect(response).to have_http_status(:ok)
     end
-  end
-end
-```
-
-#### コンポーネントテスト
-
-```ruby
-# spec/components/product_card_component_spec.rb
-require 'rails_helper'
-
-RSpec.describe ProductCardComponent, type: :component do
-  it 'renders product name' do
-    product = build(:product, name: 'ガーリックシュリンプ')
-    render_inline(ProductCardComponent.new(product: product))
-
-    expect(page).to have_text('ガーリックシュリンプ')
   end
 end
 ```
@@ -870,13 +795,13 @@ end
 
 ```bash
 # 全テスト実行
-docker compose run --rm shrimpshells-ec rspec
+bundle exec rspec
 
 # 特定ファイルのみ
-docker compose run --rm shrimpshells-ec rspec spec/models/spree/product_decorator_spec.rb
+bundle exec rspec spec/models/product_spec.rb
 
 # カバレッジ確認
-docker compose run --rm shrimpshells-ec rspec --format documentation
+bundle exec rspec --format documentation
 ```
 
 ---
@@ -951,93 +876,8 @@ protect_from_forgery with: :exception
 頻繁に検索するカラムにはインデックス：
 
 ```ruby
-add_index :spree_products, :shrimp_size
-add_index :spree_orders, [:user_id, :created_at]
-```
-
----
-
-## トラブルシューティング
-
-### よくある問題と解決策
-
-#### 1. Docker ビルドエラー
-
-```bash
-# エラー: "cannot find package..."
-make clean
-make up
-```
-
-#### 2. マイグレーションエラー
-
-```bash
-# エラー: "PG::DuplicateColumn"
-# 解決: マイグレーションをロールバック
-make shrimpshells-shell
-cd /shrimpshells && bin/rails db:rollback
-```
-
-#### 3. ポート競合
-
-```bash
-# エラー: "port is already allocated"
-# 解決: .envのポート番号を変更
-PLATFORM_PORT=3004  # デフォルト: 3001
-```
-
-#### 4. Bundle install 失敗
-
-```bash
-# エラー: "bundle install failed"
-# 解決: ボリューム削除して再ビルド
-docker volume rm landbase_ai_suite_platform_bundle
-make platform-up
-```
-
-#### 5. データベース接続エラー
-
-```bash
-# エラー: "could not connect to database"
-# 解決: PostgreSQLの起動を確認
-docker compose ps postgres
-docker compose up -d postgres
-```
-
-### ログの見方
-
-```bash
-# 全サービスログ
-make logs
-
-# 特定サービスのログ
-make platform-logs
-make shrimpshells-logs
-make n8n-logs
-make mattermost-logs
-make postgres-logs
-```
-
-### デバッグ方法
-
-#### Rails Console
-
-```bash
-make platform-console
-make shrimpshells-console
-```
-
-#### コンテナシェル接続
-
-```bash
-make platform-shell
-make shrimpshells-shell
-```
-
-#### データベース直接接続
-
-```bash
-make postgres-shell
+add_index :products, :category_id
+add_index :orders, [:user_id, :created_at]
 ```
 
 ---
