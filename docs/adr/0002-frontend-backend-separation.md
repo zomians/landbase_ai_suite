@@ -290,7 +290,7 @@ rails/
 
 - [ADR 0001: n8n + Mattermost + Rails 統合アーキテクチャ](./0001-n8n-mattermost-rails-integration.md)
 - [Microservices Pattern](https://microservices.io/)
-- [docs/company-overview.md](../company-overview.md)
+- [docs/business/company-overview.md](../business/company-overview.md)
 
 ## 関連する ADR
 

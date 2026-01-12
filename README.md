@@ -162,14 +162,13 @@ landbase_ai_suite/
 ├── config/
 │   └── client_list.yaml           # クライアントレジストリ
 ├── docs/
-│   ├── company-overview.md        # 会社・ビジネス概要
-│   └── adr/                       # Architecture Decision Records
-│       ├── 0001-n8n-mattermost-rails-integration.md
-│       ├── 0002-frontend-backend-separation.md
-│       ├── 0003-solidus-for-restaurant-ec.md
-│       ├── 0004-decorator-pattern-for-solidus-extension.md
-│       ├── 0005-multitenancy-strategy.md
-│       └── 0006-platform-app-separation.md
+│   ├── adr/                       # Architecture Decision Records
+│   ├── guides/                    # セットアップ・技術ガイド
+│   │   ├── stripe-payment-setup.md
+│   │   └── n8n-accounting-automation-setup.md
+│   └── business/                  # ビジネス関連ドキュメント
+│       ├── company-overview.md
+│       └── sns-marketing-trends-2025.md
 ├── n8n/
 │   └── workflows/                 # n8nワークフローテンプレート
 ├── rails/
@@ -286,11 +285,19 @@ landbase_ai_suite/
 
 ## ドキュメント
 
+### ドキュメント役割分担
+
+| ドキュメント        | 役割                                                   |
+| ------------------- | ------------------------------------------------------ |
+| **README.md**       | プロジェクト概要、技術スタック、クイックスタート       |
+| **CONTRIBUTING.md** | 開発規約（Issue、Git、コミット、コーディング規約）     |
+| **CLAUDE.md**       | AI 向けクイックリファレンス                            |
+| **ARCHITECTURE.md** | 技術アーキテクチャ詳細、DB 設計、API 設計              |
+
 ### 開発者向け
 
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - 開発ガイド
-
-  - 環境セットアップ
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - 開発ガイド（汎用的な開発規約）
+  - Issue 作成ガイドライン
   - Git ワークフロー（GitHub Flow）
   - コミット規約（Conventional Commits）
   - コーディング規約
@@ -298,8 +305,7 @@ landbase_ai_suite/
   - コードレビュー基準
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - 技術アーキテクチャ詳細
-  - システム概要
-  - アーキテクチャビジョン
+  - システム設計詳細
   - データベース設計
   - 設計パターン（Decorator、ViewComponent 等）
   - API 設計
@@ -308,18 +314,23 @@ landbase_ai_suite/
 ### AI 開発支援
 
 - **[CLAUDE.md](./CLAUDE.md)** - Claude 向けクイックリファレンス
-  - 5 分で理解する概要
-  - 重要な設計原則（DO/DON'T）
-  - コミット規約
   - よく使うコマンド
-  - 「○○ したい」クイックリファレンス
+  - 開発ワークフロー
+  - 重要な設計原則（プロジェクト固有）
+  - トラブルシューティング
 
-### ビジネス・企業情報
+### docs/ ディレクトリ構成
 
-- **[docs/company-overview.md](./docs/company-overview.md)** - 会社・ビジネス概要
-  - ビジョン・ミッション
-  - サービス体系（OperationAI、MarketingAI 等）
-  - 料金体系
+```
+docs/
+├── adr/                    # Architecture Decision Records
+├── guides/                 # セットアップ・技術ガイド
+│   ├── stripe-payment-setup.md
+│   └── n8n-accounting-automation-setup.md
+└── business/               # ビジネス関連ドキュメント
+    ├── company-overview.md
+    └── sns-marketing-trends-2025.md
+```
 
 ### 設計判断記録（ADR）
 

@@ -1058,7 +1058,7 @@ psql -h localhost -U postgres platform_production < backup_20251206.sql
 
 - [開発ガイド](./CONTRIBUTING.md)
 - [Claude 向けガイド](./CLAUDE.md)
-- [ビジネス概要](./docs/company-overview.md)
+- [ビジネス概要](./docs/business/company-overview.md)
 - [Ruby on Rails Guides](https://guides.rubyonrails.org/)
 - [Solidus Guides](https://guides.solidus.io/)
 
