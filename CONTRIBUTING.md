@@ -330,9 +330,9 @@ LandBase AI Suite プロジェクトへようこそ！このガイドでは、�
    ```bash
    # ✅ GOOD: 正しい手順
    # Step 1: Issue 作成（GitHub で実施）
-   # Step 2: main を最新化
+   # Step 2: main を最新化 👈 これを忘れない！
    git checkout main
-   git pull origin main
+   git pull origin main  # 🚨 必須！古いコードから分岐するとコンフリクト多発
 
    # Step 3: 新しいブランチを作成
    git checkout -b feature/76-knowledge-base-implementation
