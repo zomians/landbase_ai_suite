@@ -66,6 +66,8 @@ init: ## Platform: Railsアプリ新規作成
 	@set -a && . ./.env && set +a && \
 	docker compose run --rm --workdir /platform platform \
 		rails new . --name $$PLATFORM_APP_NAME --database=postgresql --css=tailwind --javascript=importmap --skip-test --force
+	@rm -rf rails/platform/.git
+	@perl -i -pe 's/bin\/rails server$$/bin\/rails server -b 0.0.0.0/' rails/platform/Procfile.dev
 	@echo "${GREEN}Platform: http://localhost:${PLATFORM_PORT}${NC}"
 
 .PHONY: rails-solidus-install
