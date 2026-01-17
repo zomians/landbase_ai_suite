@@ -26,7 +26,7 @@
 
 ```
 バックオフィス（共通基盤）
-├── Platform (Rails 8) :3001  ← クライアント管理、AI機能
+├── Platform (Rails 8) :3000  ← クライアント管理、AI機能
 ├── n8n :5678                 ← ワークフロー自動化
 └── Mattermost :8065          ← チームコミュニケーション
 
@@ -46,34 +46,30 @@
 
 ## よく使うコマンド
 
+### 初期セットアップ
+
+```bash
+make init                  # Platform Railsアプリ生成（初回のみ）
+```
+
 ### サービス管理
 
 ```bash
-make up                    # 全サービス起動
+make up                    # 全サービス起動（PostgreSQL, Platform, Mattermost, n8n）
 make down                  # 全サービス停止
 make logs                  # 全サービスログ表示
 make clean                 # 完全クリーンアップ（注意：データ削除）
-```
-
-### Platform 基幹アプリ（:3001）
-
-```bash
-make platform-up           # Platform起動
-make platform-console      # Railsコンソール
-make platform-migrate      # マイグレーション実行
-make platform-shell        # コンテナシェル接続
 ```
 
 ### Shrimp Shells EC（:3002）
 
 ```bash
 make shrimpshells-up       # EC起動
-make shrimpshells-console  # Railsコンソール
-make shrimpshells-migrate  # マイグレーション実行
-make shrimpshells-seed     # データ投入
+make shrimpshells-logs     # ログ表示
+make shrimpshells-shell    # コンテナシェル接続
 ```
 
-### PostgreSQL / n8n / Mattermost
+### 個別サービス
 
 ```bash
 make postgres-shell        # PostgreSQLシェル接続

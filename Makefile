@@ -17,12 +17,12 @@ help: ## ヘルプ表示
 		| awk 'BEGIN {FS = ":.*?## "}; {printf " ${GREEN}%-22s${NC} %s\n", $$1, $$2}'
 
 .PHONY: up
-up: ## Mattermost, n8n, PostgreSQLを起動
-	@echo "${GREEN}Starting Mattermost, n8n and PostgreSQL...${NC}"
-	docker compose up -d postgres mattermost n8n
+up: ## 全サービス起動（PostgreSQL, Platform, Mattermost, n8n）
+	@echo "${GREEN}Starting all services...${NC}"
+	docker compose up -d postgres platform mattermost n8n
+	@echo "${GREEN}Platform is running at http://localhost:${PLATFORM_PORT}${NC}"
 	@echo "${GREEN}Mattermost is running at http://localhost:${MATTERMOST_PORT}${NC}"
 	@echo "${GREEN}n8n is running at http://localhost:${N8N_PORT}${NC}"
-	@echo "${YELLOW}n8n Login: ${N8N_BASIC_AUTH_USER} / ${N8N_BASIC_AUTH_PASSWORD}${NC}"
 
 .PHONY: down
 down: ## サービス停止
@@ -59,6 +59,15 @@ shrimpshells-new: ## Shrimp Shells EC: Railsアプリ新規作成
 			  --skip-docker \
 		"
 
+.PHONY: init
+init: ## Platform: Railsアプリ新規作成
+	@[ -d rails/platform ] && echo "${YELLOW}Rails application 'rails/platform' already exists.${NC}" && exit 1 || true
+	@mkdir -p rails/platform
+	@set -a && . ./.env && set +a && \
+	docker compose run --rm --workdir /platform platform \
+		rails new . --name $$PLATFORM_APP_NAME --database=postgresql --css=tailwind --javascript=importmap --skip-test --force
+	@echo "${GREEN}Platform: http://localhost:${PLATFORM_PORT}${NC}"
+
 .PHONY: rails-solidus-install
 rails-solidus-install: ## RailsアプリにSolidus導入（Gem追加とインストール）
 	docker compose run --rm shrimpshells-ec bash -lc " \
@@ -85,7 +94,7 @@ shrimpshells-shell: ## Shrimp Shells EC: コンテナにシェル接続
 
 .PHONY: clean
 clean: ## クリーンアップ（コンテナ・ボリューム・プロジェクトイメージ削除）
-	docker compose down --rmi local --volumes --remove-orphans
+	docker compose --env-file .env down -v --rmi local
 	@echo "${GREEN}Cleaned up Docker resources.${NC}"
 
 .PHONY: build
