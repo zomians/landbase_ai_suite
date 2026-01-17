@@ -1,0 +1,97 @@
+# syntax=docker/dockerfile:1
+# check=error=true
+
+# ============================================
+# Base ステージ - 最小限のランタイム依存関係
+# ============================================
+ARG RUBY_VERSION
+FROM ruby:${RUBY_VERSION:-3.4.6}-slim AS base
+
+WORKDIR /platform
+
+# 実行時に必要な最小限のパッケージをインストール
+RUN apt-get update -qq \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        libjemalloc2 \
+        libvips \
+        postgresql-client \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# ============================================
+# Development ステージ - ローカル開発環境用
+# ============================================
+FROM base AS development
+
+# ビルドツールと開発ツールをインストール
+RUN apt-get update -qq \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        libpq-dev \
+        libyaml-dev \
+        pkg-config \
+        less \
+        vim \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Rails をインストール
+ARG RAILS_VERSION
+RUN gem install rails -v ${RAILS_VERSION} --no-document
+
+# ============================================
+# Production-builder ステージ - アプリケーションビルド用
+# ============================================
+FROM base AS production-builder
+
+# ビルドに必要なパッケージをインストール
+RUN apt-get update -qq \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        libpq-dev \
+        libyaml-dev \
+        pkg-config \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Gemfile をコピーして gem をインストール
+COPY platform/Gemfile platform/Gemfile.lock ./
+RUN bundle install --jobs 4 --retry 3 --without development test \
+    && rm -rf ~/.bundle/ /usr/local/bundle/ruby/*/cache /usr/local/bundle/ruby/*/bundler/gems/*/.git \
+    && bundle exec bootsnap precompile --gemfile
+
+# アプリケーションコードをコピー
+COPY platform/ .
+
+# bootsnap プリコンパイルで起動を高速化
+RUN bundle exec bootsnap precompile app/ lib/
+
+# アセットをプリコンパイル
+RUN RAILS_ENV=production SECRET_KEY_BASE_DUMMY=1 bundle exec rails assets:precompile
+
+# ============================================
+# Production ステージ - 最小限の本番実行環境
+# ============================================
+FROM base AS production
+
+# ビルド済みの gem とアプリケーションをコピー
+COPY --from=production-builder /usr/local/bundle /usr/local/bundle
+COPY --from=production-builder /platform /platform
+
+# 非 root ユーザーを作成
+RUN groupadd --system rails \
+    && useradd --system --gid rails --create-home --shell /bin/bash rails \
+    && chown -R rails:rails db log storage tmp
+USER rails
+
+# エントリーポイントでデータベースを準備
+ENTRYPOINT ["/platform/bin/docker-entrypoint"]
+
+# ポートを公開
+EXPOSE 3000
+
+# 本番モードで Rails サーバーを起動
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]

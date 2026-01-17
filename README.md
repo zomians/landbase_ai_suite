@@ -90,7 +90,14 @@ cp .env.local.example .env.local
    SOLIDUS_STRIPE_WEBHOOK_SIGNING_SECRET=whsec_xxxxx
    ```
 
-#### 3. サービス起動
+#### 3. 初回セットアップ
+
+```bash
+# Platform Railsアプリ生成（初回のみ）
+make init
+```
+
+#### 4. サービス起動
 
 ```bash
 # 全サービス起動
@@ -100,54 +107,35 @@ make up
 docker compose ps
 ```
 
-#### 4. 各サービスにアクセス
+#### 5. 各サービスにアクセス
 
-| サービス             | URL                   | 備考                                        |
-| -------------------- | --------------------- | ------------------------------------------- |
-| **Platform**         | http://localhost:3001 | プラットフォーム基幹（issue#55 で実装予定） |
-| **Shrimp Shells EC** | http://localhost:3002 | Rails 8 + Solidus 冷凍食品 EC               |
-| **n8n**              | http://localhost:5678 | 初回アクセス時にアカウント作成              |
-| **Mattermost**       | http://localhost:8065 | 初回アクセス時にセットアップ                |
-
-#### 5. データベース初期化（必要に応じて）
-
-```bash
-# Shrimp Shells EC
-make shrimpshells-migrate
-make shrimpshells-seed
-
-# Platform（実装後）
-make platform-migrate
-make platform-seed
-```
+| サービス             | URL                   | 備考                           |
+| -------------------- | --------------------- | ------------------------------ |
+| **Platform**         | http://localhost:3000 | プラットフォーム基幹アプリ     |
+| **Shrimp Shells EC** | http://localhost:3002 | Rails 8 + Solidus 冷凍食品 EC  |
+| **n8n**              | http://localhost:5678 | 初回アクセス時にアカウント作成 |
+| **Mattermost**       | http://localhost:8065 | 初回アクセス時にセットアップ   |
 
 ### よく使うコマンド
 
 ```bash
+# 初期セットアップ
+make init                  # Platform Railsアプリ生成（初回のみ）
+
 # サービス管理
-make up                    # 全サービス起動
+make up                    # 全サービス起動（PostgreSQL, Platform, Mattermost, n8n）
 make down                  # 全サービス停止
 make logs                  # 全サービスログ表示
 make clean                 # 完全クリーンアップ（注意：データ削除）
 
-# Platform（基幹アプリ）
-make platform-up           # Platform起動
-make platform-console      # Railsコンソール
-make platform-migrate      # マイグレーション実行
-make platform-shell        # コンテナシェル接続
-
 # Shrimp Shells EC
 make shrimpshells-up       # EC起動
-make shrimpshells-console  # Railsコンソール
-make shrimpshells-migrate  # マイグレーション実行
+make shrimpshells-logs     # ログ表示
+make shrimpshells-shell    # コンテナシェル接続
 
-# n8n
+# 個別サービスログ
 make n8n-logs              # n8nログ表示
-
-# Mattermost
 make mattermost-logs       # Mattermostログ表示
-
-# PostgreSQL
 make postgres-logs         # PostgreSQLログ表示
 make postgres-shell        # PostgreSQLシェル接続
 ```
@@ -227,9 +215,9 @@ landbase_ai_suite/
 
 ### バックオフィス（共通基盤）
 
-#### Platform 基幹アプリ（issue#55 で実装予定）
+#### Platform 基幹アプリ
 
-**ポート**: 3001
+**ポート**: 3000
 **責務**:
 
 - クライアント管理（CRUD、サービス設定）

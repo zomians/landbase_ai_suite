@@ -84,6 +84,36 @@ services:
       postgres:
         condition: service_healthy
 
+  platform:
+    build:
+      context: ./rails
+      dockerfile: Dockerfile.platform
+      target: development
+      args:
+        RUBY_VERSION: ${RUBY_VERSION}
+        RAILS_VERSION: ${RAILS_VERSION}
+    command: bash -c "rm -f tmp/pids/server.pid && bin/dev"
+    volumes:
+      - ./rails/platform:/platform
+      - platform_bundle_cache:/usr/local/bundle
+    ports:
+      - "${PLATFORM_PORT}:3000"
+    env_file:
+      - .env
+      - .env.local
+    environment:
+      - RAILS_ENV=development
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/platform_development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
 volumes:
   postgres_data:
     driver: local
@@ -94,4 +124,6 @@ volumes:
   bundle_cache:
     driver: local
   yarn_global_cache:
+    driver: local
+  platform_bundle_cache:
     driver: local
