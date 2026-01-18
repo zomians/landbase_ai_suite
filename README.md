@@ -180,7 +180,6 @@ landbase_ai_suite/
 | **Solidus**                  | ~4.5       | エンタープライズ E コマース     |
 | **Devise**                   | 2.5        | ユーザー認証                    |
 | **PayPal Commerce Platform** | 1.0        | 決済機能                        |
-| **ViewComponent**            | 3.0        | UI コンポーネント               |
 | **Tailwind CSS**             | 3.0        | ユーティリティファースト CSS    |
 | **Stimulus**                 | -          | インタラクティブ JS             |
 | **Solid Queue**              | -          | バックグラウンドジョブ          |
@@ -263,7 +262,7 @@ landbase_ai_suite/
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - 技術アーキテクチャ詳細
   - システム設計詳細
   - データベース設計
-  - 設計パターン（Decorator、ViewComponent 等）
+  - 設計パターン（Decorator、Service Object 等）
   - API 設計
   - セキュリティ・パフォーマンス設計
 

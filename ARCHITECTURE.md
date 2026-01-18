@@ -181,11 +181,10 @@ LandBase AI Suite は、**バックオフィス（共通基盤）とフロント
 
 #### 4. プレゼンテーション層
 
-| コンポーネント    | 技術               | 役割                         |
-| ----------------- | ------------------ | ---------------------------- |
-| **ViewComponent** | view_component     | 再利用可能 UI コンポーネント |
-| **Stimulus**      | @hotwired/stimulus | インタラクティブ UI          |
-| **Tailwind CSS**  | tailwindcss        | ユーティリティファースト CSS |
+| コンポーネント   | 技術               | 役割                         |
+| ---------------- | ------------------ | ---------------------------- |
+| **Stimulus**     | @hotwired/stimulus | インタラクティブ UI          |
+| **Tailwind CSS** | tailwindcss        | ユーティリティファースト CSS |
 
 ---
 
@@ -422,59 +421,7 @@ Spree::Product.prepend(Spree::ProductDecorator)
 
 **詳細**: [ADR 0004: Decorator パターン](./docs/adr/0004-decorator-pattern-for-solidus-extension.md)
 
-### 2. ViewComponent パターン
-
-**目的**: 再利用可能な UI コンポーネントを Ruby クラスとして定義
-
-**実装**:
-
-```ruby
-# app/components/product_card_component.rb
-class ProductCardComponent < ViewComponent::Base
-  def initialize(product:, show_cart: true, variant: :default)
-    @product = product
-    @show_cart = show_cart
-    @variant = variant
-  end
-
-  def render?
-    @product.present? && @product.available?
-  end
-
-  def image_url
-    @product.images.any? ? rails_blob_url(@product.images.first.attachment) : asset_path('placeholder.png')
-  end
-
-  def certification_badges
-    badges = []
-    badges << 'halal' if @product.halal_certified?
-    badges << 'organic' if @product.organic_certified?
-    badges
-  end
-end
-```
-
-```erb
-<%# app/components/product_card_component.html.erb %>
-<div class="product-card product-card--<%= @variant %>">
-  <%= image_tag image_url, alt: @product.name %>
-  <h3><%= @product.name %></h3>
-  <span class="price"><%= @product.price %>円</span>
-  <% if @show_cart %>
-    <%= link_to "カートに追加", cart_path(@product), class: "btn" %>
-  <% end %>
-</div>
-```
-
-**使用**:
-
-```erb
-<% @products.each do |product| %>
-  <%= render ProductCardComponent.new(product: product, variant: :grid) %>
-<% end %>
-```
-
-### 3. Service Object パターン
+### 2. Service Object パターン
 
 **目的**: 複雑なビジネスロジックをモデル・コントローラーから分離
 
@@ -541,7 +488,7 @@ else
 end
 ```
 
-### 4. Query Object パターン
+### 3. Query Object パターン
 
 **目的**: 複雑なクエリロジックをモデルから分離
 

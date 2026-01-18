@@ -40,7 +40,7 @@
 - **Rails 8.0.2.1** + **Solidus 4.5** (EC)
 - **PostgreSQL 16** (論理分離: client_code)
 - **Docker Compose** (5 サービス統合)
-- **ViewComponent** + **Tailwind CSS** + **Stimulus**
+- **Tailwind CSS** + **Stimulus**
 
 ---
 
@@ -148,7 +148,7 @@ CleaningStandard.all
 - システム設計詳細
 - データベース設計（ER 図）
 - API 設計
-- 設計パターン（Decorator、ViewComponent、Service Object）
+- 設計パターン（Decorator、Service Object）
 
 ---
 
