@@ -51,43 +51,6 @@ services:
       postgres:
         condition: service_healthy
 
-  shrimpshells-ec:
-    build:
-      context: ./rails
-      target: development
-      args:
-        - RUBY_VERSION=${RUBY_VERSION}
-        - NODE_VERSION=${NODE_VERSION}
-        - YARN_VERSION=${YARN_VERSION}
-        - RAILS_VERSION=${RAILS_VERSION}
-    env_file:
-      - .env
-      - .env.local
-    environment:
-      - RAILS_ENV=development
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/shrimp_shells_ec_development
-    ports:
-      - "${SHRIMP_SHELLS_PORT}:3000"
-    volumes:
-      - ./rails/${SHRIMP_SHELLS_APP_NAME}:/${SHRIMP_SHELLS_APP_NAME}
-      - bundle_cache:/usr/local/bundle
-      - yarn_global_cache:/root/.yarn/berry/cache
-    command: >
-      bash -c "
-        cd /${SHRIMP_SHELLS_APP_NAME} &&
-        bin/rails db:create db:migrate &&
-        bin/dev
-      "
-    stdin_open: true
-    tty: true
-    depends_on:
-      postgres:
-        condition: service_healthy
-
   platform:
     build:
       context: ./rails
@@ -132,10 +95,6 @@ volumes:
   mattermost_client_plugins:
     driver: local
   n8n_data:
-    driver: local
-  bundle_cache:
-    driver: local
-  yarn_global_cache:
     driver: local
   platform_bundle_cache:
     driver: local

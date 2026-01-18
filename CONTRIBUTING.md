@@ -437,18 +437,17 @@ git checkout -b feature/57-documentation-system
 | Type       | 説明               | 例                                        |
 | ---------- | ------------------ | ----------------------------------------- |
 | `feat`     | 新機能             | `feat(platform): 清掃基準管理APIを実装`   |
-| `fix`      | バグ修正           | `fix(rails): 在庫計算ロジックを修正`      |
+| `fix`      | バグ修正           | `fix(platform): 清掃基準の検証を修正`     |
 | `docs`     | ドキュメント       | `docs: CONTRIBUTING.mdを追加`             |
-| `refactor` | リファクタリング   | `refactor(platform): Decorator構造を整理` |
-| `test`     | テスト追加・修正   | `test(rails): 商品モデルのテストを追加`   |
-| `chore`    | ビルド・ツール設定 | `chore: Dockerfileを更新`                 |
-| `perf`     | パフォーマンス改善 | `perf(rails): N+1クエリを解消`            |
+| `refactor` | リファクタリング   | `refactor(platform): Service構造を整理`   |
+| `test`     | テスト追加・修正   | `test(platform): CleaningStandardモデルのテストを追加` |
+| `chore`    | ビルド・ツール設定 | `chore(docker): Dockerfileを更新`         |
+| `perf`     | パフォーマンス改善 | `perf(platform): N+1クエリを解消`         |
 | `style`    | コードスタイル     | `style: RuboCop違反を修正`                |
 
 ### Scope 一覧（オプション）
 
 - `platform` - Platform 基幹アプリ
-- `rails` - Shrimp Shells EC
 - `n8n` - n8n ワークフロー
 - `docker` - Docker 設定
 - `db` - データベース
@@ -460,11 +459,12 @@ git checkout -b feature/57-documentation-system
 ```bash
 # ✅ GOOD
 feat(platform): 清掃基準管理APIを実装 (issue#54)
-fix(rails): カート合計金額の計算ロジックを修正 (issue#58)
+fix(platform): 清掃基準の検証を修正 (issue#58)
 docs: ARCHITECTURE.mdを追加 (issue#57)
-refactor(rails): Product Decoratorを整理 (issue#60)
+refactor(platform): Service構造を整理 (issue#60)
 test(platform): CleaningStandardモデルのテストを追加 (issue#54)
 chore(docker): PostgreSQL 16にアップグレード (issue#62)
+feat(n8n): 経理自動化ワークフローを追加 (issue#63)
 ```
 
 ### 悪いコミットメッセージの例

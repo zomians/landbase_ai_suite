@@ -2,7 +2,7 @@
 
 LandBase AI Suite の技術アーキテクチャ詳細設計
 
-**最終更新**: 2025-12-06
+**最終更新**: 2026-01-18
 **バージョン**: 1.0
 
 ---
@@ -176,7 +176,7 @@ LandBase AI Suite は、**バックオフィス（共通基盤）とフロント
 | コンポーネント        | 技術            | バージョン | 役割          |
 | --------------------- | --------------- | ---------- | ------------- |
 | **Platform 基幹**     | Ruby on Rails   | 8.0.2.1    | API、管理、AI |
-| **Shrimp Shells EC**  | Rails + Solidus | 8.0/4.5    | 冷凍食品 EC   |
+| **フロントサービス** | クライアント別 | -          | クライアント固有機能 |
 | **Hotel App（将来）** | Rails（予定）   | 8.0        | 予約サイト    |
 
 #### 4. プレゼンテーション層
@@ -201,12 +201,6 @@ PostgreSQL 16-alpine
 │   ├── clients                 # クライアント管理
 │   ├── cleaning_standards      # 清掃基準
 │   └── cleaning_sessions       # 清掃報告
-│
-├── shrimp_shells_development   # Shrimp Shells EC DB
-│   ├── spree_products          # Solidus標準テーブル
-│   ├── spree_orders            # + カスタムフィールド
-│   └── spree_*                 # (Decorator拡張)
-│
 └── （将来）hotel_app_development
 ```
 
@@ -255,30 +249,9 @@ CREATE TABLE cleaning_sessions (
 );
 ```
 
-**Shrimp Shells EC（Solidus 拡張）**:
+**フロントサービス（別リポジトリ）**:
 
-```sql
--- 商品テーブル（Solidus標準 + カスタムフィールド）
-ALTER TABLE spree_products ADD COLUMN shrimp_origin VARCHAR;
-ALTER TABLE spree_products ADD COLUMN shrimp_size VARCHAR;
-ALTER TABLE spree_products ADD COLUMN catch_method VARCHAR;
-ALTER TABLE spree_products ADD COLUMN storage_temperature DECIMAL;
-ALTER TABLE spree_products ADD COLUMN halal_certified BOOLEAN;
-ALTER TABLE spree_products ADD COLUMN organic_certified BOOLEAN;
-ALTER TABLE spree_products ADD COLUMN allergens TEXT;
-ALTER TABLE spree_products ADD COLUMN nutritional_info JSON;
-
--- 注文テーブル（Solidus標準 + カスタムフィールド）
-ALTER TABLE spree_orders ADD COLUMN preferred_delivery_date DATE;
-ALTER TABLE spree_orders ADD COLUMN carrier_code VARCHAR;
-ALTER TABLE spree_orders ADD COLUMN packing_temperature DECIMAL;
-ALTER TABLE spree_orders ADD COLUMN ice_pack_count INTEGER;
-
--- 在庫テーブル（Solidus標準 + カスタムフィールド）
-ALTER TABLE spree_stock_items ADD COLUMN lot_number VARCHAR;
-ALTER TABLE spree_stock_items ADD COLUMN expiry_date DATE;
-ALTER TABLE spree_stock_items ADD COLUMN quality_status VARCHAR;
-```
+フロントサービス固有のデータモデルやカスタムフィールドは各リポジトリで管理します。
 
 ### データモデル設計原則
 
@@ -394,56 +367,10 @@ rails/platform/
 
 **詳細**: [ADR 0006: Platform 基幹アプリ分離](./docs/adr/0006-platform-app-separation.md)
 
-### Rails Shrimp Shells EC
+### フロントサービス（クライアント固有）
 
-**ディレクトリ構造**:
-
-```
-rails/shrimp_shells_ec/
-├── app/
-│   ├── models/spree/              # Solidus Decorator拡張
-│   │   ├── product_decorator.rb
-│   │   ├── order_decorator.rb
-│   │   ├── user_decorator.rb
-│   │   └── stock_item_decorator.rb
-│   │
-│   ├── controllers/
-│   │   ├── store_controller.rb            # ストアフロント基底
-│   │   ├── home_controller.rb
-│   │   ├── products_controller.rb
-│   │   └── spree/admin/                   # Admin拡張
-│   │       ├── products_controller_decorator.rb
-│   │       └── orders_controller_decorator.rb
-│   │
-│   ├── components/                # ViewComponent
-│   │   ├── product_card_component.rb
-│   │   ├── filter_component.rb
-│   │   └── breadcrumbs_component.rb
-│   │
-│   ├── views/
-│   │   ├── layouts/application.html.erb
-│   │   ├── home/index.html.erb
-│   │   └── products/
-│   │
-│   └── javascript/controllers/    # Stimulus
-│       ├── search_controller.js
-│       └── cart_page_controller.js
-│
-└── config/
-    └── initializers/solidus.rb
-```
-
-**責務**:
-
-- **冷凍食品 EC**: Solidus 標準機能 + Decorator 拡張
-- **ストアフロント**: 商品閲覧、カート、チェックアウト
-- **在庫・配送管理**: 冷凍食品特有の管理（保管温度、賞味期限）
-- **顧客管理**: 購買履歴、アレルギー情報
-
-**詳細**:
-
-- [ADR 0003: Solidus 採用](./docs/adr/0003-solidus-for-restaurant-ec.md)
-- [ADR 0004: Decorator パターン](./docs/adr/0004-decorator-pattern-for-solidus-extension.md)
+フロントサービスはクライアント別に独立し、別リポジトリで管理します。
+（例: Shrimp Shells EC）
 
 ---
 
@@ -767,10 +694,9 @@ end
 
 ### 認証設計
 
-**Shrimp Shells EC**:
+**フロントサービス**:
 
-- **Devise**: ユーザー認証
-- **solidus_auth_devise**: Solidus 統合
+- **各サービス固有**: サービス毎に選定
 
 **Platform 基幹アプリ**:
 

@@ -48,17 +48,6 @@ postgres-shell: ## PostgreSQLシェル接続
 mattermost-logs: ## Mattermostログ表示
 	docker compose logs -f mattermost
 
-.PHONY: shrimpshells-new
-shrimpshells-new: ## Shrimp Shells EC: Railsアプリ新規作成
-	@[ -d rails/${SHRIMP_SHELLS_APP_NAME} ] && echo "${YELLOW}Rails application 'rails/${SHRIMP_SHELLS_APP_NAME}' already exists.${NC}" || \
-		docker compose run --rm -e HOME=/tmp -e XDG_CACHE_HOME=/tmp shrimpshells-ec bash -lc " \
-			/usr/local/bundle/bin/rails new /$$SHRIMP_SHELLS_APP_NAME \
-			  --database=postgresql \
-			  --javascript=esbuild \
-			  --css=tailwind \
-			  --skip-docker \
-		"
-
 .PHONY: init
 init: ## Platform: Railsアプリ新規作成
 	@[ -d rails/platform ] && echo "${YELLOW}Rails application 'rails/platform' already exists.${NC}" && exit 1 || true
@@ -69,30 +58,6 @@ init: ## Platform: Railsアプリ新規作成
 	@rm -rf rails/platform/.git
 	@perl -i -pe 's/bin\/rails server$$/bin\/rails server -b 0.0.0.0/' rails/platform/Procfile.dev
 	@echo "${GREEN}Platform: http://localhost:${PLATFORM_PORT}${NC}"
-
-.PHONY: rails-solidus-install
-rails-solidus-install: ## RailsアプリにSolidus導入（Gem追加とインストール）
-	docker compose run --rm shrimpshells-ec bash -lc " \
-		cd /$$SHRIMP_SHELLS_APP_NAME && \
-		bundle add solidus -v '~> 4.5' solidus_auth_devise solidus_support && \
-		bundle install && \
-		bin/rails g solidus:install || bin/rails g spree:install && \
-		bin/rails db:prepare && \
-		bin/rails db:seed \
-	"
-
-.PHONY: shrimpshells-up
-shrimpshells-up: ## Shrimp Shells EC: サービス起動
-	docker compose up -d shrimpshells-ec
-	@echo "${GREEN}Shrimp Shells EC is running at http://localhost:${SHRIMP_SHELLS_PORT}${NC}"
-
-.PHONY: shrimpshells-logs
-shrimpshells-logs: ## Shrimp Shells EC: ログ表示
-	docker compose logs -f shrimpshells-ec
-
-.PHONY: shrimpshells-shell
-shrimpshells-shell: ## Shrimp Shells EC: コンテナにシェル接続
-	docker compose run --rm --service-ports shrimpshells-ec bash
 
 .PHONY: clean
 clean: ## クリーンアップ（コンテナ・ボリューム・プロジェクトイメージ削除）

@@ -74,21 +74,8 @@ cd landbase_ai_suite
 cp .env.local.example .env.local
 # .env.local を編集（以下の情報を設定）
 # - LINE Bot 認証情報（LINE Developers Consoleで取得）
-# - Stripe APIキー（Stripe Dashboardで取得）
-#   - テストモード: sk_test_xxx, pk_test_xxx
-#   - 本番モード: sk_live_xxx, pk_live_xxx
+# - 決済関連設定は各フロントサービス側で管理
 ```
-
-**Stripe決済を使用する場合**:
-
-1. [Stripe Dashboard](https://dashboard.stripe.com/)でアカウント作成
-2. 開発者用 > APIキー でテストキーを取得
-3. `.env.local` に以下を設定:
-   ```
-   SOLIDUS_STRIPE_API_KEY=sk_test_xxxxx
-   SOLIDUS_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxx
-   SOLIDUS_STRIPE_WEBHOOK_SIGNING_SECRET=whsec_xxxxx
-   ```
 
 #### 3. 初回セットアップ
 
@@ -112,7 +99,7 @@ docker compose ps
 | サービス             | URL                   | 備考                           |
 | -------------------- | --------------------- | ------------------------------ |
 | **Platform**         | http://localhost:3000 | プラットフォーム基幹アプリ     |
-| **Shrimp Shells EC** | http://localhost:3002 | Rails 8 + Solidus 冷凍食品 EC  |
+| **フロントサービス** | - | クライアント別フロントは別リポジトリで管理 |
 | **n8n**              | http://localhost:5678 | 初回アクセス時にアカウント作成 |
 | **Mattermost**       | http://localhost:8065 | 初回アクセス時にセットアップ   |
 
@@ -127,11 +114,6 @@ make up                    # 全サービス起動（PostgreSQL, Platform, Matte
 make down                  # 全サービス停止
 make logs                  # 全サービスログ表示
 make clean                 # 完全クリーンアップ（注意：データ削除）
-
-# Shrimp Shells EC
-make shrimpshells-up       # EC起動
-make shrimpshells-logs     # ログ表示
-make shrimpshells-shell    # コンテナシェル接続
 
 # 個別サービスログ
 make n8n-logs              # n8nログ表示
@@ -152,7 +134,6 @@ landbase_ai_suite/
 ├── docs/
 │   ├── adr/                       # Architecture Decision Records
 │   ├── guides/                    # セットアップ・技術ガイド
-│   │   ├── stripe-payment-setup.md
 │   │   └── n8n-accounting-automation-setup.md
 │   └── business/                  # ビジネス関連ドキュメント
 │       ├── company-overview.md
@@ -160,8 +141,7 @@ landbase_ai_suite/
 ├── n8n/
 │   └── workflows/                 # n8nワークフローテンプレート
 ├── rails/
-│   ├── platform/                  # プラットフォーム基幹アプリ（issue#55で実装予定）
-│   └── shrimp_shells_ec/          # Shrimp Shells 冷凍食品EC
+│   └── platform/                  # プラットフォーム基幹アプリ（導入済み）
 ├── nextjs/                        # マーケティングサイト（将来）
 ├── .env                           # 環境変数設定
 ├── .env.local.example             # 機密情報テンプレート
@@ -196,7 +176,7 @@ landbase_ai_suite/
 
 | 技術                         | バージョン | 用途                            |
 | ---------------------------- | ---------- | ------------------------------- |
-| **Ruby on Rails**            | 8.0.2.1    | Platform 基幹、Shrimp Shells EC |
+| **Ruby on Rails**            | 8.0.2.1    | Platform 基幹 |
 | **Solidus**                  | ~4.5       | エンタープライズ E コマース     |
 | **Devise**                   | 2.5        | ユーザー認証                    |
 | **PayPal Commerce Platform** | 1.0        | 決済機能                        |
@@ -243,22 +223,10 @@ landbase_ai_suite/
 
 ### フロントサービス（クライアント固有）
 
-#### Shrimp Shells EC（restaurant 向け冷凍食品 EC）
+#### フロントサービス（クライアント固有）
 
-**ポート**: 3002
-**技術**: Rails 8 + Solidus + Decorator 拡張
-**責務**:
-
-- 冷凍食品 E コマース
-- 在庫・配送管理（保管温度、賞味期限管理）
-- 顧客管理（購買履歴、アレルギー情報）
-
-**実装済み機能**:
-
-- ストアフロント商品閲覧（issue#50）
-- 冷凍食品配送管理（issue#40）
-- 顧客管理画面（issue#41）
-- 在庫管理画面（issue#39）
+フロントサービスはクライアント別に独立し、別リポジトリで管理します。
+例: Shrimp Shells EC（restaurant 向け冷凍食品 EC）
 
 #### Hotel App（将来）
 
@@ -313,7 +281,6 @@ landbase_ai_suite/
 docs/
 ├── adr/                    # Architecture Decision Records
 ├── guides/                 # セットアップ・技術ガイド
-│   ├── stripe-payment-setup.md
 │   └── n8n-accounting-automation-setup.md
 └── business/               # ビジネス関連ドキュメント
     ├── company-overview.md
@@ -392,5 +359,5 @@ All rights reserved. © 株式会社 AI.LandBase
 
 ---
 
-**Last Updated**: 2025-12-06
+**Last Updated**: 2026-01-18
 **Version**: 1.0

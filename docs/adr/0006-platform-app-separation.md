@@ -18,7 +18,7 @@ ADR 0002 でフロント/バックオフィス分離アーキテクチャを採�
 
 - これらは **特定クライアント（Shrimp Shells）専用ではなく、プラットフォーム共通機能**
 - hotel業種でも清掃管理は必要（汎用的な機能）
-- Shrimp Shells EC（クライアント固有アプリ）に実装すると、**他のクライアントで再利用できない**
+- クライアント固有アプリに実装すると、**他のクライアントで再利用できない**
 - プラットフォーム管理機能（クライアント管理、ワークフロー設定等）を配置する場所がない
 
 ### ビジネス要件
@@ -30,7 +30,7 @@ ADR 0002 でフロント/バックオフィス分離アーキテクチャを採�
    - ワークフロー設定
 
 2. **クライアント固有機能との明確な分離**:
-   - Shrimp Shells EC: restaurant向け冷凍食品EC（固有）
+   - クライアント固有アプリ: 業種固有機能
    - Platform: 全業種共通のバックオフィス機能
 
 3. **再利用性**:
@@ -51,13 +51,11 @@ ADR 0002 でフロント/バックオフィス分離アーキテクチャを採�
 **アーキテクチャ**:
 ```
 rails/
-├── platform/              # プラットフォーム基幹アプリ（新規）
-│   ├── クライアント管理
-│   ├── 清掃基準管理 (issue#54)
-│   ├── 清掃報告管理 (issue#53)
-│   └── プラットフォームAPI
-└── shrimp_shells_ec/      # クライアント固有アプリ
-    └── 冷凍食品EC専用機能
+└── platform/              # プラットフォーム基幹アプリ
+    ├── クライアント管理
+    ├── 清掃基準管理 (issue#54)
+    ├── 清掃報告管理 (issue#53)
+    └── プラットフォームAPI
 ```
 
 **メリット**:
@@ -73,11 +71,11 @@ rails/
 - ⚠️ Railsアプリが増加（管理コスト若干増）
 - ⚠️ 初期構築コスト
 
-### 選択肢2: Shrimp Shells EC内に名前空間で分離（不採用）
+### 選択肢2: クライアント固有アプリ内に名前空間で分離（不採用）
 
 **アーキテクチャ**:
 ```
-rails/shrimp_shells_ec/
+rails/<client_app>/
 ├── app/
 │   ├── controllers/
 │   │   ├── platform/        # プラットフォーム機能
@@ -92,9 +90,9 @@ rails/shrimp_shells_ec/
 - ✅ コード共有が容易
 
 **デメリット**:
-- ❌ **責務が混在**: ECとプラットフォームが同居
-- ❌ **再利用困難**: hotel業種でShrimp Shells ECを使うのは不自然
-- ❌ **スケーリング困難**: EC負荷とプラットフォームAPI負荷を分離できない
+- ❌ **責務が混在**: フロント固有機能とプラットフォームが同居
+- ❌ **再利用困難**: 業種・クライアント横断の再利用が難しい
+- ❌ **スケーリング困難**: フロント負荷とプラットフォームAPI負荷を分離できない
 - ❌ **ADR 0002の思想に反する**: フロント/バックオフィス分離の原則に矛盾
 
 **不採用の理由**:
@@ -108,7 +106,7 @@ gems/
 └── platform_engine/
     └── プラットフォーム機能をEngineとして実装
 
-rails/shrimp_shells_ec/
+rails/<client_app>/
 └── Gemfile
     gem 'platform_engine', path: '../gems/platform_engine'
 ```
@@ -129,7 +127,7 @@ rails/shrimp_shells_ec/
 **アーキテクチャ**:
 ```
 platform-api/          # Node.js/Express、Python/FastAPI等
-shrimp_shells_ec/      # Rails
+<client_app>/          # Rails
 ```
 
 **メリット**:
@@ -156,7 +154,7 @@ shrimp_shells_ec/      # Rails
 
 2. **責務の明確化**:
    - **Platform**: 全クライアント共通機能
-   - **Shrimp Shells EC**: restaurant固有機能
+   - **クライアント固有アプリ**: 業種固有機能
    - **Hotel App（将来）**: hotel固有機能
 
 3. **再利用性**:
@@ -190,9 +188,9 @@ shrimp_shells_ec/      # Rails
 - Rails Admin導入
 - プラットフォーム管理者向けUI
 
-#### Shrimp Shells EC の責務（変更なし）
+#### クライアント固有アプリの責務（変更なし）
 
-- 冷凍食品EC専用機能
+- 業種固有のフロント機能
 - Solidus + Decorator
 - ストアフロント
 - 在庫・配送管理（冷凍食品特有）
@@ -207,14 +205,14 @@ shrimp_shells_ec/      # Rails
 | **認証** | トークンベース（Bearer） |
 | **画像管理** | Active Storage |
 | **管理画面** | Rails Admin（将来） |
-| **ポート** | 3001 |
+| **ポート** | 3000 |
 
 ### ディレクトリ構成
 
 ```
 landbase_ai_suite/
 ├── rails/
-│   ├── platform/              # ★新規: プラットフォーム基幹
+│   ├── platform/              # プラットフォーム基幹
 │   │   ├── app/
 │   │   │   ├── models/
 │   │   │   │   ├── client.rb
@@ -238,12 +236,12 @@ landbase_ai_suite/
 │   │   ├── spec/
 │   │   └── Dockerfile
 │   │
-│   └── shrimp_shells_ec/      # 既存: クライアント固有EC
+│   └── <client_app>/          # 既存: クライアント固有フロント
 │       └── ...
 │
 ├── compose.yaml               # platformサービス追加
 ├── Makefile                   # platformコマンド追加
-└── .env                       # PLATFORM_PORT=3001
+└── .env                       # PLATFORM_PORT=3000
 ```
 
 ## 結果
@@ -265,9 +263,9 @@ landbase_ai_suite/
         │           ┌────────────────────────┼─────────┐
         │           │                        │         │
    ┌────▼───────────▼────┐          ┌───────▼────┐ ┌──▼──────────┐
-   │ Platform (Rails)   │          │  Shrimp    │ │  Hotel App  │
-   │ ポート: 3001        │          │  Shells EC │ │  (将来)     │
-   │                    │          │  ポート: 3002│ │             │
+   │ Platform (Rails)   │          │  Client   │ │  Hotel App  │
+   │ ポート: 3000        │          │  App      │ │  (将来)     │
+   │                    │          │  ポート: - │ │             │
    │ - クライアント管理  │          └────────────┘ └─────────────┘
    │ - 清掃基準管理     │           フロントサービス
    │ - 清掃報告管理     │           (クライアント固有)
@@ -306,23 +304,23 @@ landbase_ai_suite/
 - ⚠️ Railsアプリ数の増加（2→3以上）
 - ⚠️ 初期構築コスト（許容範囲）
 
-### 実装予定（issue #55）
+### 実装状況（issue #55）
 
-**Phase 1**: Rails 8 アプリ生成
+**Phase 1**: Rails 8 アプリ生成（完了）
 - `make platform-new`
 - Docker設定
 - データベース作成
 
-**Phase 2**: 基本設定
+**Phase 2**: 基本設定（計画）
 - Gemfile設定（CORS、JWT、画像処理、PDF生成）
 - Active Storage
 - ルーティング
 
-**Phase 3**: クライアント管理
+**Phase 3**: クライアント管理（計画）
 - Clientモデル
 - API実装
 
-**Phase 4**: 清掃管理（issue #54, #53）
+**Phase 4**: 清掃管理（issue #54, #53 / 計画）
 - 清掃基準管理
 - 清掃報告管理
 - AI判定統合

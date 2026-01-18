@@ -31,8 +31,8 @@
 └── Mattermost :8065          ← チームコミュニケーション
 
 フロントサービス（クライアント固有）
-├── Shrimp Shells EC (Rails + Solidus) :3002  ← 冷凍食品EC
-└── Hotel App (将来) :3004                     ← 予約サイト
+├── Shrimp Shells EC (別リポジトリ)           ← 冷凍食品EC
+└── Hotel App (将来)                           ← 予約サイト
 ```
 
 ### 技術スタック
@@ -59,14 +59,6 @@ make up                    # 全サービス起動（PostgreSQL, Platform, Matte
 make down                  # 全サービス停止
 make logs                  # 全サービスログ表示
 make clean                 # 完全クリーンアップ（注意：データ削除）
-```
-
-### Shrimp Shells EC（:3002）
-
-```bash
-make shrimpshells-up       # EC起動
-make shrimpshells-logs     # ログ表示
-make shrimpshells-shell    # コンテナシェル接続
 ```
 
 ### 個別サービス
@@ -189,8 +181,7 @@ make clean && make up
 ### マイグレーションエラー
 
 ```bash
-make shrimpshells-shell
-cd /shrimpshells && bin/rails db:rollback
+docker compose exec platform bash -lc "bin/rails db:rollback"
 ```
 
 ### ポート競合
