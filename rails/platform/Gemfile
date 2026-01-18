@@ -73,6 +73,5 @@ group :development do
   gem "web-console"
 
   # === 開発支援ツール ===
-  gem "annotate"
   gem "bullet"
 end
