@@ -152,18 +152,11 @@ ADR 0001 で n8n + Mattermost + Rails の統合アーキテクチャを採用し
 
 ```
 rails/
-├── platform/              # バックオフィス（共通）
-└── [client-name]_[type]/  # フロントサービス（独立）
-    ├── shrimp_shells_ec/  # restaurant: ECサイト
-    ├── hotel_booking/     # hotel: 予約サイト（将来）
-    └── tour_experience/   # tour: ツアーサイト（将来）
+└── platform/              # バックオフィス（共通）
 ```
 
 **特徴**:
 
-- **独立したディレクトリ**: クライアント毎に完全分離
-- **独立したコンテナ**: Docker Compose で個別管理
-- **独立したデータベース**: または共有 DB で論理分離
 - **API 経由連携**: Platform Rails API を通じてバックオフィスと連携
 
 ### MarketingAI 連携設計
