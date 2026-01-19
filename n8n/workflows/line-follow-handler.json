@@ -1,0 +1,238 @@
+{
+  "name": "LINE Follow Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "execute-workflow-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "親ワークフローから呼び出されるトリガー"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "16qhVQNDn_5Y1Ayw_H0ziUw1nu2b70o6IcRn1rr4Pa94",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "line_user_id",
+              "lookupValue": "={{ $('Execute Workflow Trigger').item.json.body.events[0].source.userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "lookup-existing-user",
+      "name": "既存ユーザー確認",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [450, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "重複登録防止：既に登録済みか確認",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-new-user",
+              "leftValue": "={{ !$input.first().json.line_user_id }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "alwaysOutputData": false
+        }
+      },
+      "id": "if-new-user",
+      "name": "IF 新規ユーザー",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "notes": "新規ユーザーか既存ユーザーかを判定"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "16qhVQNDn_5Y1Ayw_H0ziUw1nu2b70o6IcRn1rr4Pa94",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "line_user_id": "={{ $('Execute Workflow Trigger').item.json.body.events[0].source.userId }}",
+            "customer_name": "未設定",
+            "drive_folder_id": "",
+            "sheet_id": "",
+            "accounting_soft": "freee",
+            "registration_date": "={{ $now.toISO() }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "add-user-to-sheet",
+      "name": "新規ユーザー登録",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [850, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "Master_User_Configに新規ユーザーを追加（registration_date含む）"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $('Execute Workflow Trigger').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"✅ 友だち追加ありがとうございます！\\n\\n自動登録が完了しました。\\n管理者が設定を完了次第、領収書画像を送信できるようになります。\\n\\nしばらくお待ちください。\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "line-reply-welcome",
+      "name": "LINE返信（新規ユーザー）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-bot-auth",
+          "name": "LINE Bot Auth"
+        }
+      },
+      "notes": "新規ユーザーにウェルカムメッセージを送信"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $('Execute Workflow Trigger').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"既に登録済みです。\\n\\n領収書画像を送信してご利用ください。\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "line-reply-existing",
+      "name": "LINE返信（既存ユーザー）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 400],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-bot-auth",
+          "name": "LINE Bot Auth"
+        }
+      },
+      "notes": "既存ユーザーに登録済みメッセージを送信"
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "既存ユーザー確認",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "既存ユーザー確認": {
+      "main": [
+        [
+          {
+            "node": "IF 新規ユーザー",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF 新規ユーザー": {
+      "main": [
+        [
+          {
+            "node": "新規ユーザー登録",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LINE返信（既存ユーザー）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新規ユーザー登録": {
+      "main": [
+        [
+          {
+            "node": "LINE返信（新規ユーザー）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "LINE Bot",
+      "id": "line-bot"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2026-01-19T00:00:00.000Z",
+  "versionId": "1"
+}
