@@ -1,5 +1,5 @@
 {
-  "name": "LINE Follow - Simple Registration",
+  "name": "LINE Follow - Auto Registration with Duplicate Check",
   "nodes": [
     {
       "parameters": {
@@ -46,10 +46,77 @@
     },
     {
       "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $env.LINE_ACCOUNTING_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "line_user_id",
+              "lookupValue": "={{ $('Webhook').item.json.body.events[0].source.userId }}"
+            }
+          ]
+        },
+        "options": {
+          "continue": true
+        }
+      },
+      "id": "check-existing-user",
+      "name": "既存ユーザー確認",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [650, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "condition-new-user",
+              "leftValue": "={{ $json.line_user_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-new-user",
+      "name": "IF 新規ユーザー",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "1dw8XFIp6KnYzYFKSUkIrhhnOpCEpkUsqzajwtc5rOkY",
+          "value": "={{ $env.LINE_ACCOUNTING_SHEET_ID }}",
           "mode": "id"
         },
         "sheetName": {
@@ -60,20 +127,21 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "line_user_id": "={{ $json.body.events[0].source.userId }}",
+            "line_user_id": "={{ $('Webhook').item.json.body.events[0].source.userId }}",
             "customer_name": "未設定",
             "drive_folder_id": "",
             "sheet_id": "",
-            "accounting_soft": "freee"
+            "accounting_soft": "freee",
+            "registration_date": "={{ $now.toISO() }}"
           }
         },
         "options": {}
       },
       "id": "add-user-to-sheet",
-      "name": "スプレッドシートに追加",
+      "name": "新規ユーザー登録",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
-      "position": [650, 300],
+      "position": [1050, 200],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "gsheet-oauth",
@@ -84,19 +152,42 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.line.me/v2/bot/message/reply",
+        "url": "https://api.line.me/v2/bot/message/push",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"replyToken\": \"{{ $('Webhook').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"✅ 友だち追加ありがとうございます！\\n\\n自動登録が完了しました。\\n管理者が設定を完了次第、領収書画像を送信できるようになります。\\n\\nしばらくお待ちください。\"\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"to\": \"{{ $('Webhook').item.json.body.events[0].source.userId }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"✅ 友だち追加ありがとうございます！\\n\\n自動登録が完了しました。\\n管理者が設定を完了次第、領収書画像を送信できるようになります。\\n\\nしばらくお待ちください。\"\n    }\n  ]\n}",
         "options": {}
       },
       "id": "line-reply-welcome",
-      "name": "LINE返信",
+      "name": "LINE返信（新規）",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [850, 300],
+      "position": [1250, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-bot-auth",
+          "name": "LINE Bot Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"{{ $('Webhook').item.json.body.events[0].source.userId }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"✅ 既に登録済みです\\n\\nこのアカウントは既に登録されています。\\n領収書画像を送信してご利用ください。\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "line-reply-existing",
+      "name": "LINE返信（既存）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 400],
       "credentials": {
         "httpHeaderAuth": {
           "id": "line-bot-auth",
@@ -121,18 +212,47 @@
       "main": [
         [
           {
-            "node": "スプレッドシートに追加",
+            "node": "既存ユーザー確認",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "スプレッドシートに追加": {
+    "既存ユーザー確認": {
       "main": [
         [
           {
-            "node": "LINE返信",
+            "node": "IF 新規ユーザー",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF 新規ユーザー": {
+      "main": [
+        [
+          {
+            "node": "新規ユーザー登録",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LINE返信（既存）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "新規ユーザー登録": {
+      "main": [
+        [
+          {
+            "node": "LINE返信（新規）",
             "type": "main",
             "index": 0
           }
@@ -147,6 +267,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-12-19T00:00:00.000Z",
-  "versionId": "1"
+  "updatedAt": "2026-01-19T00:00:00.000Z",
+  "versionId": "2"
 }
