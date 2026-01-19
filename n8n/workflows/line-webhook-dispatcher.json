@@ -1,0 +1,166 @@
+{
+  "name": "LINE Webhook Dispatcher",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "line-webhook",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "line-webhook",
+      "notes": "LINE Messaging APIからのWebhook受信（全イベント）"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-follow",
+              "leftValue": "={{ $json.body.events[0].type }}",
+              "rightValue": "follow",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-follow-event",
+      "name": "IF Follow Event",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-message",
+              "leftValue": "={{ $json.body.events[0].type }}",
+              "rightValue": "message",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-image",
+              "leftValue": "={{ $json.body.events[0].message.type }}",
+              "rightValue": "image",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-image-event",
+      "name": "IF Image Event",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 400],
+      "notes": "画像メッセージのみ処理（テキストやスタンプは除外）"
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ 'line-follow-handler' }}",
+        "options": {}
+      },
+      "id": "execute-follow-handler",
+      "name": "Follow Handler呼び出し",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [650, 200],
+      "notes": "Follow Event処理を子ワークフローに委譲"
+    },
+    {
+      "parameters": {
+        "workflowId": "={{ 'line-image-handler' }}",
+        "options": {}
+      },
+      "id": "execute-image-handler",
+      "name": "Image Handler呼び出し",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [650, 400],
+      "notes": "Image Event処理を子ワークフローに委譲"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "IF Follow Event",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Image Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Follow Event": {
+      "main": [
+        [
+          {
+            "node": "Follow Handler呼び出し",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Image Event": {
+      "main": [
+        [
+          {
+            "node": "Image Handler呼び出し",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "LINE Bot",
+      "id": "line-bot"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2026-01-19T00:00:00.000Z",
+  "versionId": "1"
+}
