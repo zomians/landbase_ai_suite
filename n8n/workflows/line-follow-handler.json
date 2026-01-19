@@ -27,7 +27,7 @@
           "values": [
             {
               "lookupColumn": "line_user_id",
-              "lookupValue": "={{ $json.body.events[0].source.userId }}"
+              "lookupValue": "={{ $('Execute Workflow Trigger').item.json.body.events[0].source.userId }}"
             }
           ]
         },
@@ -44,7 +44,8 @@
           "name": "Google Sheets OAuth2"
         }
       },
-      "notes": "重複登録防止：既に登録済みか確認"
+      "notes": "重複登録防止：既に登録済みか確認",
+      "alwaysOutputData": true
     },
     {
       "parameters": {

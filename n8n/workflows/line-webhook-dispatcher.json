@@ -43,7 +43,8 @@
       "name": "IF Follow Event",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [450, 200]
+      "position": [450, 200],
+      "notes": "Follow Event（友だち追加）の判定"
     },
     {
       "parameters": {
@@ -55,7 +56,7 @@
           },
           "conditions": [
             {
-              "id": "condition-message",
+              "id": "condition-message-type",
               "leftValue": "={{ $json.body.events[0].type }}",
               "rightValue": "message",
               "operator": {
@@ -64,7 +65,7 @@
               }
             },
             {
-              "id": "condition-image",
+              "id": "condition-image-type",
               "leftValue": "={{ $json.body.events[0].message.type }}",
               "rightValue": "image",
               "operator": {
@@ -82,11 +83,11 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [450, 400],
-      "notes": "画像メッセージのみ処理（テキストやスタンプは除外）"
+      "notes": "Image Event（画像メッセージ）の判定"
     },
     {
       "parameters": {
-        "workflowId": "={{ 'line-follow-handler' }}",
+        "workflowId": "={{ 'LINE Follow Handler' }}",
         "options": {}
       },
       "id": "execute-follow-handler",
@@ -98,7 +99,7 @@
     },
     {
       "parameters": {
-        "workflowId": "={{ 'line-image-handler' }}",
+        "workflowId": "={{ 'LINE Image Handler' }}",
         "options": {}
       },
       "id": "execute-image-handler",
@@ -161,6 +162,6 @@
     }
   ],
   "triggerCount": 0,
-  "updatedAt": "2026-01-19T00:00:00.000Z",
-  "versionId": "1"
+  "updatedAt": "2026-01-19T13:45:00.000Z",
+  "versionId": "2"
 }
