@@ -5,14 +5,16 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "line-webhook",
-        "responseMode": "onReceived",
         "options": {}
       },
-      "id": "webhook-follow",
+      "id": "1d4ec187-4e5c-457c-99bf-521af84c1fe0",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [250, 300],
+      "position": [
+        -800,
+        112
+      ],
       "webhookId": "line-webhook"
     },
     {
@@ -21,7 +23,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -38,17 +41,20 @@
         },
         "options": {}
       },
-      "id": "if-follow-event",
+      "id": "b08437c0-0cfb-4082-830b-e6b12e7a5791",
       "name": "IF Follow Event",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [450, 300]
+      "position": [
+        -608,
+        112
+      ]
     },
     {
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.LINE_ACCOUNTING_SHEET_ID }}",
+          "value": "=1dw8XFIp6KnYzYFKSUkIrhhnOpCEpkUsqzajwtc5rOkY",
           "mode": "id"
         },
         "sheetName": {
@@ -64,19 +70,20 @@
             }
           ]
         },
-        "options": {
-          "continue": true
-        }
+        "options": {}
       },
-      "id": "check-existing-user",
+      "id": "253ea773-6a6b-4beb-9264-72e8f3399e72",
       "name": "既存ユーザー確認",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
-      "position": [650, 300],
+      "position": [
+        -400,
+        112
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "gsheet-oauth",
-          "name": "Google Sheets OAuth2"
+          "id": "ROJzPVoM5oAoJbht",
+          "name": "gsheet-oauth"
         }
       },
       "continueOnFail": true
@@ -87,7 +94,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "loose"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -99,24 +107,37 @@
                 "operation": "isEmpty",
                 "singleValue": true
               }
+            },
+            {
+              "id": "d31a688b-20c5-4ca9-bee1-1f24a91957e0",
+              "leftValue": "={{ $json.line_user_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
             }
           ],
-          "combinator": "and"
+          "combinator": "or"
         },
         "options": {}
       },
-      "id": "if-new-user",
+      "id": "e7652590-fdab-4c57-8725-a234925730c8",
       "name": "IF 新規ユーザー",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [850, 300]
+      "position": [
+        -208,
+        112
+      ]
     },
     {
       "parameters": {
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "={{ $env.LINE_ACCOUNTING_SHEET_ID }}",
+          "value": "=1dw8XFIp6KnYzYFKSUkIrhhnOpCEpkUsqzajwtc5rOkY",
           "mode": "id"
         },
         "sheetName": {
@@ -137,15 +158,18 @@
         },
         "options": {}
       },
-      "id": "add-user-to-sheet",
+      "id": "567a77af-cd1d-42d8-8ec2-09401c3c684b",
       "name": "新規ユーザー登録",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
-      "position": [1050, 200],
+      "position": [
+        0,
+        0
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "gsheet-oauth",
-          "name": "Google Sheets OAuth2"
+          "id": "ROJzPVoM5oAoJbht",
+          "name": "gsheet-oauth"
         }
       }
     },
@@ -160,15 +184,18 @@
         "jsonBody": "={\n  \"to\": \"{{ $('Webhook').item.json.body.events[0].source.userId }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"✅ 友だち追加ありがとうございます！\\n\\n自動登録が完了しました。\\n管理者が設定を完了次第、領収書画像を送信できるようになります。\\n\\nしばらくお待ちください。\"\n    }\n  ]\n}",
         "options": {}
       },
-      "id": "line-reply-welcome",
+      "id": "f0ff7696-e1f4-4121-a283-7e432eb94988",
       "name": "LINE返信（新規）",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1250, 200],
+      "position": [
+        208,
+        0
+      ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "line-bot-auth",
-          "name": "LINE Bot Auth"
+          "id": "W2HXAsu4U49qcxS3",
+          "name": "line-bot-auth"
         }
       }
     },
@@ -183,19 +210,23 @@
         "jsonBody": "={\n  \"to\": \"{{ $('Webhook').item.json.body.events[0].source.userId }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"✅ 既に登録済みです\\n\\nこのアカウントは既に登録されています。\\n領収書画像を送信してご利用ください。\"\n    }\n  ]\n}",
         "options": {}
       },
-      "id": "line-reply-existing",
+      "id": "60d7a748-4806-4e2b-baa3-ef61d1e5aa27",
       "name": "LINE返信（既存）",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1050, 400],
+      "position": [
+        0,
+        208
+      ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "line-bot-auth",
-          "name": "LINE Bot Auth"
+          "id": "W2HXAsu4U49qcxS3",
+          "name": "line-bot-auth"
         }
       }
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook": {
       "main": [
@@ -260,13 +291,16 @@
       ]
     }
   },
-  "pinData": {},
+  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "availableInMCP": false
   },
-  "staticData": null,
-  "tags": [],
-  "triggerCount": 0,
-  "updatedAt": "2026-01-19T00:00:00.000Z",
-  "versionId": "2"
+  "versionId": "dafad0d7-7514-4285-8596-bf228f2a4542",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "faaa7132a861649d5b2459b24797889c8ab370f06610eda697f904d9fc215ba9"
+  },
+  "id": "r40cMCoS0OKvVioKqCvzR",
+  "tags": []
 }
