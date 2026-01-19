@@ -60,7 +60,7 @@ LandBase AI Suite は、沖縄県北部の観光業事業者（ホテル、飲�
 ### 制約条件
 
 1. **技術スタック**: OSS（オープンソースソフトウェア）優先
-2. **開発速度**: Rails scaffold、Solidus 等による高速開発
+2. **開発速度**: Rails scaffold による高速開発
 3. **保守性**: 非侵襲的拡張（Decorator パターン）
 4. **シンプルさ**: 過剰設計を避け、必要十分な設計
 
@@ -147,7 +147,7 @@ LandBase AI Suite は、**バックオフィス（共通基盤）とフロント
    │ :3000              │          │  Shells EC │ │  (将来)     │
    │                    │          │  :3002     │ │  :3004      │
    │ - クライアント管理  │          │            │ │             │
-   │ - OperationAI      │          │ - Solidus  │ │ - 予約      │
+   │ - OperationAI      │          │            │ │ - 予約      │
    │ - 清掃管理         │          │ - EC       │ │ - 清掃      │
    │ - プラットフォームAPI│         └────────────┘ └─────────────┘
    └────────────────────┘           フロントサービス
@@ -266,33 +266,7 @@ CleaningStandard.for_client('shrimp_shells')
 CleaningStandard.all  # 危険！
 ```
 
-#### 2. カスタムフィールド追加パターン
-
-**Solidus 拡張**:
-
-```ruby
-# マイグレーション
-class AddCustomFieldsToSpreeProducts < ActiveRecord::Migration[8.0]
-  def change
-    add_column :spree_products, :shrimp_origin, :string,
-      comment: "エビの原産地"
-    add_column :spree_products, :shrimp_size, :string,
-      comment: "エビのサイズ（XL/L/M/S）"
-
-    add_index :spree_products, :shrimp_size
-  end
-end
-
-# Decorator
-module Spree::ProductDecorator
-  def self.prepended(base)
-    base.validates :shrimp_size,
-      inclusion: { in: SHRIMP_SIZES.keys.map(&:to_s), allow_blank: true }
-  end
-end
-```
-
-#### 3. JSON/JSONB カラム活用
+#### 2. JSON/JSONB カラム活用
 
 **柔軟なデータ構造**:
 
@@ -305,7 +279,7 @@ add_column :clients, :services, :jsonb, default: {}
 add_index :clients, :services, using: :gin
 ```
 
-#### 4. カラムコメント必須
+#### 3. カラムコメント必須
 
 ```ruby
 add_column :spree_products, :storage_temperature, :decimal,
@@ -375,53 +349,7 @@ rails/platform/
 
 ## 設計パターン
 
-### 1. Decorator パターン（Solidus 拡張）
-
-**目的**: Gem のソースコードを直接変更せず、非侵襲的に機能拡張
-
-**実装**:
-
-```ruby
-# app/models/spree/product_decorator.rb
-module Spree
-  module ProductDecorator
-    def self.prepended(base)
-      # クラスレベルの定義
-      base.const_set(:SHRIMP_SIZES, {
-        xl: '特大（XL）', l: '大（L）', m: '中（M）', s: '小（S）'
-      })
-
-      base.validates :shrimp_size,
-        inclusion: { in: SHRIMP_SIZES.keys.map(&:to_s), allow_blank: true }
-
-      base.scope :by_shrimp_size, ->(size) { where(shrimp_size: size) }
-      base.scope :frozen_products, -> { where('storage_temperature < ?', 0) }
-    end
-
-    # インスタンスメソッド追加
-    def frozen_product?
-      storage_temperature.present? && storage_temperature < 0
-    end
-
-    # 既存メソッド上書き
-    def requires_special_shipping?
-      super || frozen_product?  # 元のメソッド呼び出し + 追加条件
-    end
-  end
-end
-
-Spree::Product.prepend(Spree::ProductDecorator)
-```
-
-**メリット**:
-
-- ✅ Solidus バージョンアップ時も変更が維持される
-- ✅ メソッド上書き可能（`prepend`でメソッドチェーン先頭に追加）
-- ✅ テスト可能（Decorator のみをテスト）
-
-**詳細**: [ADR 0004: Decorator パターン](./docs/adr/0004-decorator-pattern-for-solidus-extension.md)
-
-### 2. Service Object パターン
+### 1. Service Object パターン
 
 **目的**: 複雑なビジネスロジックをモデル・コントローラーから分離
 
@@ -488,7 +416,7 @@ else
 end
 ```
 
-### 3. Query Object パターン
+### 2. Query Object パターン
 
 **目的**: 複雑なクエリロジックをモデルから分離
 
@@ -886,9 +814,7 @@ psql -h localhost -U postgres platform_production < backup_20251206.sql
 **Rails バージョンアップ**:
 
 1. テスト環境で検証
-2. Decorator 互換性確認
-3. Solidus バージョン確認
-4. 段階的ロールアウト
+2. 段階的ロールアウト
 
 ---
 
@@ -905,16 +831,6 @@ psql -h localhost -U postgres platform_production < backup_20251206.sql
 
   - バックオフィス（共通）とフロントサービス（クライアント固有）の分離
   - MarketingAI 連携、将来の分離可能性
-
-- **[ADR 0003: restaurant EC サイトに Solidus を採用](./docs/adr/0003-solidus-for-restaurant-ec.md)**
-
-  - Solidus 選定理由（80%自動生成）
-  - 冷凍食品対応（PoC）
-
-- **[ADR 0004: Solidus 拡張に Decorator パターン採用](./docs/adr/0004-decorator-pattern-for-solidus-extension.md)**
-
-  - 非侵襲的拡張方法
-  - `prepend`による実装
 
 - **[ADR 0005: マルチテナント実装戦略](./docs/adr/0005-multitenancy-strategy.md)**
 
@@ -933,7 +849,6 @@ psql -h localhost -U postgres platform_production < backup_20251206.sql
 - [Claude 向けガイド](./CLAUDE.md)
 - [ビジネス概要](./docs/business/company-overview.md)
 - [Ruby on Rails Guides](https://guides.rubyonrails.org/)
-- [Solidus Guides](https://guides.solidus.io/)
 
 ---
 

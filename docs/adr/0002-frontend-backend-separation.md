@@ -288,5 +288,4 @@ rails/
 ## 関連する ADR
 
 - ADR 0001: n8n + Mattermost + Rails 統合アーキテクチャ（前提）
-- ADR 0003: restaurant EC サイトに Solidus を採用（フロントサービスの実装例）
 - ADR 0006: Platform 基幹アプリ分離（バックオフィス内の更なる分離）

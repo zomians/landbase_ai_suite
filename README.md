@@ -4,7 +4,6 @@
 沖縄県北部の観光業向けマルチテナント自動化スイート
 
 [![Rails](https://img.shields.io/badge/Rails-8.0-red)](https://rubyonrails.org/)
-[![Solidus](https://img.shields.io/badge/Solidus-4.5-blue)](https://solidus.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)](https://www.postgresql.org/)
 [![n8n](https://img.shields.io/badge/n8n-2.1.1-6e1e78)](https://n8n.io/)
 [![Mattermost](https://img.shields.io/badge/Mattermost-9.11-0058cc)](https://mattermost.com/)
@@ -44,8 +43,7 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 - 🤖 **n8n ワークフロー自動化**: ノーコード/ローコードで業務自動化（OperationAI）
 - 📊 **MarketingAI**: データ分析、価格最適化、レコメンド
 - 💬 **Mattermost 統合**: クライアント別チームコミュニケーション
-- 🛒 **Solidus EC**: エンタープライズ向け E コマースフレームワーク
-- 🐳 **Docker Compose**: 5 サービス統合環境
+- 🐳 **Docker Compose**: 4 サービス統合環境
 - 🔓 **完全 OSS**: すべてのコアコンポーネントがオープンソース
 
 ---
@@ -177,7 +175,6 @@ landbase_ai_suite/
 | 技術                         | バージョン | 用途                            |
 | ---------------------------- | ---------- | ------------------------------- |
 | **Ruby on Rails**            | 8.0.2.1    | Platform 基幹 |
-| **Solidus**                  | ~4.5       | エンタープライズ E コマース     |
 | **Devise**                   | 2.5        | ユーザー認証                    |
 | **PayPal Commerce Platform** | 1.0        | 決済機能                        |
 | **Tailwind CSS**             | 3.0        | ユーティリティファースト CSS    |
@@ -291,8 +288,6 @@ docs/
 - **[docs/adr/](./docs/adr/)** - Architecture Decision Records
   - [0001: n8n + Mattermost + Rails 統合](./docs/adr/0001-n8n-mattermost-rails-integration.md)
   - [0002: フロント/バックオフィス分離](./docs/adr/0002-frontend-backend-separation.md)
-  - [0003: Solidus 採用](./docs/adr/0003-solidus-for-restaurant-ec.md)
-  - [0004: Decorator パターン](./docs/adr/0004-decorator-pattern-for-solidus-extension.md)
   - [0005: マルチテナント戦略](./docs/adr/0005-multitenancy-strategy.md)
   - [0006: Platform 基幹アプリ分離](./docs/adr/0006-platform-app-separation.md)
 
@@ -348,7 +343,6 @@ All rights reserved. © 株式会社 AI.LandBase
 このプロジェクトは、以下のオープンソースソフトウェアを活用しています：
 
 - [Ruby on Rails](https://rubyonrails.org/)
-- [Solidus](https://solidus.io/)
 - [n8n](https://n8n.io/)
 - [Mattermost](https://mattermost.com/)
 - [PostgreSQL](https://www.postgresql.org/)
