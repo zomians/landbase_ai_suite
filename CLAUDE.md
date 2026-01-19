@@ -37,10 +37,10 @@
 
 ### 技術スタック
 
-- **Rails 8.0.2.1** + **Solidus 4.5** (EC)
+- **Rails 8.0.2.1**
 - **PostgreSQL 16** (論理分離: client_code)
 - **Docker Compose** (5 サービス統合)
-- **ViewComponent** + **Tailwind CSS** + **Stimulus**
+- **Tailwind CSS** + **Stimulus**
 
 ---
 
@@ -118,22 +118,7 @@ docs: CONTRIBUTING.mdを追加 (issue#57)
 
 ## 重要な設計原則（プロジェクト固有）
 
-### 1. Solidus 拡張は必ず Decorator パターン
-
-```ruby
-# ✅ GOOD: Decorator で拡張
-# app/models/spree/product_decorator.rb
-module Spree::ProductDecorator
-  def self.prepended(base)
-    base.validates :shrimp_size, inclusion: { in: %w[xl l m s] }
-  end
-end
-Spree::Product.prepend(Spree::ProductDecorator)
-
-# ❌ BAD: Gem ファイルを直接編集
-```
-
-### 2. マルチテナントは client_code スコープ
+### 1. マルチテナントは client_code スコープ
 
 ```ruby
 # ✅ GOOD: スコープで分離
@@ -143,12 +128,12 @@ CleaningStandard.for_client(@current_client.code)
 CleaningStandard.all
 ```
 
-### 3. 詳細は ARCHITECTURE.md 参照
+### 2. 詳細は ARCHITECTURE.md 参照
 
 - システム設計詳細
 - データベース設計（ER 図）
 - API 設計
-- 設計パターン（Decorator、ViewComponent、Service Object）
+- 設計パターン（Service Object）
 
 ---
 
