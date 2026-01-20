@@ -1,0 +1,507 @@
+{
+  "name": "Airレジ日報自動作成バッチ",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger-node",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [250, 300],
+      "notes": "毎日深夜2時（JST）に実行"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "16qhVQNDn_5Y1Ayw_H0ziUw1nu2b70o6IcRn1rr4Pa94",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "options": {
+          "returnAllMatches": true
+        }
+      },
+      "id": "get-all-clients-node",
+      "name": "全クライアント取得",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [450, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "Master_User_Configから全クライアント取得"
+    },
+    {
+      "parameters": {},
+      "id": "loop-over-clients-node",
+      "name": "Loop Over Clients",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [650, 300],
+      "notes": "各クライアント毎に処理"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 前日の日付範囲を計算（5:00-翌日4:59の24時間）\nconst yesterday = new Date();\nyesterday.setDate(yesterday.getDate() - 1);\n\nconst dateStr = yesterday.toISOString().split('T')[0].replace(/-/g, '');\nconst startTime = '0500';\nconst endTime = '0459';\n\n// ファイル名パターン: 会計明細_202601200500-202601210459.csv\nconst targetFileName = `会計明細_${dateStr}${startTime}-${dateStr.slice(0,6)}${(parseInt(dateStr.slice(6,8))+1).toString().padStart(2,'0')}${endTime}.csv`;\n\nreturn [{ json: { target_file_name: targetFileName, date: dateStr } }];"
+      },
+      "id": "calculate-target-date-node",
+      "name": "対象日付計算",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300],
+      "notes": "前日分のCSVファイル名を生成"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "driveId": {
+          "__rl": true,
+          "value": "={{ $('Loop Over Clients').item.json.drive_folder_id }}",
+          "mode": "list",
+          "cachedResultName": "クライアントフォルダ"
+        },
+        "filters": {
+          "name": "={{ $json.target_file_name }}"
+        },
+        "options": {}
+      },
+      "id": "search-csv-file-node",
+      "name": "AirレジCSV検索",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1050, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gdrive-oauth",
+          "name": "Google Drive OAuth2"
+        }
+      },
+      "notes": "Google Driveから前日分のAirレジCSVを検索"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "doNotConvert": true
+            }
+          }
+        }
+      },
+      "id": "download-csv-node",
+      "name": "CSVダウンロード",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1250, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gdrive-oauth",
+          "name": "Google Drive OAuth2"
+        }
+      },
+      "notes": "CSVファイルをダウンロード"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Shift-JIS → UTF-8 変換（iconv-lite使用）\nconst iconv = require('iconv-lite');\n\n// バイナリデータを取得\nconst binaryData = await this.helpers.getBinaryDataBuffer(0, 'data');\n\n// Shift-JISからUTF-8に変換\nconst utf8Text = iconv.decode(binaryData, 'shift_jis');\n\nreturn [{ json: { csv_text: utf8Text } }];"
+      },
+      "id": "convert-encoding-node",
+      "name": "Shift-JIS→UTF-8変換",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1450, 300],
+      "notes": "Shift-JISエンコーディングをUTF-8に変換"
+    },
+    {
+      "parameters": {
+        "jsCode": "// CSVパース・取引Noグループ化処理\nconst csvText = $json.csv_text;\n\n// 簡易CSVパーサー（引用符対応）\nfunction parseCSV(text) {\n  const lines = text.split('\\n').filter(line => line.trim());\n  const headers = lines[0].split(',');\n  const rows = [];\n  \n  for (let i = 1; i < lines.length; i++) {\n    const values = lines[i].split(',');\n    const row = {};\n    headers.forEach((header, idx) => {\n      row[header] = values[idx] || '';\n    });\n    rows.push(row);\n  }\n  \n  return rows;\n}\n\nconst rows = parseCSV(csvText);\n\n// 取引Noでグループ化\nconst transactions = {};\n\nfor (const row of rows) {\n  const txNo = row['取引No'];\n  \n  if (!txNo) continue;\n  \n  if (!transactions[txNo]) {\n    transactions[txNo] = {\n      transactionNo: txNo,\n      visitDate: row['来店日'],\n      visitTime: row['来店時間'],\n      accountDate: row['会計日'],\n      accountTime: row['会計時間'],\n      total: parseFloat(row['合計']) || 0,\n      subtotal: parseFloat(row['小計']) || 0,\n      tax: parseFloat(row['内消費税']) || 0,\n      customerCount: parseInt(row['人数']) || 0,\n      cash: parseFloat(row['現金']) || 0,\n      creditCard: parseFloat(row['クレジットカード(Airペイ)']) || 0,\n      eMoney: parseFloat(row['交通系電子マネー(Airペイ)']) || 0,\n      items: []\n    };\n  }\n  \n  // 商品明細を追加\n  const category = row['カテゴリー名'];\n  const menu = row['メニュー名'];\n  const price = parseFloat(row['価格']) || 0;\n  \n  if (category || menu) {\n    transactions[txNo].items.push({\n      category: category,\n      menu: menu,\n      price: price\n    });\n  }\n}\n\nconst transactionList = Object.values(transactions);\n\nreturn [{ json: { transactions: transactionList, date: $('対象日付計算').item.json.date } }];"
+      },
+      "id": "parse-csv-node",
+      "name": "CSVパース・グループ化",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 300],
+      "notes": "CSVをパースし取引No単位でグループ化"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 日報集計処理\nconst transactions = $json.transactions;\nconst reportDate = $json.date;\n\n// 基本指標\nlet totalSales = 0;\nlet totalSubtotal = 0;\nlet totalTax = 0;\nlet totalCustomers = 0;\nlet transactionCount = transactions.length;\n\n// 時間帯別集計\nconst timeSlots = {\n  lunch: { name: 'ランチ帯(11:00-14:00)', sales: 0, customers: 0, transactions: 0 },\n  cafe: { name: 'カフェ帯(14:00-17:00)', sales: 0, customers: 0, transactions: 0 },\n  dinner: { name: 'ディナー帯(17:00-22:00)', sales: 0, customers: 0, transactions: 0 },\n  other: { name: 'その他', sales: 0, customers: 0, transactions: 0 }\n};\n\n// カテゴリー別集計\nconst categoryStats = {};\n\n// 支払方法別集計\nlet cashPayments = 0;\nlet creditCardPayments = 0;\nlet eMoneyPayments = 0;\n\nfor (const tx of transactions) {\n  // 基本指標集計\n  totalSales += tx.total;\n  totalSubtotal += tx.subtotal;\n  totalTax += tx.tax;\n  totalCustomers += tx.customerCount;\n  \n  // 支払方法集計\n  cashPayments += tx.cash;\n  creditCardPayments += tx.creditCard;\n  eMoneyPayments += tx.eMoney;\n  \n  // 時間帯判定\n  const visitTime = tx.visitTime;\n  if (visitTime) {\n    const hour = parseInt(visitTime.split(':')[0]);\n    \n    if (hour >= 11 && hour < 14) {\n      timeSlots.lunch.sales += tx.total;\n      timeSlots.lunch.customers += tx.customerCount;\n      timeSlots.lunch.transactions++;\n    } else if (hour >= 14 && hour < 17) {\n      timeSlots.cafe.sales += tx.total;\n      timeSlots.cafe.customers += tx.customerCount;\n      timeSlots.cafe.transactions++;\n    } else if (hour >= 17 && hour < 22) {\n      timeSlots.dinner.sales += tx.total;\n      timeSlots.dinner.customers += tx.customerCount;\n      timeSlots.dinner.transactions++;\n    } else {\n      timeSlots.other.sales += tx.total;\n      timeSlots.other.customers += tx.customerCount;\n      timeSlots.other.transactions++;\n    }\n  }\n  \n  // カテゴリー別集計\n  for (const item of tx.items) {\n    if (item.category) {\n      if (!categoryStats[item.category]) {\n        categoryStats[item.category] = { sales: 0, count: 0 };\n      }\n      categoryStats[item.category].sales += item.price;\n      categoryStats[item.category].count++;\n    }\n  }\n}\n\n// 客単価計算\nconst avgPerCustomer = totalCustomers > 0 ? Math.round(totalSales / totalCustomers) : 0;\n\n// 日報データ構築\nconst dailyReport = {\n  date: reportDate,\n  dayOfWeek: new Date(reportDate).toLocaleDateString('ja-JP', { weekday: 'short' }),\n  totalSales: totalSales,\n  totalSubtotal: totalSubtotal,\n  totalTax: totalTax,\n  customerCount: totalCustomers,\n  avgPerCustomer: avgPerCustomer,\n  transactionCount: transactionCount,\n  lunchSales: timeSlots.lunch.sales,\n  lunchCustomers: timeSlots.lunch.customers,\n  cafeSales: timeSlots.cafe.sales,\n  cafeCustomers: timeSlots.cafe.customers,\n  dinnerSales: timeSlots.dinner.sales,\n  dinnerCustomers: timeSlots.dinner.customers,\n  otherSales: timeSlots.other.sales,\n  otherCustomers: timeSlots.other.customers,\n  cashPayments: cashPayments,\n  creditCardPayments: creditCardPayments,\n  eMoneyPayments: eMoneyPayments,\n  categoryBreakdown: JSON.stringify(categoryStats)\n};\n\nreturn [{ json: dailyReport }];"
+      },
+      "id": "aggregate-daily-report-node",
+      "name": "日報集計処理",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1850, 300],
+      "notes": "基本指標・時間帯別・カテゴリー別・支払方法別を集計"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Loop Over Clients').item.json.sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "日報",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "日付",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dayOfWeek",
+              "displayName": "曜日",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalSales",
+              "displayName": "売上(税込)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalSubtotal",
+              "displayName": "売上(税抜)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalTax",
+              "displayName": "消費税",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customerCount",
+              "displayName": "客数",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "avgPerCustomer",
+              "displayName": "客単価",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "transactionCount",
+              "displayName": "取引件数",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lunchSales",
+              "displayName": "ランチ売上",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dinnerSales",
+              "displayName": "ディナー売上",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cashPayments",
+              "displayName": "現金",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "creditCardPayments",
+              "displayName": "クレジットカード",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "eMoneyPayments",
+              "displayName": "電子マネー",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "value": {
+            "date": "={{ $json.date }}",
+            "dayOfWeek": "={{ $json.dayOfWeek }}",
+            "totalSales": "={{ $json.totalSales }}",
+            "totalSubtotal": "={{ $json.totalSubtotal }}",
+            "totalTax": "={{ $json.totalTax }}",
+            "customerCount": "={{ $json.customerCount }}",
+            "avgPerCustomer": "={{ $json.avgPerCustomer }}",
+            "transactionCount": "={{ $json.transactionCount }}",
+            "lunchSales": "={{ $json.lunchSales }}",
+            "dinnerSales": "={{ $json.dinnerSales }}",
+            "cashPayments": "={{ $json.cashPayments }}",
+            "creditCardPayments": "={{ $json.creditCardPayments }}",
+            "eMoneyPayments": "={{ $json.eMoneyPayments }}"
+          },
+          "matchingColumns": []
+        },
+        "options": {}
+      },
+      "id": "write-to-spreadsheet-node",
+      "name": "日報をスプレッドシートに記録",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [2050, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "Googleスプレッドシートの「日報」シートに追記"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mattermost通知メッセージ構築\nconst report = $input.first().json;\nconst clientName = $('Loop Over Clients').item.json.client_name;\n\nconst message = `### 📊 ${clientName} 日報（${report.date} ${report.dayOfWeek}）\\n\\n` +\n  `**売上:** ¥${report.totalSales.toLocaleString()} (税込)\\n` +\n  `**客数:** ${report.customerCount}名\\n` +\n  `**客単価:** ¥${report.avgPerCustomer.toLocaleString()}\\n` +\n  `**取引件数:** ${report.transactionCount}件\\n\\n` +\n  `**時間帯別:**\\n` +\n  `- ランチ: ¥${report.lunchSales.toLocaleString()} (${report.lunchCustomers}名)\\n` +\n  `- ディナー: ¥${report.dinnerSales.toLocaleString()} (${report.dinnerCustomers}名)\\n\\n` +\n  `**支払方法:**\\n` +\n  `- 現金: ¥${report.cashPayments.toLocaleString()}\\n` +\n  `- クレカ: ¥${report.creditCardPayments.toLocaleString()}\\n` +\n  `- 電子マネー: ¥${report.eMoneyPayments.toLocaleString()}`;\n\nreturn [{ json: { message: message } }];"
+      },
+      "id": "build-mattermost-message-node",
+      "name": "Mattermost通知メッセージ構築",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2250, 300],
+      "notes": "日報サマリーのMattermost通知メッセージを構築"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Loop Over Clients').item.json.mattermost_webhook_url }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-mattermost-notification-node",
+      "name": "Mattermost通知送信",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2450, 300],
+      "notes": "Mattermostに日報サマリーを通知"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "全クライアント取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "全クライアント取得": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Clients",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Clients": {
+      "main": [
+        [
+          {
+            "node": "対象日付計算",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "対象日付計算": {
+      "main": [
+        [
+          {
+            "node": "AirレジCSV検索",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AirレジCSV検索": {
+      "main": [
+        [
+          {
+            "node": "CSVダウンロード",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CSVダウンロード": {
+      "main": [
+        [
+          {
+            "node": "Shift-JIS→UTF-8変換",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shift-JIS→UTF-8変換": {
+      "main": [
+        [
+          {
+            "node": "CSVパース・グループ化",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CSVパース・グループ化": {
+      "main": [
+        [
+          {
+            "node": "日報集計処理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "日報集計処理": {
+      "main": [
+        [
+          {
+            "node": "日報をスプレッドシートに記録",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "日報をスプレッドシートに記録": {
+      "main": [
+        [
+          {
+            "node": "Mattermost通知メッセージ構築",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mattermost通知メッセージ構築": {
+      "main": [
+        [
+          {
+            "node": "Mattermost通知送信",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true
+  },
+  "versionId": "1",
+  "id": "air-register-daily-report-batch",
+  "meta": {
+    "instanceId": "local"
+  },
+  "tags": [
+    {
+      "name": "日報自動化",
+      "id": "daily-report-automation"
+    },
+    {
+      "name": "Airレジ連携",
+      "id": "air-register-integration"
+    }
+  ]
+}
