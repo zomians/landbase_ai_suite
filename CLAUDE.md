@@ -201,6 +201,51 @@ issue#XX の [タスク内容] を実装してください。
 
 ---
 
+## 自動実行ポリシー
+
+Claude Code が操作を実行する際の基準を定義します。
+
+### 確認なしで実行可能
+
+以下の**読み取り専用操作**は、確認なしで自動実行できます：
+
+- **ファイル読み取り**: Read, Grep, Glob
+- **状態確認コマンド**:
+  - `git status`, `git log`, `git diff`
+  - `docker ps`, `docker compose ps`
+  - `ls`, `cat`, `grep`, `find`
+- **ログ確認**:
+  - `docker compose logs`
+  - `make logs`, `make n8n-logs`, `make mattermost-logs`
+- **テスト実行**:
+  - `bundle exec rspec`
+  - `npm test`
+
+### 必ず確認が必要
+
+以下の**書き込み・変更操作**は、ユーザーの明示的な承認が必要です：
+
+- **データベース操作**:
+  - `bin/rails db:create`, `db:migrate`, `db:seed`
+  - `bin/rails db:drop`, `db:reset`
+  - SQL の INSERT/UPDATE/DELETE
+- **Git 操作**:
+  - `git commit`, `git push`
+  - `git branch` 作成・削除
+  - `git merge`, `git rebase`
+- **ファイル削除・上書き**:
+  - Write, Edit（既存ファイルの上書き）
+  - `rm`, `mv`（ファイル削除・移動）
+  - `docker compose down -v`（ボリューム削除）
+- **本番環境への操作**:
+  - デプロイコマンド
+  - 環境変数の変更
+  - 本番データベースへのアクセス
+
+**原則**: データの永続的な変更や、元に戻せない操作は必ず確認する。
+
+---
+
 ## 関連リンク
 
 - [README.md](./README.md) - プロジェクト概要、クイックスタート
@@ -210,4 +255,4 @@ issue#XX の [タスク内容] を実装してください。
 
 ---
 
-**Last Updated**: 2025-01-12
+**Last Updated**: 2026-01-20
