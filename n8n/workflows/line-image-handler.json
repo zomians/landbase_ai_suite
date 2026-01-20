@@ -245,7 +245,8 @@
         }
       },
       "notes": "顧客別勘定科目ナレッジベースを取得",
-      "continueOnFail": true
+      "continueOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "parameters": {
