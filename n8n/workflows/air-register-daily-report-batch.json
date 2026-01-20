@@ -50,11 +50,14 @@
       "notes": "Master_User_Configから全クライアント取得"
     },
     {
-      "parameters": {},
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
       "id": "loop-over-clients-node",
       "name": "Loop Over Clients",
       "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
+      "typeVersion": 2,
       "position": [650, 300],
       "notes": "各クライアント毎に処理"
     },
@@ -71,22 +74,33 @@
     },
     {
       "parameters": {
-        "operation": "search",
-        "driveId": {
-          "__rl": true,
-          "value": "={{ $('Loop Over Clients').item.json.drive_folder_id }}",
-          "mode": "list",
-          "cachedResultName": "クライアントフォルダ"
-        },
-        "filters": {
-          "name": "={{ $json.target_file_name }}"
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=name='{{ $json.target_file_name }}' and '{{ $('Loop Over Clients').item.json.drive_folder_id }}' in parents"
+            },
+            {
+              "name": "fields",
+              "value": "files(id, name, mimeType)"
+            },
+            {
+              "name": "pageSize",
+              "value": "10"
+            }
+          ]
         },
         "options": {}
       },
       "id": "search-csv-file-node",
       "name": "AirレジCSV検索",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [1050, 300],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -94,29 +108,30 @@
           "name": "Google Drive OAuth2"
         }
       },
-      "notes": "Google Driveから前日分のAirレジCSVを検索"
+      "notes": "Google Drive APIでCSVファイルを検索"
+    },
+    {
+      "parameters": {
+        "jsCode": "// HTTP Request結果からファイル情報を抽出\nconst files = $input.item.json.files || [];\n\nif (files.length === 0) {\n  throw new Error(`CSVファイルが見つかりません: ${$('対象日付計算').item.json.target_file_name}`);\n}\n\n// 最初のファイルを返す\nreturn { json: files[0] };"
+      },
+      "id": "extract-file-info-node",
+      "name": "ファイル情報抽出",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1150, 300],
+      "notes": "検索結果からファイルIDを抽出"
     },
     {
       "parameters": {
         "operation": "download",
-        "fileId": {
-          "__rl": true,
-          "value": "={{ $json.id }}",
-          "mode": "id"
-        },
-        "options": {
-          "googleFileConversion": {
-            "conversion": {
-              "doNotConvert": true
-            }
-          }
-        }
+        "fileId": "={{ $json.id }}",
+        "options": {}
       },
       "id": "download-csv-node",
       "name": "CSVダウンロード",
       "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [1250, 300],
+      "typeVersion": 2,
+      "position": [1350, 300],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "gdrive-oauth",
@@ -404,6 +419,17 @@
       ]
     },
     "AirレジCSV検索": {
+      "main": [
+        [
+          {
+            "node": "ファイル情報抽出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ファイル情報抽出": {
       "main": [
         [
           {
