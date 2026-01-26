@@ -171,7 +171,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// GPT-4oのレスポンスをパース\nlet content = $json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\nconst ocrResult = JSON.parse(content);\n\n// transactions配列を個別のアイテムに展開\nconst transactions = ocrResult.transactions || [];\n\nif (transactions.length === 0) {\n  throw new Error('PDFから取引データを抽出できませんでした');\n}\n\n// 各取引に共通データを付与\nconst pdf_file_name = $('PDF OCRリクエスト構築').item.json.pdf_file_name;\nconst pdf_file_id = $('PDF OCRリクエスト構築').item.json.pdf_file_id;\nconst customer_name = $('PDF OCRリクエスト構築').item.json.customer_name;\nconst sheet_id = $('PDF OCRリクエスト構築').item.json.sheet_id;\nconst drive_folder_id = $('PDF OCRリクエスト構築').item.json.drive_folder_id;\n\nreturn transactions.map(transaction => ({\n  json: {\n    ...transaction,\n    pdf_file_name,\n    pdf_file_id,\n    customer_name,\n    sheet_id,\n    drive_folder_id\n  }\n}));"
+        "jsCode": "// GPT-4oのレスポンスをパース\nlet content = $json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\n// JSON.parseをtry/catchでラップ\nlet ocrResult;\ntry {\n  ocrResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// transactions配列を個別のアイテムに展開\nconst transactions = ocrResult.transactions || [];\n\nif (transactions.length === 0) {\n  throw new Error('PDFから取引データを抽出できませんでした');\n}\n\n// 各取引に共通データを付与\nconst pdf_file_name = $('PDF OCRリクエスト構築').item.json.pdf_file_name;\nconst pdf_file_id = $('PDF OCRリクエスト構築').item.json.pdf_file_id;\nconst customer_name = $('PDF OCRリクエスト構築').item.json.customer_name;\nconst sheet_id = $('PDF OCRリクエスト構築').item.json.sheet_id;\nconst drive_folder_id = $('PDF OCRリクエスト構築').item.json.drive_folder_id;\n\nreturn transactions.map(transaction => ({\n  json: {\n    ...transaction,\n    pdf_file_name,\n    pdf_file_id,\n    customer_name,\n    sheet_id,\n    drive_folder_id\n  }\n}));"
       },
       "id": "parse-transactions",
       "name": "取引データ展開",
@@ -279,7 +279,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// AI推論結果をパース\nlet content = $json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\nconst aiResult = JSON.parse(content);\n\n// 元のデータとマージ\nconst originalData = $('IF AI推論が必要').item.json;\n\nreturn {\n  json: {\n    ...originalData,\n    matched_category: aiResult.account_category,\n    match_source: 'ai_inference'\n  }\n};"
+        "jsCode": "// AI推論結果をパース\nlet content = $json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\nlet aiResult;\ntry {\n  aiResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// 元のデータとマージ\nconst originalData = $('IF AI推論が必要').item.json;\n\nreturn {\n  json: {\n    ...originalData,\n    matched_category: aiResult.account_category,\n    match_source: 'ai_inference'\n  }\n};"
       },
       "id": "merge-ai-result",
       "name": "AI推論結果マージ",
@@ -488,7 +488,7 @@
             }
           ],
           "value": {
-            "取引No": "={{ $now.format('yyyyMMddHHmmss') }}",
+            "取引No": "={{ $now.format('yyyyMMddHHmmss') }}-{{ $itemIndex }}",
             "取引日": "={{ $json.transaction_date }}",
             "借方勘定科目": "={{ $json.matched_category || 'Review_Required' }}",
             "借方補助科目": "",
@@ -527,13 +527,26 @@
     },
     {
       "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "wait-all-transactions",
+      "name": "全取引完了待機",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [3650, 300],
+      "notes": "全取引の記帳完了を待ってからPDFリネームを実行"
+    },
+    {
+      "parameters": {
         "jsCode": "// 全取引の記帳が完了したら、PDFファイルを処理済みマーキング\nconst pdfFileId = $('PDF OCRリクエスト構築').item.json.pdf_file_id;\nconst pdfFileName = $('PDF OCRリクエスト構築').item.json.pdf_file_name;\n\n// 新しいファイル名を生成（_processed を追加）\nconst newFileName = pdfFileName.replace(/\\.pdf$/i, '_processed.pdf');\n\nreturn {\n  json: {\n    file_id: pdfFileId,\n    new_name: newFileName,\n    old_name: pdfFileName\n  }\n};"
       },
       "id": "prepare-rename",
       "name": "リネーム準備",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3650, 300],
+      "position": [3850, 300],
       "notes": "処理済みマーキング用のファイル名生成"
     },
     {
@@ -748,6 +761,17 @@
       ]
     },
     "仕訳台帳へ記帳": {
+      "main": [
+        [
+          {
+            "node": "全取引完了待機",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "全取引完了待機": {
       "main": [
         [
           {
