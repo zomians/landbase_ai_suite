@@ -10,8 +10,8 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        250,
-        300
+        -2608,
+        112
       ],
       "notes": "手動実行で顧客を選択してワークフローを開始"
     },
@@ -37,8 +37,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        450,
-        300
+        -2400,
+        112
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -57,8 +57,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        650,
-        300
+        -2208,
+        112
       ],
       "notes": "設定済み顧客のみリスト化"
     },
@@ -81,8 +81,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
       "position": [
-        5678,
-        300
+        -2000,
+        112
       ],
       "notes": "手動で処理対象の顧客を選択（実際にはn8nのUI上で選択）"
     },
@@ -95,8 +95,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1050,
-        300
+        -1808,
+        112
       ],
       "notes": "選択された顧客の情報をパース"
     },
@@ -126,8 +126,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1250,
-        300
+        -1600,
+        112
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -146,8 +146,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1350,
-        300
+        -1504,
+        112
       ],
       "notes": "files配列を個別のアイテムに展開"
     },
@@ -167,8 +167,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1450,
-        300
+        -1408,
+        112
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -187,8 +187,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1650,
-        300
+        -1200,
+        112
       ],
       "notes": "画像をBase64エンコードしてGPT-4o Vision APIリクエストを構築"
     },
@@ -208,8 +208,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        15678,
-        300
+        -1008,
+        112
       ],
       "credentials": {
         "openAiApi": {
@@ -228,8 +228,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2050,
-        300
+        -800,
+        112
       ],
       "notes": "JSON配列を個別のアイテムに展開してループ処理可能にする",
       "continueOnFail": true
@@ -256,8 +256,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        2250,
-        300
+        -608,
+        112
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -278,8 +278,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2450,
-        300
+        -400,
+        112
       ],
       "notes": "ナレッジベースでマッチング、なければAI推論へ"
     },
@@ -311,8 +311,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        2650,
-        300
+        -208,
+        112
       ],
       "notes": "ナレッジベースマッチがない場合のみAI推論"
     },
@@ -332,8 +332,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        25678,
-        200
+        0,
+        0
       ],
       "credentials": {
         "openAiApi": {
@@ -352,8 +352,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3050,
-        200
+        208,
+        0
       ],
       "notes": "AI推論結果を元データにマージ"
     },
@@ -366,8 +366,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3250,
-        300
+        400,
+        112
       ],
       "notes": "軽減税率8%対象店舗を判定、貸方勘定科目を未払金に設定"
     },
@@ -589,8 +589,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        3450,
-        300
+        608,
+        112
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -609,8 +609,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        35678,
-        300
+        1008,
+        112
       ],
       "notes": "処理済みマーキング用のファイル名生成"
     },
@@ -633,8 +633,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        35678,
-        300
+        1008,
+        112
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
