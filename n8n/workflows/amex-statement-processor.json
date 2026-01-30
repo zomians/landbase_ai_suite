@@ -9,7 +9,10 @@
       "name": "手動トリガー（顧客選択）",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "notes": "手動実行で顧客を選択してワークフローを開始"
     },
     {
@@ -33,7 +36,10 @@
       "name": "全クライアント取得",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
-      "position": [450, 300],
+      "position": [
+        450,
+        300
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "gsheet-oauth",
@@ -50,7 +56,10 @@
       "name": "顧客リスト作成",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [650, 300],
+      "position": [
+        650,
+        300
+      ],
       "notes": "設定済み顧客のみリスト化"
     },
     {
@@ -71,7 +80,10 @@
       "name": "顧客選択",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
-      "position": [850, 300],
+      "position": [
+        850,
+        300
+      ],
       "notes": "手動で処理対象の顧客を選択（実際にはn8nのUI上で選択）"
     },
     {
@@ -82,37 +94,66 @@
       "name": "選択顧客データ解析",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1050, 300],
+      "position": [
+        1050,
+        300
+      ],
       "notes": "選択された顧客の情報をパース"
     },
     {
       "parameters": {
-        "operation": "list",
-        "folderId": {
-          "__rl": true,
-          "value": "={{ $json.drive_folder_id }}",
-          "mode": "id"
-        },
-        "filters": {
-          "query": "name contains '.pdf' and name does not contain '_processed'"
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "='{{ $json.drive_folder_id }}' in parents and name contains '.png' and not name contains '_processed'"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name,mimeType)"
+            }
+          ]
         },
         "options": {}
       },
       "id": "get-pdf-list",
-      "name": "未処理PDFリスト取得",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [1250, 300],
+      "name": "未処理画像リスト取得",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1250,
+        300
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "gdrive-oauth",
           "name": "Google Drive OAuth2"
         }
       },
-      "notes": "顧客フォルダから未処理PDFファイルを検索"
+      "notes": "Google Drive APIで顧客フォルダから未処理PDFファイルを検索"
     },
     {
       "parameters": {
+        "jsCode": "// Google Drive APIのレスポンスからfiles配列を展開\nconst files = $json.files || [];\n\nif (files.length === 0) {\n  throw new Error('未処理の画像ファイルが見つかりませんでした');\n}\n\n// 顧客情報を保持\nconst driveFolder = $('未処理画像リスト取得').first().json.drive_folder_id;\n\n// 各ファイルを個別のアイテムとして返す\nreturn files.map(file => ({\n  json: {\n    id: file.id,\n    name: file.name,\n    mimeType: file.mimeType,\n    drive_folder_id: driveFolder\n  }\n}));"
+      },
+      "id": "expand-pdf-list",
+      "name": "画像リスト展開",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1350,
+        300
+      ],
+      "notes": "files配列を個別のアイテムに展開"
+    },
+    {
+      "parameters": {
+        "resource": "file",
         "operation": "download",
         "fileId": {
           "__rl": true,
@@ -122,28 +163,34 @@
         "options": {}
       },
       "id": "download-pdf",
-      "name": "PDFダウンロード",
+      "name": "画像ダウンロード",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
-      "position": [1450, 300],
+      "position": [
+        1450,
+        300
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "gdrive-oauth",
           "name": "Google Drive OAuth2"
         }
       },
-      "notes": "PDFファイルをバイナリデータとしてダウンロード"
+      "notes": "画像ファイルをバイナリデータとしてダウンロード"
     },
     {
       "parameters": {
-        "jsCode": "// PDFバイナリデータをBase64エンコード\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst mimeType = $input.item.binary[binaryPropertyName].mimeType || 'application/pdf';\n\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\nconst base64Pdf = `data:${mimeType};base64,${base64String}`;\n\n// OpenAI APIリクエストボディを構築\nconst requestBody = {\n  model: \"gpt-4o\",\n  messages: [\n    {\n      role: \"system\",\n      content: `あなたはアメックス明細PDFを解析する経理の専門家AIです。PDFから全ての取引データを抽出してください。\n\n# ルール\n1. **複数の取引**を1つのJSON配列として抽出してください。\n2. **各取引**について以下を抽出:\n   - **transaction_date**: 取引日（YYYY-MM-DD形式）\n   - **merchant**: 支払先（店舗名・会社名）\n   - **amount**: 金額（数値のみ、カンマや円マークは除去）\n   - **description**: 取引内容（明細に記載があれば）\n\n# 出力形式\nJSONのみを出力してください。説明文は不要です。\n\n{\n  \"transactions\": [\n    {\n      \"transaction_date\": \"2025-01-15\",\n      \"merchant\": \"Amazon.co.jp\",\n      \"amount\": 5280,\n      \"description\": \"書籍購入\"\n    },\n    {\n      \"transaction_date\": \"2025-01-16\",\n      \"merchant\": \"セブンイレブン\",\n      \"amount\": 850,\n      \"description\": \"\"\n    }\n  ]\n}`\n    },\n    {\n      role: \"user\",\n      content: [\n        {\n          type: \"text\",\n          text: \"このアメックス明細PDFから全ての取引データを抽出してください。\"\n        },\n        {\n          type: \"image_url\",\n          image_url: {\n            url: base64Pdf\n          }\n        }\n      ]\n    }\n  ],\n  max_tokens: 2000,\n  temperature: 0.1\n};\n\n// PDFファイル名も保持\nconst pdfFileName = $('PDFダウンロード').item.json.name;\nconst pdfFileId = $('PDFダウンロード').item.json.id;\n\nreturn {\n  json: {\n    requestBody: requestBody,\n    pdf_file_name: pdfFileName,\n    pdf_file_id: pdfFileId,\n    customer_name: $('選択顧客データ解析').item.json.customer_name,\n    sheet_id: $('選択顧客データ解析').item.json.sheet_id,\n    drive_folder_id: $('選択顧客データ解析').item.json.drive_folder_id\n  }\n};"
+        "jsCode": "// 画像バイナリデータをBase64エンコード\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst mimeType = $input.item.binary[binaryPropertyName].mimeType || 'image/png';\n\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\nconst base64Image = `data:${mimeType};base64,${base64String}`;\n\n// OpenAI APIリクエストボディを構築\nconst requestBody = {\n  model: \"gpt-4o\",\n  messages: [\n    {\n      role: \"system\",\n      content: `あなたはアメックス明細を解析する経理の専門家AIです。画像から全ての取引データを抽出してください。\n\n# 重要\n- **必ずJSON形式のみ**を出力してください\n- 説明文、挨拶、エラーメッセージは一切出力しないでください\n- 取引データが見つからない場合でも、空の配列をJSON形式で返してください: {\"transactions\": []}\n\n# ルール\n1. **複数の取引**を1つのJSON配列として抽出してください\n2. **各取引**について以下を抽出:\n   - **transaction_date**: 取引日（YYYY-MM-DD形式）\n   - **merchant**: 支払先（店舗名・会社名）\n   - **amount**: 金額（数値のみ、カンマや円マークは除去）\n   - **description**: 取引内容（明細に記載があれば）\n\n# 出力例\n{\n  \"transactions\": [\n    {\n      \"transaction_date\": \"2025-01-15\",\n      \"merchant\": \"Amazon.co.jp\",\n      \"amount\": 5280,\n      \"description\": \"書籍購入\"\n    },\n    {\n      \"transaction_date\": \"2025-01-16\",\n      \"merchant\": \"セブンイレブン\",\n      \"amount\": 850,\n      \"description\": \"\"\n    }\n  ]\n}`\n    },\n    {\n      role: \"user\",\n      content: [\n        {\n          type: \"text\",\n          text: \"この画像から全ての取引データを抽出してJSON形式で出力してください。取引データがない場合は空の配列を返してください。\"\n        },\n        {\n          type: \"image_url\",\n          image_url: {\n            url: base64Image\n          }\n        }\n      ]\n    }\n  ],\n  max_tokens: 2000,\n  temperature: 0.1\n};\n\n// PDFファイル名も保持\nconst pdfFileName = $('画像ダウンロード').item.json.name;\nconst pdfFileId = $('画像ダウンロード').item.json.id;\n\nreturn {\n  json: {\n    requestBody: requestBody,\n    pdf_file_name: pdfFileName,\n    pdf_file_id: pdfFileId,\n    customer_name: $('選択顧客データ解析').item.json.customer_name,\n    sheet_id: $('選択顧客データ解析').item.json.sheet_id,\n    drive_folder_id: $('選択顧客データ解析').item.json.drive_folder_id\n  }\n};"
       },
       "id": "build-pdf-ocr-request",
-      "name": "PDF OCRリクエスト構築",
+      "name": "画像OCRリクエスト構築",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1650, 300],
-      "notes": "PDFをBase64エンコードしてGPT-4o Vision APIリクエストを構築"
+      "position": [
+        1650,
+        300
+      ],
+      "notes": "画像をBase64エンコードしてGPT-4o Vision APIリクエストを構築"
     },
     {
       "parameters": {
@@ -157,27 +204,33 @@
         "options": {}
       },
       "id": "ai-pdf-ocr",
-      "name": "AI-PDF解析（GPT-4o）",
+      "name": "AI画像解析（GPT-4o Vision）",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1850, 300],
+      "position": [
+        1850,
+        300
+      ],
       "credentials": {
         "openAiApi": {
           "id": "openai-api",
           "name": "OpenAI API"
         }
       },
-      "notes": "GPT-4oでPDFから取引データを構造化抽出"
+      "notes": "GPT-4o Visionで画像から取引データを構造化抽出"
     },
     {
       "parameters": {
-        "jsCode": "// GPT-4oのレスポンスをパース\nlet content = $json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\n// JSON.parseをtry/catchでラップ\nlet ocrResult;\ntry {\n  ocrResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// transactions配列を個別のアイテムに展開\nconst transactions = ocrResult.transactions || [];\n\nif (transactions.length === 0) {\n  throw new Error('PDFから取引データを抽出できませんでした');\n}\n\n// 各取引に共通データを付与\nconst pdf_file_name = $('PDF OCRリクエスト構築').item.json.pdf_file_name;\nconst pdf_file_id = $('PDF OCRリクエスト構築').item.json.pdf_file_id;\nconst customer_name = $('PDF OCRリクエスト構築').item.json.customer_name;\nconst sheet_id = $('PDF OCRリクエスト構築').item.json.sheet_id;\nconst drive_folder_id = $('PDF OCRリクエスト構築').item.json.drive_folder_id;\n\nreturn transactions.map(transaction => ({\n  json: {\n    ...transaction,\n    pdf_file_name,\n    pdf_file_id,\n    customer_name,\n    sheet_id,\n    drive_folder_id\n  }\n}));"
+        "jsCode": "// GPT-4oのレスポンスをパース\nlet content = $json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\n// JSON.parseをtry/catchでラップ\nlet ocrResult;\ntry {\n  ocrResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// transactions配列を個別のアイテムに展開\nconst transactions = ocrResult.transactions || [];\n\nif (transactions.length === 0) {\n  throw new Error('PDFから取引データを抽出できませんでした');\n}\n\n// 各取引に共通データを付与（画像ダウンロードノードから直接取得）\nconst pdf_file_name = $node['画像ダウンロード'].json.name;\nconst pdf_file_id = $node['画像ダウンロード'].json.id;\nconst customer_name = $node['選択顧客データ解析'].json.customer_name;\nconst sheet_id = $node['選択顧客データ解析'].json.sheet_id;\nconst drive_folder_id = $node['選択顧客データ解析'].json.drive_folder_id;\n\nreturn transactions.map(transaction => ({\n  json: {\n    ...transaction,\n    pdf_file_name,\n    pdf_file_id,\n    customer_name,\n    sheet_id,\n    drive_folder_id\n  }\n}));"
       },
       "id": "parse-transactions",
       "name": "取引データ展開",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2050, 300],
+      "position": [
+        2050,
+        300
+      ],
       "notes": "JSON配列を個別のアイテムに展開してループ処理可能にする"
     },
     {
@@ -201,7 +254,10 @@
       "name": "勘定科目マスター取得",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
-      "position": [2250, 300],
+      "position": [
+        2250,
+        300
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "gsheet-oauth",
@@ -214,13 +270,16 @@
     },
     {
       "parameters": {
-        "jsCode": "// 取引データを取得\nconst transactionData = $('取引データ展開').item.json;\nconst merchant = transactionData.merchant || '';\nconst description = transactionData.description || '';\n\n// ナレッジベース取得\nlet knowledgeBase = [];\ntry {\n  const kbData = $('勘定科目マスター取得').all();\n  if (kbData && Array.isArray(kbData) && kbData.length > 0) {\n    knowledgeBase = kbData.filter(item => item && item.json && !item.error);\n  }\n} catch (error) {\n  knowledgeBase = [];\n}\n\n// マッチング処理\nlet matchedCategory = null;\nlet maxConfidence = 0;\nlet matchedRowId = null;\nlet matchedMerchantKeyword = null;\nlet matchedAccountCategory = null;\nlet matchedUsageCount = 0;\nlet matchedLastUsedDate = '';\nlet matchedConfidenceScore = 0;\n\nfor (let i = 0; i < knowledgeBase.length; i++) {\n  const rule = knowledgeBase[i].json;\n  const merchantKeyword = rule.merchant_keyword || '';\n  const descriptionKeyword = rule.description_keyword || '';\n  const confidence = parseInt(rule.confidence_score) || 0;\n  const rowNumber = i + 2;\n  \n  // 店舗名での完全一致（最優先）\n  if (merchantKeyword && merchant.includes(merchantKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchedRowId = rowNumber;\n      matchedMerchantKeyword = merchantKeyword;\n      matchedAccountCategory = rule.account_category;\n      matchedUsageCount = rule.usage_count || 0;\n      matchedLastUsedDate = rule.last_used_date || '';\n      matchedConfidenceScore = confidence;\n    }\n  }\n  \n  // 取引内容での部分一致\n  if (!matchedCategory && descriptionKeyword && description.includes(descriptionKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchedRowId = rowNumber;\n      matchedMerchantKeyword = merchantKeyword;\n      matchedAccountCategory = rule.account_category;\n      matchedUsageCount = rule.usage_count || 0;\n      matchedLastUsedDate = rule.last_used_date || '';\n      matchedConfidenceScore = confidence;\n    }\n  }\n}\n\n// マッチしない場合はAI推定を呼び出す準備\nreturn {\n  json: {\n    ...transactionData,\n    matched_category: matchedCategory,\n    match_source: matchedCategory ? 'knowledge_base' : 'ai_inference_needed',\n    matched_confidence: maxConfidence,\n    matched_row_id: matchedRowId,\n    merchant_keyword: matchedMerchantKeyword,\n    account_category: matchedAccountCategory,\n    usage_count: matchedUsageCount,\n    last_used_date: matchedLastUsedDate,\n    confidence_score: matchedConfidenceScore\n  }\n};"
+        "jsCode": "// 取引データを取得\nconst transactionData = $('取引データ展開').item.json;\n\n// 一時的にナレッジベースをスキップし、常にAI推論を使用\nconsole.log('ナレッジベースをスキップ - AI推論で勘定科目判定');\n\nreturn {\n  json: {\n    ...transactionData,\n    matched_category: null,\n    match_source: 'ai_inference_needed',\n    matched_confidence: 0\n  }\n};"
       },
       "id": "account-matching",
       "name": "勘定科目判定（ナレッジベース）",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2450, 300],
+      "position": [
+        2450,
+        300
+      ],
       "notes": "ナレッジベースでマッチング、なければAI推論へ"
     },
     {
@@ -250,7 +309,10 @@
       "name": "IF AI推論が必要",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2650, 300],
+      "position": [
+        2650,
+        300
+      ],
       "notes": "ナレッジベースマッチがない場合のみAI推論"
     },
     {
@@ -268,7 +330,10 @@
       "name": "AI勘定科目推論",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2850, 200],
+      "position": [
+        2850,
+        200
+      ],
       "credentials": {
         "openAiApi": {
           "id": "openai-api",
@@ -285,7 +350,10 @@
       "name": "AI推論結果マージ",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3050, 200],
+      "position": [
+        3050,
+        200
+      ],
       "notes": "AI推論結果を元データにマージ"
     },
     {
@@ -296,7 +364,10 @@
       "name": "消費税率判定",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3250, 300],
+      "position": [
+        3250,
+        300
+      ],
       "notes": "軽減税率8%対象店舗を判定、貸方勘定科目を未払金に設定"
     },
     {
@@ -506,7 +577,7 @@
             "貸方金額(円)": "={{ $json.amount }}",
             "摘要": "={{ $json.merchant }}（{{ $json.description || 'カード決済' }}）",
             "タグ": "={{ $json.match_source === 'knowledge_base' ? 'ナレッジベース' : 'AI推論' }}",
-            "メモ": "PDF: {{ $json.pdf_file_name }} | Status: {{ $json.matched_category ? 'Auto' : 'Review_Required' }}"
+            "メモ": "=PDF: {{ $json.pdf_file_name }} | Status: {{ $json.matched_category ? 'Auto' : 'Review_Required' }}"
           },
           "matchingColumns": []
         },
@@ -516,7 +587,10 @@
       "name": "仕訳台帳へ記帳",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
-      "position": [3450, 300],
+      "position": [
+        3450,
+        300
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "gsheet-oauth",
@@ -527,30 +601,21 @@
     },
     {
       "parameters": {
-        "mode": "combine",
-        "combineBy": "combineAll",
-        "options": {}
-      },
-      "id": "wait-all-transactions",
-      "name": "全取引完了待機",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [3650, 300],
-      "notes": "全取引の記帳完了を待ってからPDFリネームを実行"
-    },
-    {
-      "parameters": {
-        "jsCode": "// 全取引の記帳が完了したら、PDFファイルを処理済みマーキング\nconst pdfFileId = $('PDF OCRリクエスト構築').item.json.pdf_file_id;\nconst pdfFileName = $('PDF OCRリクエスト構築').item.json.pdf_file_name;\n\n// 新しいファイル名を生成（_processed を追加）\nconst newFileName = pdfFileName.replace(/\\.pdf$/i, '_processed.pdf');\n\nreturn {\n  json: {\n    file_id: pdfFileId,\n    new_name: newFileName,\n    old_name: pdfFileName\n  }\n};"
+        "jsCode": "// デバッグ: 受け取ったデータを確認\nconsole.log('=== リネーム準備ノード: 受け取ったデータ ===');\nconsole.log('$json:', JSON.stringify($json, null, 2));\n\n// 画像ファイル情報を取得\nlet imageFileId = $json.pdf_file_id;\nlet imageFileName = $json.pdf_file_name;\n\n// データがない場合は、$nodeから直接取得を試みる\nif (!imageFileName) {\n  console.log('$json.pdf_file_nameがありません。$nodeから取得を試みます');\n  try {\n    imageFileName = $node['画像ダウンロード'].json.name;\n    imageFileId = $node['画像ダウンロード'].json.id;\n    console.log('$nodeから取得成功:', imageFileName, imageFileId);\n  } catch (error) {\n    console.error('$nodeからの取得も失敗:', error.message);\n    throw new Error('画像ファイル情報が取得できませんでした');\n  }\n}\n\n// 新しいファイル名を生成（_processed を追加）\nconst newFileName = imageFileName.replace(/\\.(png|jpg|jpeg)$/i, '_processed.$1');\n\nreturn {\n  json: {\n    file_id: imageFileId,\n    new_name: newFileName,\n    old_name: imageFileName\n  }\n};"
       },
       "id": "prepare-rename",
       "name": "リネーム準備",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3850, 300],
+      "position": [
+        3850,
+        300
+      ],
       "notes": "処理済みマーキング用のファイル名生成"
     },
     {
       "parameters": {
+        "resource": "file",
         "operation": "update",
         "fileId": {
           "__rl": true,
@@ -566,7 +631,10 @@
       "name": "処理済みマーキング",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
-      "position": [3850, 300],
+      "position": [
+        3850,
+        300
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "gdrive-oauth",
@@ -625,47 +693,47 @@
       "main": [
         [
           {
-            "node": "未処理PDFリスト取得",
+            "node": "未処理画像リスト取得",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "未処理PDFリスト取得": {
+    "未処理画像リスト取得": {
       "main": [
         [
           {
-            "node": "PDFダウンロード",
+            "node": "画像リスト展開",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "PDFダウンロード": {
+    "画像ダウンロード": {
       "main": [
         [
           {
-            "node": "PDF OCRリクエスト構築",
+            "node": "画像OCRリクエスト構築",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "PDF OCRリクエスト構築": {
+    "画像OCRリクエスト構築": {
       "main": [
         [
           {
-            "node": "AI-PDF解析（GPT-4o）",
+            "node": "AI画像解析（GPT-4o Vision）",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "AI-PDF解析（GPT-4o）": {
+    "AI画像解析（GPT-4o Vision）": {
       "main": [
         [
           {
@@ -677,17 +745,6 @@
       ]
     },
     "取引データ展開": {
-      "main": [
-        [
-          {
-            "node": "勘定科目マスター取得",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "勘定科目マスター取得": {
       "main": [
         [
           {
@@ -764,17 +821,6 @@
       "main": [
         [
           {
-            "node": "全取引完了待機",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "全取引完了待機": {
-      "main": [
-        [
-          {
             "node": "リネーム準備",
             "type": "main",
             "index": 0
@@ -787,6 +833,17 @@
         [
           {
             "node": "処理済みマーキング",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "画像リスト展開": {
+      "main": [
+        [
+          {
+            "node": "画像ダウンロード",
             "type": "main",
             "index": 0
           }
