@@ -20,7 +20,7 @@
         "operation": "read",
         "documentId": {
           "__rl": true,
-          "value": "16qhVQNDn_5Y1Ayw_H0ziUw1nu2b70o6IcRn1rr4Pa94",
+          "value": "1dw8XFIp6KnYzYFKSUkIrhhnOpCEpkUsqzajwtc5rOkY",
           "mode": "id"
         },
         "sheetName": {
@@ -42,7 +42,7 @@
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "gsheet-oauth",
+          "id": "20kqD5uj6zSeTJdI",
           "name": "Google Sheets OAuth2"
         }
       },
@@ -131,7 +131,7 @@
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "gdrive-oauth",
+          "id": "XcrtrL7hJTxWi6Vv",
           "name": "Google Drive OAuth2"
         }
       },
@@ -172,7 +172,7 @@
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "gdrive-oauth",
+          "id": "XcrtrL7hJTxWi6Vv",
           "name": "Google Drive OAuth2"
         }
       },
@@ -180,7 +180,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 画像バイナリデータをBase64エンコード\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst mimeType = $input.item.binary[binaryPropertyName].mimeType || 'image/png';\n\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\nconst base64Image = `data:${mimeType};base64,${base64String}`;\n\n// OpenAI APIリクエストボディを構築\nconst requestBody = {\n  model: \"gpt-4o\",\n  messages: [\n    {\n      role: \"system\",\n      content: `あなたはアメックス明細を解析する経理の専門家AIです。画像から全ての取引データを抽出してください。\n\n# 重要\n- **必ずJSON形式のみ**を出力してください\n- 説明文、挨拶、エラーメッセージは一切出力しないでください\n- 取引データが見つからない場合でも、空の配列をJSON形式で返してください: {\"transactions\": []}\n\n# ルール\n1. **複数の取引**を1つのJSON配列として抽出してください\n2. **各取引**について以下を抽出:\n   - **transaction_date**: 取引日（YYYY-MM-DD形式）\n   - **merchant**: 支払先（店舗名・会社名）\n   - **amount**: 金額（数値のみ、カンマや円マークは除去）\n   - **description**: 取引内容（明細に記載があれば）\n\n# 出力形式（注意: これは形式の例です。必ず画像から実際のデータを抽出してください）\n{\n  \"transactions\": [\n    {\n      \"transaction_date\": \"2025-01-15\",\n      \"merchant\": \"Amazon.co.jp\",\n      \"amount\": 1234,\n      \"description\": \"書籍購入\"\n    },\n    {\n      \"transaction_date\": \"2025-01-16\",\n      \"merchant\": \"セブンイレブン\",\n      \"amount\": 5678,\n      \"description\": \"\"\n    }\n  ]\n}`\n    },\n    {\n      role: \"user\",\n      content: [\n        {\n          type: \"text\",\n          text: \"この画像から全ての取引データを抽出してJSON形式で出力してください。取引データがない場合は空の配列を返してください。\"\n        },\n        {\n          type: \"image_url\",\n          image_url: {\n            url: base64Image\n          }\n        }\n      ]\n    }\n  ],\n  max_tokens: 2000,\n  temperature: 0.1\n};\n\n// PDFファイル名も保持\nconst pdfFileName = $('画像ダウンロード').item.json.name;\nconst pdfFileId = $('画像ダウンロード').item.json.id;\n\nreturn {\n  json: {\n    requestBody: requestBody,\n    pdf_file_name: pdfFileName,\n    pdf_file_id: pdfFileId,\n    customer_name: $('選択顧客データ解析').item.json.customer_name,\n    sheet_id: $('選択顧客データ解析').item.json.sheet_id,\n    drive_folder_id: $('選択顧客データ解析').item.json.drive_folder_id\n  }\n};"
+        "jsCode": "// 画像バイナリデータをBase64エンコード\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst mimeType = $input.item.binary[binaryPropertyName].mimeType || 'image/png';\n\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\nconst base64Image = `data:${mimeType};base64,${base64String}`;\n\n// OpenAI APIリクエストボディを構築\nconst requestBody = {\n  model: \"gpt-4o\",\n  messages: [\n    {\n      role: \"system\",\n      content: `あなたはアメックス明細を解析する経理の専門家AIです。画像から全ての取引データを抽出してください。\n\n# 重要\n- **必ずJSON形式のみ**を出力してください\n- 説明文、挨拶、エラーメッセージは一切出力しないでください\n- 取引データが見つからない場合でも、空の配列をJSON形式で返してください: {\"transactions\": []}\n\n# ルール\n1. **複数の取引**を1つのJSON配列として抽出してください\n2. **各取引**について以下を抽出:\n   - **transaction_date**: 取引日（YYYY-MM-DD形式）\n   - **merchant**: 支払先（店舗名・会社名）\n   - **amount**: 金額（数値のみ、カンマや円マークは除去）\n   - **description**: 取引内容（明細に記載があれば）\n\n# 出力形式（注意: これは形式の例です。必ず画像から実際のデータを抽出してください）\n{\n  \"transactions\": [\n    {\n      \"transaction_date\": \"YYYY-MM-DD\",\n      \"merchant\": \"店舗A\",\n      \"amount\": 1234,\n      \"description\": \"商品・サービス名\"\n    },\n    {\n      \"transaction_date\": \"YYYY-MM-DD\",\n      \"merchant\": \"店舗B\",\n      \"amount\": 5678,\n      \"description\": \"\"\n    }\n  ]\n}`\n    },\n    {\n      role: \"user\",\n      content: [\n        {\n          type: \"text\",\n          text: \"この画像から全ての取引データを抽出してJSON形式で出力してください。取引データがない場合は空の配列を返してください。\"\n        },\n        {\n          type: \"image_url\",\n          image_url: {\n            url: base64Image\n          }\n        }\n      ]\n    }\n  ],\n  max_tokens: 2000,\n  temperature: 0.1\n};\n\n// PDFファイル名も保持\nconst pdfFileName = $('画像ダウンロード').item.json.name;\nconst pdfFileId = $('画像ダウンロード').item.json.id;\n\nreturn {\n  json: {\n    requestBody: requestBody,\n    pdf_file_name: pdfFileName,\n    pdf_file_id: pdfFileId,\n    customer_name: $('選択顧客データ解析').item.json.customer_name,\n    sheet_id: $('選択顧客データ解析').item.json.sheet_id,\n    drive_folder_id: $('選択顧客データ解析').item.json.drive_folder_id\n  }\n};"
       },
       "id": "build-pdf-ocr-request",
       "name": "画像OCRリクエスト構築",
@@ -213,7 +213,7 @@
       ],
       "credentials": {
         "openAiApi": {
-          "id": "openai-api",
+          "id": "iQJJMVz6MkdVXrve",
           "name": "OpenAI API"
         }
       },
@@ -261,7 +261,7 @@
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "gsheet-oauth",
+          "id": "20kqD5uj6zSeTJdI",
           "name": "Google Sheets OAuth2"
         }
       },
@@ -337,7 +337,7 @@
       ],
       "credentials": {
         "openAiApi": {
-          "id": "openai-api",
+          "id": "iQJJMVz6MkdVXrve",
           "name": "OpenAI API"
         }
       },
@@ -594,7 +594,7 @@
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "gsheet-oauth",
+          "id": "20kqD5uj6zSeTJdI",
           "name": "Google Sheets OAuth2"
         }
       },
@@ -638,7 +638,7 @@
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "gdrive-oauth",
+          "id": "XcrtrL7hJTxWi6Vv",
           "name": "Google Drive OAuth2"
         }
       },
