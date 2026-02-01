@@ -43,6 +43,8 @@ services:
       - DB_POSTGRESDB_USER=landbase
       - DB_POSTGRESDB_PASSWORD=landbase_dev_password
       - DB_POSTGRESDB_SCHEMA=n8n_platform
+      - NODE_FUNCTION_ALLOW_EXTERNAL=pdf-parse
+      - NODE_FUNCTION_ALLOW_BUILTIN=crypto
     ports:
       - "${N8N_PORT}:5678"
     volumes:
