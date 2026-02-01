@@ -131,28 +131,45 @@ LINE返信（処理完了通知）
 
 **シート名:** `Master_User_Config`
 
-| A: line_user_id | B: customer_name | C: drive_folder_id | D: sheet_id | E: accounting_soft | F: registration_date |
-|---|---|---|---|---|---|
-| U1234567890abcdef... | 株式会社サンプル | 1A2B3C4D5E6F... | 1xYzAbCdEfGh... | freee | 2025-01-15T10:30:00.000Z |
-| U9876543210zyxwvu... | 合同会社テスト | 9Z8Y7X6W5V4U... | 9pQrStUvWxYz... | moneyforward | 2025-01-16T14:20:00.000Z |
-| Uabc123def456ghi... | 未設定 | | | freee | 2025-01-17T09:15:00.000Z |
+| A: line_user_id | B: customer_name | C: drive_folder_id | D: sheet_id | E: accounting_soft | F: registration_date | G: amex_drive_folder_id | H: amex_sheet_id |
+|---|---|---|---|---|---|---|---|
+| U1234567890abcdef... | 株式会社サンプル | 1A2B3C4D5E6F... | 1xYzAbCdEfGh... | freee | 2025-01-15T10:30:00.000Z | 1M2N3O4P5Q6R... | 1wXyZaBcDeFg... |
+| U9876543210zyxwvu... | 合同会社テスト | 9Z8Y7X6W5V4U... | 9pQrStUvWxYz... | moneyforward | 2025-01-16T14:20:00.000Z | 9S8T7U6V5W4X... | 9iJkLmNoPqRs... |
+| Uabc123def456ghi... | 未設定 | | | freee | 2025-01-17T09:15:00.000Z | | |
 
 **各列の説明:**
 
-- **line_user_id**: LINE User ID（Follow Eventで自動取得）
-- **customer_name**: 顧客名（初期値: "未設定"、管理者が後から更新）
-- **drive_folder_id**: Google DriveフォルダID（初期値: 空欄、管理者が後から設定）
-- **sheet_id**: 顧客別スプレッドシートID（初期値: 空欄、管理者が後から設定）
-- **accounting_soft**: 会計ソフト（初期値: "freee"）
-- **registration_date**: 登録日時（ISO 8601形式、自動記録）
+- **line_user_id** (A列): LINE User ID（Follow Eventで自動取得）
+- **customer_name** (B列): 顧客名（初期値: "未設定"、管理者が後から更新）
+- **drive_folder_id** (C列): **領収書用** Google DriveフォルダID（初期値: 空欄、管理者が後から設定）
+- **sheet_id** (D列): **領収書用** 顧客別スプレッドシートID（初期値: 空欄、管理者が後から設定）
+- **accounting_soft** (E列): 会計ソフト（初期値: "freee"）
+- **registration_date** (F列): 登録日時（ISO 8601形式、自動記録）
+- **amex_drive_folder_id** (G列): **アメックス明細用** Google DriveフォルダID（初期値: 空欄、管理者が設定）
+- **amex_sheet_id** (H列): **アメックス明細用** 仕訳台帳スプレッドシートID（初期値: 空欄、管理者が設定）
 
 **取得方法:**
 
 - **line_user_id**: Follow Eventで自動取得（手動の場合: LINE Developersコンソールで確認、またはWebhookのログから取得）
-- **drive_folder_id**: Google DriveのフォルダURLから抽出
+- **drive_folder_id** / **amex_drive_folder_id**: Google DriveのフォルダURLから抽出
   - 例: `https://drive.google.com/drive/folders/1A2B3C4D5E6F...` → `1A2B3C4D5E6F...`
-- **sheet_id**: スプレッドシートのURLから抽出
+- **sheet_id** / **amex_sheet_id**: スプレッドシートのURLから抽出
   - 例: `https://docs.google.com/spreadsheets/d/1xYzAbCdEfGh.../edit` → `1xYzAbCdEfGh...`
+
+**運用パターン:**
+
+Master_User_Configの設定により、以下の運用パターンを選択できます：
+
+| パターン | 設定する列 | 用途 |
+|---------|----------|------|
+| **パターン1: 領収書のみ** | C列（drive_folder_id）、D列（sheet_id）のみ設定 | LINE Bot経由の領収書処理のみ使用 |
+| **パターン2: アメックス明細のみ** | G列（amex_drive_folder_id）、H列（amex_sheet_id）のみ設定 | アメックス明細処理のみ使用 |
+| **パターン3: 両方使用（推奨）** | C, D, G, H列すべてを設定 | 領収書とアメックス明細を別々のフォルダ・シートで管理 |
+
+**利点:**
+- データ分離: 領収書とアメックス明細を別シートで管理し、混在を防ぐ
+- 柔軟性: 顧客ごとに運用方法を選択可能
+- 分析容易: データソース別に集計・分析しやすい
 
 **重要: 友だち追加時の自動登録**
 
@@ -786,47 +803,60 @@ Google Drive上の顧客フォルダに配置されたアメックス明細PDF�
 ### 処理フロー
 
 ```
-手動トリガー（顧客選択）
+手動トリガー
     ↓
-Master_User_Config参照 ← 顧客情報取得
+Master_User_Config参照 ← 全顧客情報取得
     ↓
-Google Drive: 未処理PDFリスト取得
+設定済み顧客フィルタ ← amex_drive_folder_id, amex_sheet_idがある顧客のみ
     ↓
-各PDFをループ処理
-    ↓
-  ┌─────────────────┐
-  │ PDFダウンロード │
-  └────────┬────────┘
-           ↓
-  ┌─────────────────────────┐
-  │ AI-OCR処理（GPT-4o）    │
-  │ - 取引日、店舗、金額抽出 │
-  └────────┬────────────────┘
-           ↓
-  ┌─────────────────────────┐
-  │ 各取引行をループ処理     │
-  └────────┬────────────────┘
-           ↓
-  ┌─────────────────────────┐
-  │ 勘定科目マスタ照合      │← 既存システムと共通
-  └────────┬────────────────┘
-           ↓
-  ┌─────────────────────────┐
-  │ マスタになければAI推定   │← GPT-4o API
-  └────────┬────────────────┘
-           ↓
-  ┌─────────────────────────┐
-  │ 消費税率判定（10%/8%）  │
-  └────────┬────────────────┘
-           ↓
-  ┌─────────────────────────┐
-  │ 仕訳台帳へ記帳          │← 貸方: 未払金
-  └────────┬────────────────┘
-           ↓
-  ┌─────────────────────────┐
-  │ PDF処理済みマーキング   │← _processed追加
-  └─────────────────────────┘
+[各顧客をループ処理] ━━━━━━━━━━━┓
+    ↓                           ┃
+Google Drive: 未処理PDFリスト取得  ┃
+    ↓                           ┃
+各PDFをループ処理                 ┃
+    ↓                           ┃
+  ┌─────────────────┐          ┃
+  │ PDFダウンロード │          ┃
+  └────────┬────────┘          ┃
+           ↓                   ┃
+  ┌─────────────────────────┐  ┃
+  │ AI-OCR処理（GPT-4o）    │  ┃
+  │ - 取引日、店舗、金額抽出 │  ┃
+  └────────┬────────────────┘  ┃
+           ↓                   ┃
+  ┌─────────────────────────┐  ┃
+  │ 各取引行をループ処理     │  ┃
+  └────────┬────────────────┘  ┃
+           ↓                   ┃
+  ┌─────────────────────────┐  ┃
+  │ 勘定科目マスタ照合      │  ┃ ← 既存システムと共通
+  └────────┬────────────────┘  ┃
+           ↓                   ┃
+  ┌─────────────────────────┐  ┃
+  │ マスタになければAI推定   │  ┃ ← GPT-4o API
+  └────────┬────────────────┘  ┃
+           ↓                   ┃
+  ┌─────────────────────────┐  ┃
+  │ 消費税率判定（10%/8%）  │  ┃
+  └────────┬────────────────┘  ┃
+           ↓                   ┃
+  ┌─────────────────────────┐  ┃
+  │ 仕訳台帳へ記帳          │  ┃ ← 貸方: 未払金
+  └────────┬────────────────┘  ┃
+           ↓                   ┃
+  ┌─────────────────────────┐  ┃
+  │ PDF処理済みマーキング   │  ┃ ← _processed追加
+  └────────┬────────────────┘  ┃
+           ↓                   ┃
+      [次の顧客へ] ━━━━━━━━━━━┛
 ```
+
+**ワークフローの特徴:**
+- ✅ **全顧客自動処理**: Master_User_Configに登録されているすべての顧客を自動処理
+- ✅ **設定フィルタ**: amex_drive_folder_id と amex_sheet_id が設定されている顧客のみ処理
+- ✅ **顧客ループ**: 各顧客のフォルダから未処理PDFを検索し、順番に処理
+- ✅ **PDFループ**: 各顧客の複数PDFを処理
+- ✅ **取引ループ**: 各PDFの複数取引を個別に記帳
 
 ### セットアップ手順
 
@@ -836,9 +866,30 @@ Google Drive: 未処理PDFリスト取得
 2. `n8n/workflows/amex-statement-processor.json` を選択
 3. インポート完了
 
-#### 2. Master_User_Config のシートID設定
+#### 2. Master_User_Config の設定
+
+**2-1. シートID設定**
 
 「全クライアント取得」ノードで、Master_User_ConfigスプレッドシートのIDを設定してください。
+
+**2-2. 顧客ごとのアメックス設定**
+
+Master_User_Configスプレッドシートで、各顧客について以下を設定：
+
+| 列 | 設定内容 | 説明 |
+|----|---------|------|
+| **G列** | amex_drive_folder_id | アメックス明細PDF用のGoogle DriveフォルダID |
+| **H列** | amex_sheet_id | アメックス明細用仕訳台帳スプレッドシートID |
+
+**設定例:**
+```
+G列: 1M2N3O4P5Q6R7S8T9U0V...  ← アメックス用フォルダID
+H列: 1wXyZaBcDeFgHiJkLmNo...  ← アメックス用仕訳台帳シートID
+```
+
+**注意:**
+- G列・H列が空欄の顧客はスキップされます
+- 領収書処理（C列・D列）とは別に管理できます
 
 #### 3. Credentialsの紐付け
 
@@ -857,13 +908,26 @@ Google Drive: 未処理PDFリスト取得
 
 #### 1. PDFファイルの配置
 
-顧客別Google Driveフォルダにアメックス明細PDFを配置します。
+各顧客のアメックス専用Google Driveフォルダ（amex_drive_folder_id）にアメックス明細PDFを配置します。
 
+**推奨フォルダ構成（領収書と分離）:**
 ```
 Google Drive
-└── 顧客A フォルダ (drive_folder_id: 1A2B3C...)
+└── 顧客A
+    ├── receipts フォルダ (drive_folder_id: 1A2B3C...)
+    │   └── 20250115_123456_U123.jpg
+    │
+    └── amex フォルダ (amex_drive_folder_id: 1M2N3O...)
+        ├── amex_202501.pdf           ← 未処理
+        └── amex_202412_processed.pdf ← 処理済み（スキップ）
+```
+
+**シンプル構成（同じフォルダ）:**
+```
+Google Drive
+└── 顧客A フォルダ (drive_folder_id = amex_drive_folder_id: 1A2B3C...)
     ├── amex_202501.pdf           ← 未処理
-    ├── amex_202412_processed.pdf ← 処理済み（スキップ）
+    ├── amex_202412_processed.pdf ← 処理済み
     └── receipts/
         └── 20250115_123456_U123.jpg
 ```
@@ -872,8 +936,16 @@ Google Drive
 
 1. n8nで「アメックス明細→仕訳台帳変換」ワークフローを開く
 2. 「Execute Workflow」をクリック
-3. 処理対象の顧客が自動選択される（現在は1番目の顧客を選択）
-4. 未処理PDFが自動的に処理される
+3. **Master_User_Configに登録されているすべての顧客が自動的に処理されます**
+4. 各顧客のフォルダから未処理PDFが検索され、順番に処理されます
+
+**処理の流れ:**
+```
+顧客A → 未処理PDF 2件処理 → 次へ
+顧客B → 未処理PDF 1件処理 → 次へ
+顧客C → amex設定なし → スキップ
+顧客D → 未処理PDFなし → スキップ
+```
 
 #### 3. 処理結果の確認
 
