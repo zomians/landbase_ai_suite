@@ -652,6 +652,7 @@
           "value": "={{ $json.file_id }}",
           "mode": "id"
         },
+        "newUpdatedFileName": "={{ $json.new_name }}",
         "options": {}
       },
       "id": "b66e7a14-48d4-4c54-815a-8657dbf02f3b",
@@ -659,8 +660,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1232,
-        336
+        1248,
+        192
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -906,7 +907,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "6e6c9856-b117-47ac-9ae9-48d91489ea4f",
+  "versionId": "24638e1e-4a84-44ee-9107-814b8e06dfe0",
   "meta": {
     "instanceId": "faaa7132a861649d5b2459b24797889c8ab370f06610eda697f904d9fc215ba9"
   },
