@@ -1,5 +1,5 @@
 {
-  "name": "アメックス明細→仕訳台帳変換",
+  "name": "銀行明細→仕訳台帳変換",
   "nodes": [
     {
       "parameters": {},
@@ -107,7 +107,7 @@
           "parameters": [
             {
               "name": "q",
-              "value": "='{{ $json.drive_folder_id }}' in parents and name contains '.png' and not name contains '_processed'"
+              "value": "='{{ $json.drive_folder_id }}' in parents and name contains 'bank_' and name contains '.png' and not name contains '_processed'"
             },
             {
               "name": "fields",
@@ -135,7 +135,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Google Drive APIのレスポンスからfiles配列を展開\nconst files = $json.files || [];\n\nif (files.length === 0) {\n  throw new Error('未処理の画像ファイルが見つかりませんでした');\n}\n\n// 顧客情報を保持\nconst driveFolder = $('未処理画像リスト取得').first().json.drive_folder_id;\n\nconsole.log(`画像リスト展開: ${files.length}件の画像を検出`);\n\n// 【デバッグモード】最初の1枚のみ処理\nconst DEBUG_MODE = false;  // 全画像を処理\nconst filesToProcess = DEBUG_MODE ? files.slice(0, 1) : files;\n\nif (DEBUG_MODE) {\n  console.log(`⚠️ デバッグモード: 最初の1枚のみ処理します`);\n  console.log(`処理対象: ${filesToProcess[0].name}`);\n} else {\n  console.log(`✅ 全${files.length}件の画像を処理します`);\n}\n\n// 各ファイルを個別のアイテムとして返す\nreturn filesToProcess.map(file => ({\n  json: {\n    id: file.id,\n    name: file.name,\n    mimeType: file.mimeType,\n    drive_folder_id: driveFolder\n  }\n}));"
+        "jsCode": "// Google Drive APIのレスポンスからfiles配列を展開\nconst files = $json.files || [];\n\n// ファイルを名前順にソート（bank_0.png, bank_1.png, bank_2.pngの順）\nfiles.sort((a, b) => a.name.localeCompare(b.name));\n\nif (files.length === 0) {\n  throw new Error('未処理の画像ファイルが見つかりませんでした');\n}\n\n// 顧客情報を保持\nconst driveFolder = $('未処理画像リスト取得').first().json.drive_folder_id;\n\nconsole.log(`画像リスト展開: ${files.length}件の画像を検出`);\n\n// 【デバッグモード】最初の1枚のみ処理\nconst DEBUG_MODE = false;  // 全画像を処理\nconst filesToProcess = DEBUG_MODE ? files.slice(0, 1) : files;\n\nif (DEBUG_MODE) {\n  console.log(`⚠️ デバッグモード: 最初の1枚のみ処理します`);\n  console.log(`処理対象: ${filesToProcess[0].name}`);\n} else {\n  console.log(`✅ 全${files.length}件の画像を処理します`);\n}\n\n// 各ファイルを個別のアイテムとして返す\nreturn filesToProcess.map(file => ({\n  json: {\n    id: file.id,\n    name: file.name,\n    mimeType: file.mimeType,\n    drive_folder_id: driveFolder\n  }\n}));"
       },
       "id": "323cbb46-5972-4fc9-b1c6-1a2372d01190",
       "name": "画像リスト展開",
@@ -176,7 +176,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Google Cloud Vision APIでOCR実行\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer($itemIndex, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\nconst pdfFileName = $('画像ダウンロード').item.json.name;\nconst pdfFileId = $('画像ダウンロード').item.json.id;\n\nconsole.log(`\\n=== Google Cloud Vision OCR: ${pdfFileName} ===`);\nconsole.log(`画像サイズ: ${binaryBuffer.length} bytes`);\nconsole.log(`Base64長: ${base64String.length} 文字`);\n\n// Vision APIリクエストボディ\nconst visionRequest = {\n  requests: [\n    {\n      image: {\n        content: base64String\n      },\n      features: [\n        {\n          type: \"DOCUMENT_TEXT_DETECTION\"\n        }\n      ],\n      imageContext: {\n        languageHints: [\"ja\"]\n      }\n    }\n  ]\n};\n\n// 顧客データを取得\nconst customerData = $('選択顧客データ解析').item.json;\n\nreturn {\n  json: {\n    visionRequest: visionRequest,\n    pdf_file_name: pdfFileName,\n    pdf_file_id: pdfFileId,\n    customer_name: customerData.customer_name,\n    sheet_id: customerData.sheet_id,\n    drive_folder_id: customerData.drive_folder_id,\n    gcp_service_account_json: customerData.gcp_service_account_json\n  }\n};"
+        "jsCode": "// Google Cloud Vision APIでOCR実行\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer($itemIndex, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\n// 現在処理中のアイテムからファイル名とIDを取得\nconst pdfFileName = $input.item.json.name;\nconst pdfFileId = $input.item.json.id;\n\nconsole.log(`\\n=== Google Cloud Vision OCR: ${pdfFileName} ===`);\nconsole.log(`画像サイズ: ${binaryBuffer.length} bytes`);\nconsole.log(`Base64長: ${base64String.length} 文字`);\n\n// Vision APIリクエストボディ\nconst visionRequest = {\n  requests: [\n    {\n      image: {\n        content: base64String\n      },\n      features: [\n        {\n          type: \"DOCUMENT_TEXT_DETECTION\"\n        }\n      ],\n      imageContext: {\n        languageHints: [\"ja\"]\n      }\n    }\n  ]\n};\n\n// 顧客データを取得\nconst customerData = $('選択顧客データ解析').item.json;\n\nreturn {\n  json: {\n    visionRequest: visionRequest,\n    pdf_file_name: pdfFileName,\n    pdf_file_id: pdfFileId,\n    customer_name: customerData.customer_name,\n    sheet_id: customerData.sheet_id,\n    drive_folder_id: customerData.drive_folder_id,\n    gcp_service_account_json: customerData.gcp_service_account_json\n  }\n};"
       },
       "id": "6e244b78-0f16-4ae8-b5f1-857d070b8020",
       "name": "Google Cloud Vision OCR準備",
@@ -226,7 +226,7 @@
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"あなたはクレジットカード明細のOCRテキストをJSON形式に変換する専門AIです。\\n\\n【重要な制約】\\n1. 出力は必ずJSON形式のみとし、説明文や補足は一切含めないでください\\n2. マークダウンのコードブロック（```json）も使用しないでください\\n3. JSONとして解析できない文字列を返さないでください\\n4. 取引データが見つからない場合は空配列を返してください: {\\\"transactions\\\": []}\\n5. 確信度が低い情報でも、推測して構造化してください\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"以下のOCRテキストから取引データを抽出し、JSON形式で出力してください。\\n\\n【出力形式（この形式でのみ応答）】\\n{\\\"transactions\\\": [{\\\"transaction_date\\\": \\\"YYYY-MM-DD\\\", \\\"merchant\\\": \\\"店舗名\\\", \\\"amount\\\": 金額, \\\"description\\\": \\\"詳細\\\"}]}\\n\\n【OCRテキスト】\\n\" + $json.extracted_text + \"\\n\\n【必須】JSONのみを返してください。説明文は不要です。\"\n    }\n  ],\n  \"max_tokens\": 4000,\n  \"temperature\": 0\n} }}",
+        "jsonBody": "={{ {\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"あなたは銀行明細のOCRテキストをJSON形式に変換する専門AIです。\\n\\n【入力データの特性】\\n- OCRテキストは銀行の入出金明細表から抽出されたものです\\n- 表形式のレイアウトが崩れている可能性があります\\n- 日付、摘要、入金額、出金額、残高などの列が含まれています\\n\\n【重要な制約】\\n1. 出力は必ずJSON形式のみとし、説明文や補足は一切含めないでください\\n2. マークダウンのコードブロック（```json）も使用しないでください\\n3. JSONとして解析できない文字列を返さないでください\\n4. 取引データが見つからない場合は空配列を返してください: {\\\"transactions\\\": []}\\n5. 確信度が低い情報でも、推測して構造化してください\\n\\n【データ抽出のルール】\\n1. 日付の解釈:\\n   - 【重要】印刷日時や照会日時は無視してください。取引日のみを抽出してください\\n   - \\\"取引日\\\"列に記載された日付のみを対象としてください\\n   - \\n   【日付フォーマットの判定ルール】\\n   \\n   ケース1: \\\"28/12/1\\\" や \\\"28/12/29\\\" のような2桁年形式\\n   → これは平成28年（2016年）を意味します\\n   → 平成N年 = 1989 + N - 1 = 西暦年\\n   → 例: \\\"28/12/1\\\" → \\\"2016-12-01\\\"\\n   → 例: \\\"28/1/19\\\" → \\\"2016-01-19\\\"\\n   \\n   ケース2: \\\"2/12/1\\\" や \\\"2/1/11\\\" のような1桁年形式（年が0～9の場合）\\n   → 照会期間を参考に年を推測\\n   → 例: 照会期間が\\\"2025/12/1～2025/12/31\\\"で取引日が\\\"2/12/29\\\"なら → \\\"2025-12-29\\\"\\n   \\n   ケース3: \\\"12/29\\\" や \\\"1/11\\\" のような月日のみの形式\\n   → 照会期間の年を使用\\n   → 例: 照会期間が\\\"2016/1/1\\\"で取引日が\\\"1/11\\\"なら → \\\"2016-01-11\\\"\\n   \\n   - 日付は必ず YYYY-MM-DD 形式に変換してください\\n\\n2. 摘要の抽出:\\n   - \\\"振替\\\"\\\"振込\\\"だけでなく、その後の詳細情報（銀行名、依頼人名など）も含めてください\\n   - 例: \\\"振替 V21 カ) ラキツリー\\\" → description: \\\"振替 V21 カ) ラキツリー\\\"\\n\\n3. 金額の処理:\\n   - カンマ区切りの数値（\\\"1,234,567\\\"）を数値に変換してください\\n   - 金額がない場合は null を設定してください\\n\\n4. 入出金の判定:\\n   - 入金額が記載されている行は deposit_amount に設定\\n   - 出金額が記載されている行は withdrawal_amount に設定\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"以下のOCRテキストから銀行取引データを抽出し、JSON形式で出力してください。\\n\\nOCRテキストは表形式の銀行明細から抽出されたもので、レイアウトが崩れています。取引日、摘要、入出金額、残高を正確に抽出してください。\\n\\n【出力形式（この形式でのみ応答）】\\n{\\\"transactions\\\": [{\\\"transaction_date\\\": \\\"YYYY-MM-DD\\\", \\\"description\\\": \\\"摘要（詳細情報を含む）\\\", \\\"withdrawal_amount\\\": 出金額または null, \\\"deposit_amount\\\": 入金額または null, \\\"balance\\\": 残高}]}\\n\\n【重要】\\n- 日付は YYYY-MM-DD 形式に変換してください（印刷日時ではなく、取引日列のデータを使用）\\n- 取引日が\\\"28/12/1\\\"形式（2桁年）の場合 → 平成28年 = 2016年として変換\\n- 取引日が\\\"2/12/1\\\"形式（1桁年）の場合 → 照会期間の年を参考に推測\\n- 取引日が\\\"12/1\\\"形式（月日のみ）の場合 → 照会期間の年を使用\\n- 摘要は振替/振込だけでなく、依頼人名や銀行名も含めてください\\n- 金額のカンマは除去して数値にしてください\\n\\n【OCRテキスト】\\n\" + $json.extracted_text + \"\\n\\n【必須】JSONのみを返してください。説明文は不要です。\"\n    }\n  ],\n  \"max_tokens\": 4000,\n  \"temperature\": 0\n} }}",
         "options": {}
       },
       "id": "8c7987a5-4f11-41e5-bb65-8a4b7d08d2d9",
@@ -296,7 +296,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// 警告レコード（取引データなし）はスキップ\nif ($json.warning) {\n  console.warn('勘定科目判定: スキップ（警告レコード）');\n  return [];  // このアイテムは次のノードに渡さない\n}\n\n// 取引データを前のノードから取得\nconst transactionData = $json;\n\n// 一時的にナレッジベースをスキップし、常にAI推論を使用\nreturn {\n  json: {\n    ...transactionData,\n    matched_category: null,\n    match_source: 'ai_inference_needed',\n    matched_confidence: 0\n  }\n};"
+        "jsCode": "// 警告レコード（取引データなし）はスキップ\nif ($json.warning) {\n  console.warn('勘定科目判定: スキップ（警告レコード）');\n  return [];  // このアイテムは次のノードに渡さない\n}\n\n// 取引データを前のノードから取得\nconst transactionData = $json;\n\n// 銀行明細: 入出金判定\nconst withdrawal = transactionData.withdrawal_amount || 0;\nconst deposit = transactionData.deposit_amount || 0;\nconst transaction_type = withdrawal > 0 ? 'withdrawal' : 'deposit';\nconst amount = withdrawal > 0 ? withdrawal : deposit;\n\nconsole.log(`入出金判定: ${transaction_type}, 金額: ${amount}`);\n\n// 一時的にナレッジベースをスキップし、常にAI推論を使用\nreturn {\n  json: {\n    ...transactionData,\n    transaction_type: transaction_type,\n    amount: amount,\n    matched_category: null,\n    match_source: 'ai_inference_needed',\n    matched_confidence: 0\n  }\n};"
       },
       "id": "37b58562-c2a1-42ce-98d7-e089f5a8369e",
       "name": "勘定科目判定（ナレッジベース）",
@@ -388,7 +388,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// 警告レコード（取引データなし）はスキップ\nif ($json.warning) {\n  console.warn('消費税率判定: スキップ（警告レコード）');\n  return [];  // このアイテムは次のノードに渡さない\n}\n\n// 消費税率の自動判定\nconst merchant = $json.merchant || '';\nlet taxRate = 10; // デフォルトは標準税率10%\n\n// 軽減税率8%対象店舗\nconst reducedTaxMerchants = [\n  'セブン', 'ローソン', 'ファミマ', 'ファミリーマート',\n  'イオン', '西友', 'マックスバリュ',\n  'Uber Eats', '出前館', 'menu', 'Wolt'\n];\n\nfor (const keyword of reducedTaxMerchants) {\n  if (merchant.includes(keyword)) {\n    taxRate = 8;\n    break;\n  }\n}\n\n// 税区分判定（アメックスはインボイス登録事業者なのでインボイス対応）\nconst taxType = taxRate === 10 ? '課10% インボイス' : '課8% インボイス';\n\nreturn {\n  json: {\n    ...$json,\n    tax_rate: taxRate,\n    tax_type: taxType,\n    // 貸方勘定科目は法人カードなので「未払金」\n    credit_account: '未払金'\n  }\n};"
+        "jsCode": "// 警告レコード（取引データなし）はスキップ\nif ($json.warning) {\n  console.warn('借方・貸方設定: スキップ（警告レコード）');\n  return [];  // このアイテムは次のノードに渡さない\n}\n\n// 銀行明細: 借方・貸方の動的設定\nconst transactionType = $json.transaction_type;\nconst accountCategory = $json.matched_category || 'Review_Required';\n\nlet debitAccount, creditAccount, taxType;\n\nif (transactionType === 'withdrawal') {\n  // 出金: 借方=費用科目、貸方=普通預金\n  debitAccount = accountCategory;\n  creditAccount = '普通預金';\n  taxType = '課10% インボイス';  // デフォルト\n} else {\n  // 入金: 借方=普通預金、貸方=収益科目\n  debitAccount = '普通預金';\n  creditAccount = accountCategory;\n  taxType = '';  // 入金は税区分不要\n}\n\nconsole.log(`借方・貸方設定: ${transactionType} - 借方: ${debitAccount}, 貸方: ${creditAccount}`);\n\nreturn {\n  json: {\n    ...$json,\n    debit_account: debitAccount,\n    credit_account: creditAccount,\n    tax_type: taxType\n  }\n};"
       },
       "id": "a4942c81-1a67-414e-993c-63b647dfc708",
       "name": "消費税率判定",
@@ -591,12 +591,12 @@
           "value": {
             "取引No": "={{ $now.format('yyyyMMddHHmmss') }}-{{ $itemIndex }}",
             "取引日": "={{ $json.transaction_date }}",
-            "借方勘定科目": "={{ $json.matched_category || 'Review_Required' }}",
+            "借方勘定科目": "={{ $json.debit_account }}",
             "借方補助科目": "",
             "借方部門": "",
-            "借方取引先": "={{ $json.merchant }}",
-            "借方税区分": "={{ $json.tax_type }}",
-            "借方インボイス": "アメリカン・エキスプレス",
+            "借方取引先": "={{ $json.description }}",
+            "借方税区分": "={{ $json.transaction_type === 'withdrawal' ? $json.tax_type : '' }}",
+            "借方インボイス": "",
             "借方金額(円)": "={{ $json.amount }}",
             "貸方勘定科目": "={{ $json.credit_account }}",
             "貸方補助科目": "",
@@ -605,9 +605,9 @@
             "貸方税区分": "",
             "貸方インボイス": "",
             "貸方金額(円)": "={{ $json.amount }}",
-            "摘要": "={{ $json.merchant }}（{{ $json.description || 'カード決済' }}）",
+            "摘要": "={{ $json.description }}（{{ $json.transaction_type === 'withdrawal' ? '出金' : '入金' }}）",
             "タグ": "={{ $json.match_source === 'knowledge_base' ? 'ナレッジベース' : 'AI推論' }}",
-            "メモ": "=PDF: {{ $json.pdf_file_name }} | Status: {{ $json.matched_category ? 'Auto' : 'Review_Required' }}"
+            "メモ": "=画像: {{ $json.pdf_file_name }} | 種別: {{ $json.transaction_type }} | Status: {{ $json.matched_category ? 'Auto' : 'Review_Required' }}"
           },
           "matchingColumns": []
         },
