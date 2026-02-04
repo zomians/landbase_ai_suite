@@ -8,8 +8,8 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -2608,
-        336
+        -2600,
+        400
       ],
       "notes": "手動実行で顧客を選択してワークフローを開始"
     },
@@ -35,7 +35,7 @@
       "typeVersion": 4.4,
       "position": [
         -2400,
-        336
+        400
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -54,8 +54,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2208,
-        336
+        -2200,
+        400
       ],
       "notes": "設定済み顧客のみリスト化"
     },
@@ -79,7 +79,7 @@
       "typeVersion": 3.3,
       "position": [
         -2000,
-        336
+        400
       ],
       "notes": "手動で処理対象の顧客を選択（実際にはn8nのUI上で選択）"
     },
@@ -92,8 +92,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1808,
-        336
+        -1800,
+        400
       ],
       "notes": "選択された顧客の情報をパース"
     },
@@ -123,7 +123,7 @@
       "typeVersion": 4.2,
       "position": [
         -1600,
-        336
+        400
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -142,8 +142,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1504,
-        144
+        -1400,
+        400
       ],
       "notes": "files配列を個別のアイテムに展開"
     },
@@ -162,8 +162,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -1408,
-        336
+        -1000,
+        400
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -183,8 +183,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1200,
-        336
+        -800,
+        400
       ],
       "notes": "画像をBase64エンコードしてGoogle Cloud Vision APIリクエストを構築"
     },
@@ -198,8 +198,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1008,
-        336
+        -600,
+        400
       ],
       "notes": "Google Cloud VisionでOCR実行（サービスアカウント認証）"
     },
@@ -213,8 +213,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -816,
-        336
+        -400,
+        400
       ],
       "notes": "Vision APIレスポンスからテキストを抽出"
     },
@@ -234,8 +234,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -624,
-        336
+        -200,
+        400
       ],
       "credentials": {
         "openAiApi": {
@@ -254,8 +254,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -432,
-        336
+        0,
+        400
       ],
       "notes": "GPT-4oで構造化されたJSONから取引データを展開"
     },
@@ -280,8 +280,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        -608,
-        160
+        0,
+        200
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -303,8 +303,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -320,
-        128
+        200,
+        400
       ],
       "notes": "ナレッジベースでマッチング、なければAI推論へ"
     },
@@ -336,8 +336,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -176,
-        336
+        400,
+        400
       ],
       "notes": "ナレッジベースマッチがない場合のみAI推論"
     },
@@ -357,8 +357,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        0,
-        224
+        600,
+        300
       ],
       "retryOnFail": true,
       "waitBetweenTries": 2000,
@@ -380,8 +380,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
-        224
+        800,
+        300
       ],
       "notes": "AI推論結果を元データにマージ"
     },
@@ -395,8 +395,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        400,
-        336
+        800,
+        400
       ],
       "notes": "軽減税率8%対象店舗を判定、貸方勘定科目を未払金に設定"
     },
@@ -618,8 +618,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        608,
-        336
+        1000,
+        400
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -639,8 +639,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1008,
-        336
+        1200,
+        400
       ],
       "notes": "処理済みマーキング用のファイル名生成"
     },
@@ -660,8 +660,8 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1248,
-        192
+        1400,
+        400
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -683,8 +683,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -1456,
-        240
+        -1200,
+        400
       ],
       "notes": "6枚ずつバッチ処理してレート制限回避"
     },
@@ -698,8 +698,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        -528,
-        240
+        1600,
+        400
       ],
       "notes": "10秒待機してレート制限回避（テスト用、本番は30-40秒推奨）"
     }
