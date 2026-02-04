@@ -364,7 +364,7 @@
         300
       ],
       "retryOnFail": true,
-      "waitBetweenTries": 2000,
+      "waitBetweenTries": 60000,
       "credentials": {
         "openAiApi": {
           "id": "iQJJMVz6MkdVXrve",
