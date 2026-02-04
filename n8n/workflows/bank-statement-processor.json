@@ -243,7 +243,10 @@
           "name": "openai-api"
         }
       },
-      "notes": "OCRテキストをGPT-4oで構造化してJSON形式に変換"
+      "notes": "OCRテキストをGPT-4oで構造化してJSON形式に変換",
+      "retryOnFail": true,
+      "waitBetweenTries": 10000,
+      "maxTries": 5
     },
     {
       "parameters": {
@@ -349,7 +352,7 @@
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": `あなたは経理の専門家AIです。支払先から適切な勘定科目を推定してください。\\n\\n重要: JSON形式のみを返してください。説明文は一切不要です。\\n\\n# 勘定科目の選択肢\\n- 旅費交通費: 駐車場、タクシー、電車、飛行機など\\n- 会議費: 飲食（打ち合わせ）、カフェミーティングなど\\n- 交際費: 接待、贈答品など\\n- 消耗品費: 文房具、日用品、コンビニなど\\n- 新聞図書費: 書籍、雑誌、電子書籍など\\n- 研修費: セミナー、オンライン講座など\\n- 通信費: 携帯電話、インターネットなど\\n- 車両費: ガソリン、車検、修理など\\n- 地代家賃: オフィス賃料、駐車場月極など\\n- 雑費: その他\\n\\n# 出力形式（これのみを返す）\\n{\\\"account_category\\\": \\\"勘定科目名\\\"}`\n    },\n    {\n      \"role\": \"user\",\n      \"content\": `支払先: ${$json.merchant}`\n    }\n  ],\n  \"max_tokens\": 50,\n  \"temperature\": 0\n} }}",
+        "jsonBody": "={{ {\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": `あなたは経理の専門家AIです。支払先から適切な勘定科目を推定してください。\\n\\n重要: JSON形式のみを返してください。説明文は一切不要です。\\n\\n# 勘定科目の選択肢\\n- 旅費交通費: 駐車場、タクシー、電車、飛行機など\\n- 会議費: 飲食（打ち合わせ）、カフェミーティングなど\\n- 交際費: 接待、贈答品など\\n- 消耗品費: 文房具、日用品、コンビニなど\\n- 新聞図書費: 書籍、雑誌、電子書籍など\\n- 研修費: セミナー、オンライン講座など\\n- 通信費: 携帯電話、インターネットなど\\n- 車両費: ガソリン、車検、修理など\\n- 地代家賃: オフィス賃料、駐車場月極など\\n- 雑費: その他\\n\\n# 出力形式（これのみを返す）\\n{\\\"account_category\\\": \\\"勘定科目名\\\"}`\n    },\n    {\n      \"role\": \"user\",\n      \"content\": `支払先: ${$json.merchant}`\n    }\n  ],\n  \"max_tokens\": 50,\n  \"temperature\": 0\n} }}",
         "options": {}
       },
       "id": "477a566d-8e43-4639-ab04-239fa029fb54",
