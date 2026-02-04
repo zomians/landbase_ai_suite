@@ -831,7 +831,7 @@
       "main": [
         [
           {
-            "node": "Wait",
+            "node": "勘定科目判定（ナレッジベース）",
             "type": "main",
             "index": 0
           }
@@ -941,13 +941,6 @@
             "type": "main",
             "index": 0
           }
-        ],
-        [
-          {
-            "node": "勘定科目判定（ナレッジベース）",
-            "type": "main",
-            "index": 0
-          }
         ]
       ]
     },
@@ -956,6 +949,17 @@
         [
           {
             "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "処理済みマーキング": {
+      "main": [
+        [
+          {
+            "node": "Wait",
             "type": "main",
             "index": 0
           }
