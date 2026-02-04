@@ -243,7 +243,10 @@
           "name": "openai-api"
         }
       },
-      "notes": "OCRテキストをGPT-4oで構造化してJSON形式に変換"
+      "notes": "OCRテキストをGPT-4oで構造化してJSON形式に変換",
+      "retryOnFail": true,
+      "waitBetweenTries": 10000,
+      "maxTries": 5
     },
     {
       "parameters": {
@@ -670,38 +673,6 @@
         }
       },
       "notes": "PDFファイル名に_processedを追加"
-    },
-    {
-      "parameters": {
-        "batchSize": 6,
-        "options": {
-          "reset": true
-        }
-      },
-      "id": "4a0a4ad2-f7bf-426f-ac03-cc0df087c891",
-      "name": "Split In Batches",
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        -1200,
-        400
-      ],
-      "notes": "6枚ずつバッチ処理してレート制限回避"
-    },
-    {
-      "parameters": {
-        "amount": 10,
-        "unit": "seconds"
-      },
-      "id": "3791fd94-e99c-4f66-a47b-02a4a79b2103",
-      "name": "Wait",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        1600,
-        400
-      ],
-      "notes": "10秒待機してレート制限回避（テスト用、本番は30-40秒推奨）"
     }
   ],
   "pinData": {},
@@ -926,40 +897,7 @@
       "main": [
         [
           {
-            "node": "Split In Batches",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split In Batches": {
-      "main": [
-        [
-          {
             "node": "画像ダウンロード",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Wait": {
-      "main": [
-        [
-          {
-            "node": "Split In Batches",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "処理済みマーキング": {
-      "main": [
-        [
-          {
-            "node": "Wait",
             "type": "main",
             "index": 0
           }
