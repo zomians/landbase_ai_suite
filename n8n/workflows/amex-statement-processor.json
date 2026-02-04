@@ -670,6 +670,38 @@
         }
       },
       "notes": "PDFファイル名に_processedを追加"
+    },
+    {
+      "parameters": {
+        "batchSize": 6,
+        "options": {
+          "reset": true
+        }
+      },
+      "id": "4a0a4ad2-f7bf-426f-ac03-cc0df087c891",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1456,
+        240
+      ],
+      "notes": "6枚ずつバッチ処理してレート制限回避"
+    },
+    {
+      "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "3791fd94-e99c-4f66-a47b-02a4a79b2103",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -528,
+        240
+      ],
+      "notes": "60秒待機してレート制限回避"
     }
   ],
   "pinData": {},
@@ -788,7 +820,7 @@
       "main": [
         [
           {
-            "node": "取引データ展開",
+            "node": "Wait",
             "type": "main",
             "index": 0
           }
@@ -894,7 +926,36 @@
       "main": [
         [
           {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
             "node": "画像ダウンロード",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "取引データ展開",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
             "type": "main",
             "index": 0
           }
