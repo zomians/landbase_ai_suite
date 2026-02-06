@@ -264,40 +264,6 @@
     },
     {
       "parameters": {
-        "documentId": {
-          "__rl": true,
-          "value": "={{ $json.sheet_id }}",
-          "mode": "id"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "勘定科目マスター",
-          "mode": "name"
-        },
-        "options": {
-          "returnAllMatches": true
-        }
-      },
-      "id": "9b8edda0-d572-4b5c-8fd1-854e35eda2bf",
-      "name": "勘定科目マスター取得",
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.4,
-      "position": [
-        0,
-        200
-      ],
-      "alwaysOutputData": true,
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "20kqD5uj6zSeTJdI",
-          "name": "Google Sheets OAuth2"
-        }
-      },
-      "continueOnFail": true,
-      "notes": "顧客別勘定科目ナレッジベースを取得"
-    },
-    {
-      "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "// 警告レコード（取引データなし）はスキップ\nif ($json.warning) {\n  console.warn('勘定科目判定: スキップ（警告レコード）');\n  return [];  // このアイテムは次のノードに渡さない\n}\n\n// 取引データを前のノードから取得\nconst transactionData = $json;\n\n// 一時的にナレッジベースをスキップし、常にAI推論を使用\nreturn {\n  json: {\n    ...transactionData,\n    matched_category: null,\n    match_source: 'ai_inference_needed',\n    matched_confidence: 0\n  }\n};"
       },
