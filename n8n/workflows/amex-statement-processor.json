@@ -143,17 +143,45 @@
     },
     {
       "parameters": {
-        "jsCode": "// Google Drive Downloadノードからバイナリデータを取得\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst mimeType = $input.item.binary[binaryPropertyName].mimeType || 'image/png';\n\n// n8n 2.4.0のfilesystemモードではgetBinaryDataBuffer()を使用\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\n// Google DriveのURL（証憑用）\nconst driveFileId = $json.id;\nconst driveFileName = $json.name;\nconst driveUrl = `https://drive.google.com/uc?export=view&id=${driveFileId}`;\n\n// Base64形式でdata URIを構築\nconst base64Image = `data:${mimeType};base64,${base64String}`;\n\n// 顧客情報を取得（Amex設定済み顧客フィルタノードから）\nconst clientData = $('Amex設定済み顧客フィルタ').item.json;\n\n// OpenAI APIリクエストボディを構築\nconst requestBody = {\n  model: \"gpt-4o\",\n  messages: [\n    {\n      role: \"system\",\n      content: `あなたは経理の専門家AIです。アップロードされたアメックス明細PNG画像から取引情報を抽出してください。\n\n# ルール\n1. **複数取引を配列で返す**: 1枚の画像に複数の取引が含まれる場合、配列形式で全て抽出してください。\n2. **transaction_date**: 取引日（ご利用明細の日付）を YYYY-MM-DD 形式で抽出。\n3. **merchant**: 店舗名・サービス名を正確に抽出（例: UBER EATS、アドビ(株)、大丸 東京店）。\n4. **amount**: 金額（数値のみ、カンマや円マークは除去）。\n5. **description**: 取引カテゴリ/詳細（例: 飲食店、専門店（コンピュータ販売）、通信/インターネットサービス）。\n6. **category**: 空文字列（後続処理で自動推定）。\n\n# 出力形式\nJSON配列のみを出力してください。説明文は不要です。\n\n[\n  {\n    \"transaction_date\": \"2025-01-15\",\n    \"merchant\": \"UBER EATS\",\n    \"amount\": 1500,\n    \"description\": \"飲食店\",\n    \"category\": \"\"\n  },\n  {\n    \"transaction_date\": \"2025-01-16\",\n    \"merchant\": \"アドビ(株)\",\n    \"amount\": 3980,\n    \"description\": \"通信/インターネットサービス\",\n    \"category\": \"\"\n  }\n]`\n    },\n    {\n      role: \"user\",\n      content: [\n        {\n          type: \"text\",\n          text: \"このアメックス明細画像から全ての取引情報を抽出してください。\"\n        },\n        {\n          type: \"image_url\",\n          image_url: {\n            url: base64Image\n          }\n        }\n      ]\n    }\n  ],\n  max_tokens: 2000,\n  temperature: 0.2\n};\n\n// 出力データ\nreturn {\n  json: {\n    requestBody: requestBody,\n    driveUrl: driveUrl,\n    driveFileId: driveFileId,\n    driveFileName: driveFileName,\n    client_code: clientData.client_code,\n    amex_sheet_id: clientData.amex_sheet_id\n  }\n};"
+        "jsCode": "// Google Drive Downloadノードからバイナリデータを取得\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer($itemIndex, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\nconst driveFileId = $json.id;\nconst driveFileName = $json.name;\n\n// 顧客情報を取得（Amex設定済み顧客フィルタノードから）\nconst clientData = $('Amex設定済み顧客フィルタ').item.json;\n\n// GCP認証情報を取得（全顧客取得ノードから）\nconst allClients = $('全顧客取得').all();\nconst amexTestClient = allClients.find(c => c.json.customer_name === 'amex_test');\n\nif (!amexTestClient || !amexTestClient.json.gcp_service_account_json) {\n  throw new Error('GCP認証情報が見つかりません。Master_User_Configのamex_test行にgcp_service_account_jsonを設定してください。');\n}\n\n// Vision APIリクエストボディ\nconst visionRequest = {\n  requests: [\n    {\n      image: {\n        content: base64String\n      },\n      features: [\n        {\n          type: \"DOCUMENT_TEXT_DETECTION\"\n        }\n      ],\n      imageContext: {\n        languageHints: [\"ja\"]\n      }\n    }\n  ]\n};\n\nreturn {\n  json: {\n    visionRequest: visionRequest,\n    driveFileId: driveFileId,\n    driveFileName: driveFileName,\n    client_code: clientData.client_code,\n    amex_sheet_id: clientData.amex_sheet_id,\n    gcp_service_account_json: amexTestClient.json.gcp_service_account_json\n  }\n};"
       },
       "id": "dfe37968-1517-483e-9866-b006cc6d78be",
-      "name": "OCRリクエスト構築",
+      "name": "Google Cloud Vision OCR準備",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         -1200,
         112
       ],
-      "notes": "PNG画像をBase64エンコードしてOpenAI APIリクエストを構築（複数取引対応）"
+      "notes": "PNG画像をBase64エンコードしてGoogle Cloud Vision APIリクエストを構築"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Google Cloud Vision APIをサービスアカウントで認証して呼び出し\nconst visionRequest = $json.visionRequest;\nconst driveFileId = $json.driveFileId;\nconst driveFileName = $json.driveFileName;\nconst clientCode = $json.client_code;\nconst amexSheetId = $json.amex_sheet_id;\nconst gcpServiceAccountJson = $json.gcp_service_account_json;\n\nif (!gcpServiceAccountJson) {\n  throw new Error('gcp_service_account_jsonが設定されていません。Master_User_Configシートで設定してください。');\n}\n\n// GCPサービスアカウント情報を取得\nconst serviceAccount = JSON.parse(gcpServiceAccountJson);\n\n// JWT作成（Google Cloud Vision API用）\nconst crypto = require('crypto');\n\nconst now = Math.floor(Date.now() / 1000);\nconst jwtHeader = Buffer.from(JSON.stringify({\n  alg: 'RS256',\n  typ: 'JWT'\n})).toString('base64url');\n\nconst jwtClaim = Buffer.from(JSON.stringify({\n  iss: serviceAccount.client_email,\n  scope: 'https://www.googleapis.com/auth/cloud-vision',\n  aud: 'https://oauth2.googleapis.com/token',\n  exp: now + 3600,\n  iat: now\n})).toString('base64url');\n\nconst signatureInput = `${jwtHeader}.${jwtClaim}`;\nconst signature = crypto.createSign('RSA-SHA256')\n  .update(signatureInput)\n  .sign(serviceAccount.private_key, 'base64url');\n\nconst jwt = `${signatureInput}.${signature}`;\n\n// アクセストークン取得\nconst tokenResponse = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://oauth2.googleapis.com/token',\n  body: {\n    grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',\n    assertion: jwt\n  },\n  json: true\n});\n\nconst accessToken = tokenResponse.access_token;\n\nif (!accessToken) {\n  throw new Error(`トークン取得失敗: ${JSON.stringify(tokenResponse)}`);\n}\n\n// Vision API呼び出し\nconst visionResponse = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://vision.googleapis.com/v1/images:annotate',\n  headers: {\n    Authorization: `Bearer ${accessToken}`\n  },\n  body: visionRequest,\n  json: true\n});\n\nreturn {\n  json: {\n    visionResponse: visionResponse,\n    driveFileId: driveFileId,\n    driveFileName: driveFileName,\n    client_code: clientCode,\n    amex_sheet_id: amexSheetId\n  }\n};"
+      },
+      "id": "ac1a839c-d835-4053-96eb-8214125c8cd1",
+      "name": "Google Cloud Vision OCR実行",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1008,
+        112
+      ],
+      "notes": "Google Cloud VisionでOCR実行（サービスアカウント認証）"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Google Cloud Vision OCRの結果からテキストを抽出\nconst visionResponse = $json.visionResponse;\nconst driveFileId = $json.driveFileId;\nconst driveFileName = $json.driveFileName;\nconst clientCode = $json.client_code;\nconst amexSheetId = $json.amex_sheet_id;\n\n// Vision APIレスポンスからテキストを取得\nlet extractedText = '';\n\nif (visionResponse.responses && visionResponse.responses.length > 0) {\n  const response = visionResponse.responses[0];\n  \n  if (response.fullTextAnnotation && response.fullTextAnnotation.text) {\n    extractedText = response.fullTextAnnotation.text;\n  } else if (response.error) {\n    throw new Error(`Vision API エラー: ${JSON.stringify(response.error)}`);\n  } else {\n    throw new Error('テキストが検出されませんでした');\n  }\n} else {\n  throw new Error('Vision APIレスポンスが空です');\n}\n\nif (extractedText.length === 0) {\n  throw new Error('OCRで抽出されたテキストが空です');\n}\n\nreturn {\n  json: {\n    extracted_text: extractedText,\n    driveFileId: driveFileId,\n    driveFileName: driveFileName,\n    client_code: clientCode,\n    amex_sheet_id: amexSheetId\n  }\n};"
+      },
+      "id": "6e8f9a7b-4c5d-4e6f-a1b2-3c4d5e6f7a8b",
+      "name": "OCRテキスト抽出",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        112
+      ],
+      "notes": "Vision APIレスポンスからテキストを抽出"
     },
     {
       "parameters": {
@@ -163,15 +191,15 @@
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ $json.requestBody }}",
+        "jsonBody": "={{ {\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"あなたはクレジットカード明細のOCRテキストをJSON形式に変換する専門AIです。\\n\\n【重要な制約】\\n1. 出力は必ずJSON形式のみとし、説明文や補足は一切含めないでください\\n2. マークダウンのコードブロック（```json）も使用しないでください\\n3. JSONとして解析できない文字列を返さないでください\\n4. 取引データが見つからない場合は空配列を返してください: {\\\"transactions\\\": []}\\n5. 確信度が低い情報でも、推測して構造化してください\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"以下のOCRテキストから取引データを抽出し、JSON形式で出力してください。\\n\\n【出力形式（この形式でのみ応答）】\\n{\\\"transactions\\\": [{\\\"transaction_date\\\": \\\"YYYY-MM-DD\\\", \\\"merchant\\\": \\\"店舗名\\\", \\\"amount\\\": 金額, \\\"description\\\": \\\"詳細\\\"}]}\\n\\n【OCRテキスト】\\n\" + $json.extracted_text + \"\\n\\n【必須】JSONのみを返してください。説明文は不要です。\"\n    }\n  ],\n  \"max_tokens\": 4000,\n  \"temperature\": 0\n} }}",
         "options": {}
       },
-      "id": "ac1a839c-d835-4053-96eb-8214125c8cd1",
-      "name": "AI-OCR処理（GPT-4o）",
+      "id": "8c7987a5-4f11-41e5-bb65-8a4b7d08d2d9",
+      "name": "GPT-4oテキスト構造化",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1008,
+        -600,
         112
       ],
       "credentials": {
@@ -180,18 +208,21 @@
           "name": "openai-api"
         }
       },
-      "notes": "GPT-4oで画像から複数取引を抽出"
+      "notes": "OCRテキストをGPT-4oで構造化してJSON形式に変換",
+      "retryOnFail": true,
+      "waitBetweenTries": 10000,
+      "maxTries": 5
     },
     {
       "parameters": {
-        "jsCode": "// AI-OCR結果をパース\nlet content = $input.item.json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\nlet ocrResult;\ntry {\n  ocrResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// 配列でない場合は配列に変換\nif (!Array.isArray(ocrResult)) {\n  ocrResult = [ocrResult];\n}\n\n// OCRリクエスト構築ノードからメタデータを取得\nconst metadata = $('OCRリクエスト構築').item.json;\n\n// 各取引にメタデータを追加して出力\nreturn ocrResult.map(transaction => ({\n  json: {\n    ...transaction,\n    driveUrl: metadata.driveUrl,\n    driveFileId: metadata.driveFileId,\n    driveFileName: metadata.driveFileName,\n    client_code: metadata.client_code,\n    amex_sheet_id: metadata.amex_sheet_id\n  }\n}));"
+        "jsCode": "// GPT-4oのレスポンスから取引データを展開\nlet content = $input.item.json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\n// JSONガード: { または [ で始まっていない場合はエラー\nif (!content.startsWith('{') && !content.startsWith('[')) {\n  throw new Error(`JSON形式ではないレスポンス: ${content.substring(0, 100)}...`);\n}\n\nlet structuredData;\ntry {\n  structuredData = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// transactions配列を取得\nconst transactions = structuredData.transactions || [];\n\nif (transactions.length === 0) {\n  throw new Error('取引データが見つかりませんでした');\n}\n\n// OCRテキスト抽出ノードからメタデータを取得\nconst metadata = $('OCRテキスト抽出').item.json;\n\n// 各取引にメタデータを追加して出力\nreturn transactions.map(transaction => ({\n  json: {\n    ...transaction,\n    driveUrl: `https://drive.google.com/uc?export=view&id=${metadata.driveFileId}`,\n    driveFileId: metadata.driveFileId,\n    driveFileName: metadata.driveFileName,\n    client_code: metadata.client_code,\n    amex_sheet_id: metadata.amex_sheet_id,\n    category: transaction.category || ''\n  }\n}));"
       },
       "id": "52ee8dc7-03b6-4bdb-8515-0cae9e2e02d0",
       "name": "取引データ展開",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -800,
+        -400,
         112
       ],
       "notes": "複数取引を個別アイテムに展開"
@@ -217,7 +248,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        -608,
+        -200,
         112
       ],
       "alwaysOutputData": true,
@@ -239,7 +270,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -400,
+        0,
         112
       ],
       "notes": "ナレッジベースから勘定科目をマッチング"
@@ -273,7 +304,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -208,
+        200,
         112
       ],
       "notes": "ナレッジベースでマッチしなかった場合のみAI推論"
@@ -287,7 +318,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        0,
+        400,
         0
       ],
       "notes": "ナレッジベースでマッチしなかった取引のみAI推論"
@@ -308,7 +339,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        208,
+        600,
         0
       ],
       "credentials": {
@@ -328,7 +359,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        400,
+        800,
         0
       ],
       "notes": "AI推論結果を元の取引データにマージ"
@@ -342,7 +373,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        608,
+        1000,
         112
       ],
       "notes": "ナレッジベースマッチとAI推論の結果を統合"
@@ -356,7 +387,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        800,
+        1200,
         112
       ],
       "notes": "軽減税率（8%）対象を自動判定"
@@ -579,7 +610,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        1008,
+        1400,
         112
       ],
       "credentials": {
@@ -600,7 +631,7 @@
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
-        1200,
+        1600,
         208
       ],
       "notes": "全取引の記帳完了を待機してから処理済みマーキング"
@@ -614,7 +645,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1408,
+        1800,
         208
       ],
       "notes": "処理済みファイル名を準備"
@@ -634,7 +665,7 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1600,
+        2000,
         208
       ],
       "credentials": {
@@ -696,25 +727,47 @@
       "main": [
         [
           {
-            "node": "OCRリクエスト構築",
+            "node": "Google Cloud Vision OCR準備",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "OCRリクエスト構築": {
+    "Google Cloud Vision OCR準備": {
       "main": [
         [
           {
-            "node": "AI-OCR処理（GPT-4o）",
+            "node": "Google Cloud Vision OCR実行",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "AI-OCR処理（GPT-4o）": {
+    "Google Cloud Vision OCR実行": {
+      "main": [
+        [
+          {
+            "node": "OCRテキスト抽出",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCRテキスト抽出": {
+      "main": [
+        [
+          {
+            "node": "GPT-4oテキスト構造化",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4oテキスト構造化": {
       "main": [
         [
           {
