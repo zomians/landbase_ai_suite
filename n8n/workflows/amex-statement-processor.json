@@ -17,7 +17,7 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "16qhVQNDn_5Y1Ayw_H0ziUw1nu2b70o6IcRn1rr4Pa94",
+          "value": "1dw8XFIp6KnYzYFKSUkIrhhnOpCEpkUsqzajw",
           "mode": "id"
         },
         "sheetName": {
@@ -194,7 +194,7 @@
         "nodeCredentialType": "openAiApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"あなたはアメリカン・エキスプレス（アメックス）のクレジットカード利用明細をOCRテキストから抽出する専門AIです。\\n\\n【重要な制約】\\n1. 出力は必ずJSON形式のみとし、説明文や補足は一切含めないでください\\n2. マークダウンのコードブロック（```json）も使用しないでください\\n3. JSONとして解析できない文字列を返さないでください\\n4. 取引データが見つからない場合は空配列を返してください: {\\\"transactions\\\": []}\\n5. 確信度が低い情報でも、推測して構造化してください\\n6. OCRテキストは読みにくい場合がありますが、日付・店舗名・金額のパターンを見つけて抽出してください\\n7. 日付は 'MM/DD' または 'M月D日' の形式で記載されている場合があります（年は2026年と推定）\\n8. 金額は '¥' または '円' の記号付きで記載されています\\n9. 複数の取引が連続して記載されています\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"以下はアメックスのクレジットカード利用明細のOCRテキストです。このテキストから全ての取引データを抽出してJSON形式で出力してください。\\n\\n【抽出ルール】\\n- transaction_date: 取引日を YYYY-MM-DD 形式で（年は2026年と推定）\\n- merchant: 店舗名・サービス名\\n- amount: 金額（数値のみ、カンマや通貨記号は除去）\\n- description: 取引の説明やカテゴリ\\n\\n【出力形式（この形式でのみ応答）】\\n{\\\"transactions\\\": [{\\\"transaction_date\\\": \\\"2026-01-23\\\", \\\"merchant\\\": \\\"UBER EATS\\\", \\\"amount\\\": 1500, \\\"description\\\": \\\"飲食店\\\"}]}\\n\\n【OCRテキスト】\\n\" + $json.extracted_text + \"\\n\\n【必須】取引データが1件でも見つかればJSON配列で返してください。見つからない場合のみ空配列を返してください。\"\n    }\n  ],\n  \"max_tokens\": 4000,\n  \"temperature\": 0\n} }}",
+        "jsonBody": "={{ {\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"あなたはクレジットカード明細のOCRテキストから取引データを抽出する専門AIです。出力は必ずJSON形式のみとし、説明文は一切含めないでください。\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"以下のOCRテキストから取引データを抽出してください。\\n\\n【入力例】\\nOCRテキスト: \\\"ご入金・調整金額内容\\\\n12月5日\\\\nスマートEX（JR東海）東京都 港区\\\\n銀行振込\\\\n-33,300\\\\n12月13日\\\\nアップルストア 丸の内 ー東京都 千代田区\\\\n専門店/施設/その他サービス\\\\n-85,000\\\"\\n\\n【期待される出力】\\n{\\\"transactions\\\": [{\\\"transaction_date\\\": \\\"2025-12-05\\\", \\\"merchant\\\": \\\"スマートEX（JR東海）\\\", \\\"amount\\\": 33300, \\\"description\\\": \\\"東京都 港区\\\"}, {\\\"transaction_date\\\": \\\"2025-12-13\\\", \\\"merchant\\\": \\\"アップルストア 丸の内\\\", \\\"amount\\\": 85000, \\\"description\\\": \\\"東京都 千代田区\\\"}]}\\n\\n【抽出ルール】\\n1. '12月5日'のような日付パターンを探す\\n2. その後の行に店舗名がある\\n3. マイナス記号付きの金額を探す（例: -33,300）\\n4. 金額は数値のみ（カンマとマイナス除去）\\n5. 年は2025年12月または2026年1月と推定\\n\\n【OCRテキスト】\\n\" + $json.extracted_text + \"\\n\\n【必須】上記の例と同じ形式でJSONのみを返してください。マークダウンや説明文は不要です。\"\n    }\n  ],\n  \"max_tokens\": 4000,\n  \"temperature\": 0\n} }}",
         "options": {}
       },
       "id": "8c7987a5-4f11-41e5-bb65-8a4b7d08d2d9",
@@ -266,7 +266,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 取引データ展開ノードから取引情報を取得\nconst transaction = $input.item.json;\nconst merchant = transaction.merchant || '';\nconst description = transaction.description || '';\n\n// ナレッジベース取得（全行）- エラーハンドリング追加\nlet knowledgeBase = [];\ntry {\n  const kbData = $('勘定科目マスター取得').all();\n  if (kbData && Array.isArray(kbData) && kbData.length > 0) {\n    knowledgeBase = kbData.filter(item => item && item.json && !item.error);\n  }\n} catch (error) {\n  knowledgeBase = [];\n}\n\n// マッチング処理\nlet matchedCategory = null;\nlet maxConfidence = 0;\nlet matchSource = 'none';\n\nfor (let i = 0; i < knowledgeBase.length; i++) {\n  const rule = knowledgeBase[i].json;\n  const merchantKeyword = rule.merchant_keyword || '';\n  const descriptionKeyword = rule.description_keyword || '';\n  const confidence = parseInt(rule.confidence_score) || 0;\n  \n  // 店舗名での完全一致（最優先）\n  if (merchantKeyword && merchant.includes(merchantKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n  \n  // 取引内容での部分一致\n  if (!matchedCategory && descriptionKeyword && description.includes(descriptionKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n}\n\n// ナレッジベースでマッチしなかった場合はAI推論が必要\nif (!matchedCategory) {\n  // AI推論ノードに渡すためのフラグ\n  return {\n    json: {\n      ...transaction,\n      needs_ai_inference: true,\n      match_source: 'pending'\n    }\n  };\n} else {\n  // ナレッジベースマッチ成功\n  return {\n    json: {\n      ...transaction,\n      category: matchedCategory,\n      match_source: matchSource,\n      matched_confidence: maxConfidence,\n      needs_ai_inference: false\n    }\n  };\n}"
+        "jsCode": "// 取引データ展開ノードから取引情報を取得\nconst transaction = $input.item.json;\nconst merchant = transaction.merchant || '';\nconst description = transaction.description || '';\n\n// ナレッジベース取得（全行）- エラーハンドリング追加\nlet knowledgeBase = [];\ntry {\n  const kbData = $('勘定科目マスター取得').all();\n  if (kbData && Array.isArray(kbData) && kbData.length > 0) {\n    knowledgeBase = kbData.filter(item => item && item.json && !item.error && !item.json.error);\n  }\n} catch (error) {\n  console.log('ナレッジベース取得エラー（スキップしてAI推論に回します）:', error.message);\n  knowledgeBase = [];\n}\n\nconsole.log(`ナレッジベース: ${knowledgeBase.length}件`);\n\n// マッチング処理\nlet matchedCategory = null;\nlet maxConfidence = 0;\nlet matchSource = 'none';\n\nfor (let i = 0; i < knowledgeBase.length; i++) {\n  const rule = knowledgeBase[i].json;\n  const merchantKeyword = rule.merchant_keyword || '';\n  const descriptionKeyword = rule.description_keyword || '';\n  const confidence = parseInt(rule.confidence_score) || 0;\n  \n  // 店舗名での完全一致（最優先）\n  if (merchantKeyword && merchant.includes(merchantKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n  \n  // 取引内容での部分一致\n  if (!matchedCategory && descriptionKeyword && description.includes(descriptionKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n}\n\n// ナレッジベースでマッチしなかった場合（またはナレッジベースがない場合）はAI推論が必要\nif (!matchedCategory) {\n  console.log(`${merchant}: ナレッジベースマッチなし → AI推論`);\n  return {\n    json: {\n      ...transaction,\n      needs_ai_inference: true,\n      match_source: 'pending'\n    }\n  };\n} else {\n  console.log(`${merchant}: ナレッジベースマッチ成功 → ${matchedCategory}`);\n  return {\n    json: {\n      ...transaction,\n      category: matchedCategory,\n      match_source: matchSource,\n      matched_confidence: maxConfidence,\n      needs_ai_inference: false\n    }\n  };\n}"
       },
       "id": "14b9e119-0d54-4068-b2ea-d5da4ab50594",
       "name": "勘定科目マッチング",
@@ -314,7 +314,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 取引情報を取得\nconst transaction = $input.item.json;\n\n// AI推論用プロンプト構築\nconst prompt = `以下の取引から適切な勘定科目を推定してください。\n\n店舗名: ${transaction.merchant}\n取引内容: ${transaction.description}\n金額: ${transaction.amount}円\n\n勘定科目の選択肢:\n- 消耗品費\n- 旅費交通費\n- 会議費\n- 交際費\n- 通信費\n- 水道光熱費\n- 広告宣伝費\n- 研修費\n- 新聞図書費\n- 車両費\n- 雑費\n\nJSON形式で出力してください:\n{\n  \"category\": \"推定した勘定科目\",\n  \"tax_rate\": 10\n}`;\n\nconst requestBody = {\n  model: \"gpt-4o-mini\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"あなたは経理の専門家AIです。取引内容から適切な勘定科目を推定してください。\"\n    },\n    {\n      role: \"user\",\n      content: prompt\n    }\n  ],\n  max_tokens: 200,\n  temperature: 0.2\n};\n\nreturn {\n  json: {\n    requestBody: requestBody,\n    transaction: transaction\n  }\n};"
+        "jsCode": "// 取引情報を取得\nconst transaction = $input.item.json;\n\n// AI推論用プロンプト構築\nconst merchant = transaction.merchant || '不明';\nconst description = transaction.description || '詳細不明';\nconst amount = transaction.amount || 0;\n\nconst prompt = `以下の取引から適切な勘定科目を推定してください。\n\n店舗名: ${merchant}\n取引内容: ${description}\n金額: ${amount}円\n\n勘定科目の選択肢:\n- 消耗品費\n- 旅費交通費\n- 会議費\n- 交際費\n- 通信費\n- 水道光熱費\n- 広告宣伝費\n- 研修費\n- 新聞図書費\n- 車両費\n- 雑費\n\nJSON形式で出力してください:\n{\n  \"category\": \"推定した勘定科目\",\n  \"tax_rate\": 10\n}`;\n\nconst requestBody = {\n  model: \"gpt-4o-mini\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"あなたは経理の専門家AIです。取引内容から適切な勘定科目を推定してください。出力は必ずJSON形式のみとし、説明文は一切含めないでください。\"\n    },\n    {\n      role: \"user\",\n      content: prompt\n    }\n  ],\n  max_tokens: 200,\n  temperature: 0\n};\n\nreturn {\n  json: {\n    requestBody: requestBody,\n    transaction: transaction\n  }\n};"
       },
       "id": "e036639d-17ea-4ea4-9e86-4a4434053b19",
       "name": "AI推論リクエスト構築",
@@ -355,7 +355,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// AI推論結果をパース\nlet content = $input.item.json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\nlet aiResult;\ntry {\n  aiResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// AI推論リクエスト構築ノードから元の取引データを取得\nconst transaction = $('AI推論リクエスト構築').item.json.transaction;\n\nreturn {\n  json: {\n    ...transaction,\n    category: aiResult.category,\n    tax_rate: aiResult.tax_rate,\n    match_source: 'ai_inference',\n    matched_confidence: 0,\n    needs_ai_inference: false\n  }\n};"
+        "jsCode": "// AI推論結果をパース\nlet content = $input.item.json.choices[0].message.content;\n\n// マークダウンコードブロックを除去\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\n// 説明文を除去（JSONの前にある説明文を削除）\nconst jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\nif (jsonMatch) {\n  content = jsonMatch[0];\n}\n\nlet aiResult;\ntry {\n  aiResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// AI推論リクエスト構築ノードから元の取引データを取得\nconst transaction = $('AI推論リクエスト構築').item.json.transaction;\n\nreturn {\n  json: {\n    ...transaction,\n    category: aiResult.category,\n    tax_rate: aiResult.tax_rate || 10,\n    match_source: 'ai_inference',\n    matched_confidence: 0,\n    needs_ai_inference: false\n  }\n};"
       },
       "id": "e7a9b7a3-b7dd-40f7-8a27-5f117fa82200",
       "name": "AI推論結果マージ",
@@ -369,7 +369,9 @@
     },
     {
       "parameters": {
-        "mode": "mergeByPosition"
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
       },
       "id": "594ad365-e640-4619-b2ec-7e8c798f6f4f",
       "name": "全取引マージ",
