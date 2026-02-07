@@ -3,12 +3,12 @@
   "nodes": [
     {
       "parameters": {},
-      "id": "3525a135-2eab-4aa2-8638-5b7fe3593891",
+      "id": "51b60fa0-6ae1-410f-85b3-5aa5bd72aa50",
       "name": "手動トリガー",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -2208,
+        -2608,
         208
       ],
       "notes": "手動実行でワークフローを開始"
@@ -29,12 +29,12 @@
           "returnAllMatches": "returnAllMatches"
         }
       },
-      "id": "862e76fc-24f5-4caf-83d1-a51b38f87278",
+      "id": "f291e876-f6c0-4100-8588-68e133c1b5a1",
       "name": "全顧客取得",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        -2000,
+        -2400,
         208
       ],
       "credentials": {
@@ -80,12 +80,12 @@
         },
         "options": {}
       },
-      "id": "e202e9bb-3fe4-40f8-9f5c-f5302612920b",
+      "id": "cdcd25cd-3e0c-462d-a641-9d05537f6985",
       "name": "Amex設定済み顧客フィルタ",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -1808,
+        -2208,
         208
       ],
       "notes": "amex_drive_folder_idとamex_sheet_idが設定されている顧客のみ処理"
@@ -99,12 +99,12 @@
         "filter": {},
         "options": {}
       },
-      "id": "3c3884f9-7d07-423e-b444-245f435e59bb",
+      "id": "15ee97ba-f557-4a96-bfe0-41bb8468e043",
       "name": "未処理PNG一覧取得",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -1600,
+        -2000,
         112
       ],
       "credentials": {
@@ -125,12 +125,12 @@
         },
         "options": {}
       },
-      "id": "3f53fc36-83bb-447d-a327-66f3f0371027",
+      "id": "82e7e27f-2ac3-4654-99cf-ab4830b1dd07",
       "name": "PNGダウンロード",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -1408,
+        -1808,
         112
       ],
       "credentials": {
@@ -146,12 +146,12 @@
         "mode": "runOnceForEachItem",
         "jsCode": "// Google Drive Downloadノードからバイナリデータを取得\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer($itemIndex, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\nconst driveFileId = $json.id;\nconst driveFileName = $json.name;\n\nconsole.log(`\\n=== Google Cloud Vision OCR準備: ${driveFileName} ===`);\nconsole.log(`画像サイズ: ${binaryBuffer.length} bytes`);\nconsole.log(`Base64長: ${base64String.length} 文字`);\n\n// 顧客情報を取得（Amex設定済み顧客フィルタノードから）\nconst clientData = $('Amex設定済み顧客フィルタ').item.json;\n\n// GCP認証情報を取得（全顧客取得ノードから）\nconst allClients = $('全顧客取得').all();\nconst amexTestClient = allClients.find(c => c.json.customer_name === 'amex_test');\n\nif (!amexTestClient || !amexTestClient.json.gcp_service_account_json) {\n  throw new Error('GCP認証情報が見つかりません。Master_User_Configのamex_test行にgcp_service_account_jsonを設定してください。');\n}\n\n// Vision APIリクエストボディ\nconst visionRequest = {\n  requests: [\n    {\n      image: {\n        content: base64String\n      },\n      features: [\n        {\n          type: \"DOCUMENT_TEXT_DETECTION\"\n        }\n      ],\n      imageContext: {\n        languageHints: [\"ja\"]\n      }\n    }\n  ]\n};\n\nreturn {\n  json: {\n    visionRequest: visionRequest,\n    driveFileId: driveFileId,\n    driveFileName: driveFileName,\n    client_code: clientData.client_code,\n    amex_sheet_id: clientData.amex_sheet_id,\n    gcp_service_account_json: amexTestClient.json.gcp_service_account_json\n  }\n};"
       },
-      "id": "dfe37968-1517-483e-9866-b006cc6d78be",
+      "id": "cf19e09a-0743-4e3a-9a8e-ada3efe68bb3",
       "name": "Google Cloud Vision OCR準備",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1200,
+        -1600,
         112
       ],
       "notes": "PNG画像をBase64エンコードしてGoogle Cloud Vision APIリクエストを構築"
@@ -161,12 +161,12 @@
         "mode": "runOnceForEachItem",
         "jsCode": "// Google Cloud Vision APIをサービスアカウントで認証して呼び出し\nconst visionRequest = $json.visionRequest;\nconst driveFileId = $json.driveFileId;\nconst driveFileName = $json.driveFileName;\nconst clientCode = $json.client_code;\nconst amexSheetId = $json.amex_sheet_id;\nconst gcpServiceAccountJson = $json.gcp_service_account_json;\n\nif (!gcpServiceAccountJson) {\n  throw new Error('gcp_service_account_jsonが設定されていません。Master_User_Configシートで設定してください。');\n}\n\n// GCPサービスアカウント情報を取得\nconst serviceAccount = JSON.parse(gcpServiceAccountJson);\n\n// JWT作成（Google Cloud Vision API用）\nconst crypto = require('crypto');\n\nconst now = Math.floor(Date.now() / 1000);\nconst jwtHeader = Buffer.from(JSON.stringify({\n  alg: 'RS256',\n  typ: 'JWT'\n})).toString('base64url');\n\nconst jwtClaim = Buffer.from(JSON.stringify({\n  iss: serviceAccount.client_email,\n  scope: 'https://www.googleapis.com/auth/cloud-vision',\n  aud: 'https://oauth2.googleapis.com/token',\n  exp: now + 3600,\n  iat: now\n})).toString('base64url');\n\nconst signatureInput = `${jwtHeader}.${jwtClaim}`;\nconst signature = crypto.createSign('RSA-SHA256')\n  .update(signatureInput)\n  .sign(serviceAccount.private_key, 'base64url');\n\nconst jwt = `${signatureInput}.${signature}`;\n\n// アクセストークン取得\nconst tokenResponse = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://oauth2.googleapis.com/token',\n  body: {\n    grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',\n    assertion: jwt\n  },\n  json: true\n});\n\nconst accessToken = tokenResponse.access_token;\n\nif (!accessToken) {\n  throw new Error(`トークン取得失敗: ${JSON.stringify(tokenResponse)}`);\n}\n\n// Vision API呼び出し\nconst visionResponse = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://vision.googleapis.com/v1/images:annotate',\n  headers: {\n    Authorization: `Bearer ${accessToken}`\n  },\n  body: visionRequest,\n  json: true\n});\n\nreturn {\n  json: {\n    visionResponse: visionResponse,\n    driveFileId: driveFileId,\n    driveFileName: driveFileName,\n    client_code: clientCode,\n    amex_sheet_id: amexSheetId\n  }\n};"
       },
-      "id": "ac1a839c-d835-4053-96eb-8214125c8cd1",
+      "id": "368a7901-ef2a-4728-aeb1-7d06aedf3fb7",
       "name": "Google Cloud Vision OCR実行",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1008,
+        -1408,
         112
       ],
       "notes": "Google Cloud VisionでOCR実行（サービスアカウント認証）"
@@ -176,12 +176,12 @@
         "mode": "runOnceForEachItem",
         "jsCode": "// Google Cloud Vision OCRの結果からテキストを抽出\nconst visionResponse = $json.visionResponse;\nconst driveFileId = $json.driveFileId;\nconst driveFileName = $json.driveFileName;\nconst clientCode = $json.client_code;\nconst amexSheetId = $json.amex_sheet_id;\n\nconsole.log(`\\n=== OCRテキスト抽出: ${driveFileName} ===`);\n\n// Vision APIレスポンスからテキストを取得\nlet extractedText = '';\n\nif (visionResponse.responses && visionResponse.responses.length > 0) {\n  const response = visionResponse.responses[0];\n  \n  if (response.fullTextAnnotation && response.fullTextAnnotation.text) {\n    extractedText = response.fullTextAnnotation.text;\n    console.log(`✓ テキスト抽出成功: ${extractedText.length}文字`);\n    console.log('\\n--- OCRテキスト全文 ---');\n    console.log(extractedText);\n    console.log('--- OCRテキスト終了 ---\\n');\n  } else if (response.error) {\n    throw new Error(`Vision API エラー: ${JSON.stringify(response.error)}`);\n  } else {\n    throw new Error('テキストが検出されませんでした');\n  }\n} else {\n  throw new Error('Vision APIレスポンスが空です');\n}\n\nif (extractedText.length === 0) {\n  throw new Error('OCRで抽出されたテキストが空です');\n}\n\nreturn {\n  json: {\n    extracted_text: extractedText,\n    driveFileId: driveFileId,\n    driveFileName: driveFileName,\n    client_code: clientCode,\n    amex_sheet_id: amexSheetId\n  }\n};"
       },
-      "id": "6e8f9a7b-4c5d-4e6f-a1b2-3c4d5e6f7a8b",
+      "id": "a1a49847-a0f7-4c0f-a5b9-a3e375a7596a",
       "name": "OCRテキスト抽出",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -800,
+        -1200,
         112
       ],
       "notes": "Vision APIレスポンスからテキストを抽出"
@@ -197,35 +197,35 @@
         "jsonBody": "={{ {\n  \"model\": \"gpt-4o\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"あなたはクレジットカード明細のOCRテキストから取引データを抽出する専門AIです。出力は必ずJSON形式のみとし、説明文は一切含めないでください。\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"以下のOCRテキストから取引データを抽出してください。\\n\\n【入力例】\\nOCRテキスト: \\\"ご入金・調整金額内容\\\\n12月5日\\\\nスマートEX（JR東海）東京都 港区\\\\n銀行振込\\\\n-33,300\\\\n12月13日\\\\nアップルストア 丸の内 ー東京都 千代田区\\\\n専門店/施設/その他サービス\\\\n-85,000\\\"\\n\\n【期待される出力】\\n{\\\"transactions\\\": [{\\\"transaction_date\\\": \\\"2025-12-05\\\", \\\"merchant\\\": \\\"スマートEX（JR東海）\\\", \\\"amount\\\": 33300, \\\"description\\\": \\\"東京都 港区\\\"}, {\\\"transaction_date\\\": \\\"2025-12-13\\\", \\\"merchant\\\": \\\"アップルストア 丸の内\\\", \\\"amount\\\": 85000, \\\"description\\\": \\\"東京都 千代田区\\\"}]}\\n\\n【抽出ルール】\\n1. '12月5日'のような日付パターンを探す\\n2. その後の行に店舗名がある\\n3. マイナス記号付きの金額を探す（例: -33,300）\\n4. 金額は数値のみ（カンマとマイナス除去）\\n5. 年は2025年12月または2026年1月と推定\\n\\n【OCRテキスト】\\n\" + $json.extracted_text + \"\\n\\n【必須】上記の例と同じ形式でJSONのみを返してください。マークダウンや説明文は不要です。\"\n    }\n  ],\n  \"max_tokens\": 4000,\n  \"temperature\": 0\n} }}",
         "options": {}
       },
-      "id": "8c7987a5-4f11-41e5-bb65-8a4b7d08d2d9",
+      "id": "9ffbc447-bbf9-447d-8173-56bd120fe6b1",
       "name": "GPT-4oテキスト構造化",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -600,
+        -1008,
         112
       ],
+      "retryOnFail": true,
+      "waitBetweenTries": 10000,
+      "maxTries": 5,
       "credentials": {
         "openAiApi": {
           "id": "iQJJMVz6MkdVXrve",
           "name": "openai-api"
         }
       },
-      "notes": "OCRテキストをGPT-4oで構造化してJSON形式に変換",
-      "retryOnFail": true,
-      "waitBetweenTries": 10000,
-      "maxTries": 5
+      "notes": "OCRテキストをGPT-4oで構造化してJSON形式に変換"
     },
     {
       "parameters": {
-        "jsCode": "// GPT-4oのレスポンスから取引データを展開\nlet content = $input.item.json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\nconsole.log('=== GPT-4oレスポンス ===');\nconsole.log('元のレスポンス:', content.substring(0, 500));\n\n// JSONガード: { または [ で始まっていない場合はエラー\nif (!content.startsWith('{') && !content.startsWith('[')) {\n  throw new Error(`JSON形式ではないレスポンス: ${content.substring(0, 200)}...`);\n}\n\nlet structuredData;\ntry {\n  structuredData = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス全文:\\n${content}`);\n}\n\nconsole.log('パース成功:', JSON.stringify(structuredData, null, 2));\n\n// transactions配列を取得\nconst transactions = structuredData.transactions || [];\n\nconsole.log(`取引データ数: ${transactions.length}件`);\n\nif (transactions.length === 0) {\n  // デバッグ情報を含めてエラーを投げる\n  throw new Error(`取引データが見つかりませんでした。\\n\\nstructuredData: ${JSON.stringify(structuredData, null, 2)}\\n\\nGPT-4oレスポンス全文:\\n${content}`);\n}\n\n// OCRテキスト抽出ノードからメタデータを取得\nconst metadata = $('OCRテキスト抽出').item.json;\n\n// 各取引にメタデータを追加して出力\nreturn transactions.map(transaction => ({\n  json: {\n    ...transaction,\n    driveUrl: `https://drive.google.com/uc?export=view&id=${metadata.driveFileId}`,\n    driveFileId: metadata.driveFileId,\n    driveFileName: metadata.driveFileName,\n    client_code: metadata.client_code,\n    amex_sheet_id: metadata.amex_sheet_id,\n    category: transaction.category || ''\n  }\n}));"
+        "jsCode": "// すべてのGPT-4oレスポンスを取得（Run Once for All Items モード）\nconst gptItems = $input.all();\nconst ocrItems = $('OCRテキスト抽出').all();\n\nconsole.log(`\\n=== 取引データ展開開始 ===`);\nconsole.log(`GPT-4oアイテム数: ${gptItems.length}`);\nconsole.log(`OCRアイテム数: ${ocrItems.length}`);\n\nconst allTransactions = [];\n\n// 各GPT-4oレスポンスを処理\nfor (let i = 0; i < gptItems.length; i++) {\n  const gptResponse = gptItems[i].json;\n  const ocrData = ocrItems[i].json;\n  \n  console.log(`\\n--- 画像 ${i + 1}/${gptItems.length}: ${ocrData.driveFileName} ---`);\n  \n  if (!gptResponse.choices || !gptResponse.choices[0]) {\n    console.warn(`⚠️  GPT-4oレスポンスが不正です（画像 ${i + 1}）。スキップします。`);\n    continue;\n  }\n  \n  let content = gptResponse.choices[0].message.content;\n  content = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n  \n  console.log(`GPT-4oレスポンス（最初の500文字）: ${content.substring(0, 500)}`);\n  \n  // JSONガード\n  if (!content.startsWith('{') && !content.startsWith('[')) {\n    console.warn(`⚠️  JSON形式ではないレスポンス（画像 ${i + 1}）。スキップします。`);\n    console.warn(`レスポンス: ${content.substring(0, 200)}...`);\n    continue;\n  }\n  \n  let structuredData;\n  try {\n    structuredData = JSON.parse(content);\n  } catch (error) {\n    console.warn(`⚠️  JSON解析エラー（画像 ${i + 1}）: ${error.message}。スキップします。`);\n    console.warn(`レスポンス: ${content}`);\n    continue;\n  }\n  \n  const transactions = structuredData.transactions || [];\n  console.log(`取引データ数: ${transactions.length}件`);\n  \n  if (transactions.length === 0) {\n    console.warn(`⚠️  取引データが見つかりませんでした（画像 ${i + 1}）。スキップします。`);\n    continue;\n  }\n  \n  // 各取引にメタデータを追加\n  for (let j = 0; j < transactions.length; j++) {\n    const transaction = transactions[j];\n    console.log(`  取引 ${j + 1}: ${transaction.merchant} - ${transaction.amount}円`);\n    \n    allTransactions.push({\n      json: {\n        transaction_date: transaction.transaction_date,\n        merchant: transaction.merchant,\n        amount: transaction.amount,\n        description: transaction.description || '',\n        category: transaction.category || '',\n        driveUrl: `https://drive.google.com/uc?export=view&id=${ocrData.driveFileId}`,\n        driveFileId: ocrData.driveFileId,\n        driveFileName: ocrData.driveFileName,\n        client_code: ocrData.client_code,\n        amex_sheet_id: ocrData.amex_sheet_id\n      }\n    });\n  }\n}\n\nconsole.log(`\\n=== 取引データ展開完了 ===`);\nconsole.log(`総取引数: ${allTransactions.length}件`);\n\nif (allTransactions.length === 0) {\n  console.warn(`⚠️  処理可能な取引データがありませんでした。`);\n  return [];\n}\n\nreturn allTransactions;"
       },
-      "id": "52ee8dc7-03b6-4bdb-8515-0cae9e2e02d0",
+      "id": "eac75784-a410-4068-b3d5-7efc3654936e",
       "name": "取引データ展開",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -400,
+        -800,
         112
       ],
       "notes": "複数取引を個別アイテムに展開"
@@ -246,12 +246,12 @@
           "returnAllMatches": "returnAllMatches"
         }
       },
-      "id": "ec36b71a-ff23-4d82-b610-de1eb1d572d9",
+      "id": "081d8a37-2c2f-473d-8eb4-0a9f6229dbf4",
       "name": "勘定科目マスター取得",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        -200,
+        -608,
         112
       ],
       "alwaysOutputData": true,
@@ -262,18 +262,19 @@
         }
       },
       "continueOnFail": true,
-      "notes": "顧客別勘定科目ナレッジベースを取得"
+      "notes": "顧客別勘定科目ナレッジベースを取得（OCRテキスト抽出ノードから取得）"
     },
     {
       "parameters": {
-        "jsCode": "// 取引データ展開ノードから取引情報を取得\nconst transaction = $input.item.json;\nconst merchant = transaction.merchant || '';\nconst description = transaction.description || '';\n\n// ナレッジベース取得（全行）- エラーハンドリング追加\nlet knowledgeBase = [];\ntry {\n  const kbData = $('勘定科目マスター取得').all();\n  if (kbData && Array.isArray(kbData) && kbData.length > 0) {\n    knowledgeBase = kbData.filter(item => item && item.json && !item.error && !item.json.error);\n  }\n} catch (error) {\n  console.log('ナレッジベース取得エラー（スキップしてAI推論に回します）:', error.message);\n  knowledgeBase = [];\n}\n\nconsole.log(`ナレッジベース: ${knowledgeBase.length}件`);\n\n// マッチング処理\nlet matchedCategory = null;\nlet maxConfidence = 0;\nlet matchSource = 'none';\n\nfor (let i = 0; i < knowledgeBase.length; i++) {\n  const rule = knowledgeBase[i].json;\n  const merchantKeyword = rule.merchant_keyword || '';\n  const descriptionKeyword = rule.description_keyword || '';\n  const confidence = parseInt(rule.confidence_score) || 0;\n  \n  // 店舗名での完全一致（最優先）\n  if (merchantKeyword && merchant.includes(merchantKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n  \n  // 取引内容での部分一致\n  if (!matchedCategory && descriptionKeyword && description.includes(descriptionKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n}\n\n// ナレッジベースでマッチしなかった場合（またはナレッジベースがない場合）はAI推論が必要\nif (!matchedCategory) {\n  console.log(`${merchant}: ナレッジベースマッチなし → AI推論`);\n  return {\n    json: {\n      ...transaction,\n      needs_ai_inference: true,\n      match_source: 'pending'\n    }\n  };\n} else {\n  console.log(`${merchant}: ナレッジベースマッチ成功 → ${matchedCategory}`);\n  return {\n    json: {\n      ...transaction,\n      category: matchedCategory,\n      match_source: matchSource,\n      matched_confidence: maxConfidence,\n      needs_ai_inference: false\n    }\n  };\n}"
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 取引データを現在の入力から取得\nconst transaction = $input.item.json;\nconst merchant = transaction.merchant || '';\nconst description = transaction.description || '';\n\nconsole.log(`\\n=== 勘定科目マッチング: ${merchant} ===`);\n\n// ナレッジベース取得（全行）- エラーハンドリング追加\nlet knowledgeBase = [];\ntry {\n  const kbData = $('勘定科目マスター取得').all();\n  if (kbData && Array.isArray(kbData) && kbData.length > 0) {\n    knowledgeBase = kbData.filter(item => item && item.json && !item.error && !item.json.error);\n  }\n} catch (error) {\n  console.log('ナレッジベース取得エラー（スキップしてAI推論に回します）:', error.message);\n  knowledgeBase = [];\n}\n\nconsole.log(`ナレッジベース: ${knowledgeBase.length}件`);\n\n// マッチング処理\nlet matchedCategory = null;\nlet maxConfidence = 0;\nlet matchSource = 'none';\n\nfor (let i = 0; i < knowledgeBase.length; i++) {\n  const rule = knowledgeBase[i].json;\n  const merchantKeyword = rule.merchant_keyword || '';\n  const descriptionKeyword = rule.description_keyword || '';\n  const confidence = parseInt(rule.confidence_score) || 0;\n  \n  // 店舗名での完全一致（最優先）\n  if (merchantKeyword && merchant.includes(merchantKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n  \n  // 取引内容での部分一致\n  if (!matchedCategory && descriptionKeyword && description.includes(descriptionKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n}\n\n// ナレッジベースでマッチしなかった場合（またはナレッジベースがない場合）はAI推論が必要\nif (!matchedCategory) {\n  console.log(`${merchant}: ナレッジベースマッチなし → AI推論`);\n  return {\n    json: {\n      ...transaction,\n      needs_ai_inference: true,\n      match_source: 'pending'\n    }\n  };\n} else {\n  console.log(`${merchant}: ナレッジベースマッチ成功 → ${matchedCategory}`);\n  return {\n    json: {\n      ...transaction,\n      category: matchedCategory,\n      match_source: matchSource,\n      matched_confidence: maxConfidence,\n      needs_ai_inference: false\n    }\n  };\n}"
       },
-      "id": "14b9e119-0d54-4068-b2ea-d5da4ab50594",
+      "id": "9d23ee7b-9540-46fa-8fcb-8647a0652aa2",
       "name": "勘定科目マッチング",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        0,
+        -400,
         112
       ],
       "notes": "ナレッジベースから勘定科目をマッチング"
@@ -302,26 +303,27 @@
         },
         "options": {}
       },
-      "id": "f85b14bf-ed69-49bf-ba0d-9a91c3c57bbf",
+      "id": "0f66b0b9-60b6-4e27-8bc6-c8f809294caa",
       "name": "IF AI推論が必要",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        200,
+        -208,
         112
       ],
       "notes": "ナレッジベースでマッチしなかった場合のみAI推論"
     },
     {
       "parameters": {
+        "mode": "runOnceForEachItem",
         "jsCode": "// 取引情報を取得\nconst transaction = $input.item.json;\n\n// AI推論用プロンプト構築\nconst merchant = transaction.merchant || '不明';\nconst description = transaction.description || '詳細不明';\nconst amount = transaction.amount || 0;\n\nconst prompt = `以下の取引から適切な勘定科目を推定してください。\n\n店舗名: ${merchant}\n取引内容: ${description}\n金額: ${amount}円\n\n勘定科目の選択肢:\n- 消耗品費\n- 旅費交通費\n- 会議費\n- 交際費\n- 通信費\n- 水道光熱費\n- 広告宣伝費\n- 研修費\n- 新聞図書費\n- 車両費\n- 雑費\n\nJSON形式で出力してください:\n{\n  \"category\": \"推定した勘定科目\",\n  \"tax_rate\": 10\n}`;\n\nconst requestBody = {\n  model: \"gpt-4o-mini\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"あなたは経理の専門家AIです。取引内容から適切な勘定科目を推定してください。出力は必ずJSON形式のみとし、説明文は一切含めないでください。\"\n    },\n    {\n      role: \"user\",\n      content: prompt\n    }\n  ],\n  max_tokens: 200,\n  temperature: 0\n};\n\nreturn {\n  json: {\n    requestBody: requestBody,\n    transaction: transaction\n  }\n};"
       },
-      "id": "e036639d-17ea-4ea4-9e86-4a4434053b19",
+      "id": "b2ad2537-9777-4c1a-a021-916cf3fdff89",
       "name": "AI推論リクエスト構築",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        400,
+        0,
         0
       ],
       "notes": "ナレッジベースでマッチしなかった取引のみAI推論"
@@ -337,12 +339,12 @@
         "jsonBody": "={{ $json.requestBody }}",
         "options": {}
       },
-      "id": "266b70bd-37c9-4e0e-8d9d-d4969155c849",
+      "id": "2c2aea05-9418-4de8-9502-b6468af77fbe",
       "name": "AI勘定科目推論",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        600,
+        208,
         0
       ],
       "credentials": {
@@ -355,44 +357,42 @@
     },
     {
       "parameters": {
+        "mode": "runOnceForEachItem",
         "jsCode": "// AI推論結果をパース\nlet content = $input.item.json.choices[0].message.content;\n\n// マークダウンコードブロックを除去\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\n// 説明文を除去（JSONの前にある説明文を削除）\nconst jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\nif (jsonMatch) {\n  content = jsonMatch[0];\n}\n\nlet aiResult;\ntry {\n  aiResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// AI推論リクエスト構築ノードから元の取引データを取得\nconst transaction = $('AI推論リクエスト構築').item.json.transaction;\n\nreturn {\n  json: {\n    ...transaction,\n    category: aiResult.category,\n    tax_rate: aiResult.tax_rate || 10,\n    match_source: 'ai_inference',\n    matched_confidence: 0,\n    needs_ai_inference: false\n  }\n};"
       },
-      "id": "e7a9b7a3-b7dd-40f7-8a27-5f117fa82200",
+      "id": "a9febe29-551d-4a35-9194-a2668773855e",
       "name": "AI推論結果マージ",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        800,
+        400,
         0
       ],
       "notes": "AI推論結果を元の取引データにマージ"
     },
     {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineAll",
-        "options": {}
-      },
-      "id": "594ad365-e640-4619-b2ec-7e8c798f6f4f",
+      "parameters": {},
+      "id": "222265fb-1ebc-4a05-87f6-9bc3348a0f09",
       "name": "全取引マージ",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        1000,
+        608,
         112
       ],
-      "notes": "ナレッジベースマッチとAI推論の結果を統合"
+      "notes": "ナレッジベースマッチとAI推論の結果を統合（片方が空でも動作）"
     },
     {
       "parameters": {
+        "mode": "runOnceForEachItem",
         "jsCode": "// 勘定科目判定結果を取得\nconst judgmentResult = $input.item.json;\n\n// 消費税率の判定（軽減税率対応）\nlet taxRate = 10; // デフォルトは標準税率\nconst merchant = judgmentResult.merchant || '';\n\n// 軽減税率（8%）対象店舗\nconst reducedTaxMerchants = [\n  'セブン', 'ローソン', 'ファミマ', 'ファミリーマート',\n  'イオン', '西友', 'UBER EATS', 'Uber Eats', '出前館'\n];\n\nfor (const keyword of reducedTaxMerchants) {\n  if (merchant.includes(keyword)) {\n    taxRate = 8;\n    break;\n  }\n}\n\n// 税区分の判定\nconst taxType = taxRate === 10 ? \"課10%\" : \"課8%\";\n\nreturn {\n  json: {\n    ...judgmentResult,\n    tax_rate: taxRate,\n    tax_type: taxType\n  }\n};"
       },
-      "id": "7959ba17-71e3-46c2-b795-0fed025bcf3f",
+      "id": "4acec9d6-3406-4678-a952-020297565da2",
       "name": "消費税率判定",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1200,
+        800,
         112
       ],
       "notes": "軽減税率（8%）対象を自動判定"
@@ -610,12 +610,12 @@
         },
         "options": {}
       },
-      "id": "d21510a7-e10e-4cda-a774-03cfa2c4872c",
+      "id": "c16d34b3-8eb8-4de0-a108-6003d30570c5",
       "name": "仕訳台帳へ記帳",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
       "position": [
-        1400,
+        1008,
         112
       ],
       "credentials": {
@@ -631,29 +631,29 @@
         "aggregate": "aggregateAllItemData",
         "options": {}
       },
-      "id": "aa9ebfff-9e6e-4973-a2ab-3169150f703c",
+      "id": "e3ff1b0f-d5cd-43f3-8994-3051764a2ad3",
       "name": "全取引完了待機",
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
-        1600,
+        1200,
         208
       ],
       "notes": "全取引の記帳完了を待機してから処理済みマーキング"
     },
     {
       "parameters": {
-        "jsCode": "// 全取引の記帳完了後、処理済みマーキング用のデータを準備\n// Aggregateノードで集約されたデータから情報を取得\nconst allTransactions = $input.item.json;\n\n// 配列の最初のアイテムからファイル情報を取得\nconst firstTransaction = Array.isArray(allTransactions) ? allTransactions[0] : allTransactions;\n\nreturn {\n  json: {\n    driveFileId: firstTransaction.driveFileId,\n    driveFileName: firstTransaction.driveFileName\n  }\n};"
+        "jsCode": "// 全取引の記帳完了後、処理済みマーキング用のデータを準備\n// OCRテキスト抽出ノードから全画像を取得（取引の有無に関わらず）\n\nconsole.log('\\n=== リネーム準備 ===');\n\n// OCRテキスト抽出ノードから全画像を取得\nconst ocrItems = $('OCRテキスト抽出').all();\n\nif (!ocrItems || ocrItems.length === 0) {\n  throw new Error('OCRテキスト抽出ノードからデータを取得できませんでした');\n}\n\nconsole.log(`OCR処理済み画像数: ${ocrItems.length}件`);\n\n// driveFileIdでグループ化してユニークなファイルリストを作成\nconst fileMap = new Map();\n\nfor (const item of ocrItems) {\n  const driveFileId = item.json.driveFileId;\n  const driveFileName = item.json.driveFileName;\n  \n  if (driveFileId && driveFileName && !fileMap.has(driveFileId)) {\n    fileMap.set(driveFileId, driveFileName);\n  }\n}\n\nconsole.log(`ユニークなファイル数: ${fileMap.size}件`);\n\n// 各ファイルを個別のアイテムとして返す\nconst results = [];\nfor (const [driveFileId, driveFileName] of fileMap.entries()) {\n  console.log(`  - ${driveFileName} (ID: ${driveFileId.substring(0, 20)}...)`);\n  results.push({\n    json: {\n      driveFileId: driveFileId,\n      driveFileName: driveFileName\n    }\n  });\n}\n\nconsole.log(`\\nリネーム対象ファイル数: ${results.length}件`);\nconsole.log('取引の有無に関わらず、OCR処理が完了した全ファイルをリネームします。\\n');\n\nreturn results;"
       },
-      "id": "5277bff8-91a5-47cc-88ba-6ec703213b2a",
+      "id": "f2ca5a0f-0c9b-4010-a60d-1877a8f1a154",
       "name": "リネーム準備",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1800,
+        1408,
         208
       ],
-      "notes": "処理済みファイル名を準備"
+      "notes": "処理済みファイル名を準備（OCR処理済み全ファイル）"
     },
     {
       "parameters": {
@@ -663,14 +663,15 @@
           "value": "={{ $json.driveFileId }}",
           "mode": "id"
         },
+        "newUpdatedFileName": "=={{ $json.driveFileName.replace('.png', '_processed.png') }}",
         "options": {}
       },
-      "id": "a31d2449-c475-4099-b14f-1fab611cac41",
+      "id": "65d909fd-21ba-427b-a9e0-7282dcb4d793",
       "name": "処理済みマーキング",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        2000,
+        1600,
         208
       ],
       "credentials": {
@@ -711,6 +712,11 @@
         [
           {
             "node": "未処理PNG一覧取得",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "勘定科目マスター取得",
             "type": "main",
             "index": 0
           }
@@ -786,11 +792,6 @@
     "取引データ展開": {
       "main": [
         [
-          {
-            "node": "勘定科目マスター取得",
-            "type": "main",
-            "index": 0
-          },
           {
             "node": "勘定科目マッチング",
             "type": "main",
@@ -922,12 +923,11 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "646d224a-4d88-40cf-8533-13102e9beb21",
+  "versionId": "aa4bedd2-7b8c-4455-8498-d6cbe54159a9",
   "meta": {
-    "templateCredsSetupCompleted": true,
     "instanceId": "faaa7132a861649d5b2459b24797889c8ab370f06610eda697f904d9fc215ba9"
   },
-  "id": "ZzlihVVQzMtZUMkhG2W2Q",
+  "id": "65giNfnHHvHaoQqg5dZwL",
   "tags": [
     {
       "name": "Accounting",
