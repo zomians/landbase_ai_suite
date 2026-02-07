@@ -546,19 +546,19 @@
     },
     {
       "parameters": {
-        "mode": "mergeByPosition",
+        "aggregate": "aggregateAllItemData",
         "options": {}
       },
       "id": "wait-all-transactions",
       "name": "全取引完了待機",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
       "position": [3650, 300],
-      "notes": "全取引の記帳完了を待機"
+      "notes": "全取引の記帳完了を待機してから処理済みマーキング"
     },
     {
       "parameters": {
-        "jsCode": "// 全取引の記帳完了後、処理済みマーキング用のデータを準備\nconst firstTransaction = $('仕訳台帳へ記帳').first().json;\n\nreturn {\n  json: {\n    driveFileId: firstTransaction.driveFileId,\n    driveFileName: firstTransaction.driveFileName\n  }\n};"
+        "jsCode": "// 全取引の記帳完了後、処理済みマーキング用のデータを準備\n// Aggregateノードで集約されたデータから情報を取得\nconst allTransactions = $input.item.json;\n\n// 配列の最初のアイテムからファイル情報を取得\nconst firstTransaction = Array.isArray(allTransactions) ? allTransactions[0] : allTransactions;\n\nreturn {\n  json: {\n    driveFileId: firstTransaction.driveFileId,\n    driveFileName: firstTransaction.driveFileName\n  }\n};"
       },
       "id": "prepare-rename",
       "name": "リネーム準備",
