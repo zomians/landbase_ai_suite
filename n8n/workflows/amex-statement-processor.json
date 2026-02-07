@@ -1,0 +1,829 @@
+{
+  "name": "Amex Statement Processor",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "手動トリガー",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "手動実行でワークフローを開始"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "16qhVQNDn_5Y1Ayw_H0ziUw1nu2b70o6IcRn1rr4Pa94",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Master_User_Config",
+          "mode": "name"
+        },
+        "options": {
+          "returnAllMatches": true
+        }
+      },
+      "id": "get-all-clients",
+      "name": "全顧客取得",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [450, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "Master_User_Configから全顧客情報を取得"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-amex-drive-exists",
+              "leftValue": "={{ $json.amex_drive_folder_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "condition-amex-sheet-exists",
+              "leftValue": "={{ $json.amex_sheet_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-amex-clients",
+      "name": "Amex設定済み顧客フィルタ",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "notes": "amex_drive_folder_idとamex_sheet_idが設定されている顧客のみ処理"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "search",
+        "q": "='{{ $json.amex_drive_folder_id }}' in parents and name contains 'amex_' and name contains '.png' and not name contains '_processed'",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "list-unprocessed-png",
+      "name": "未処理PNG一覧取得",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [850, 200],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gdrive-oauth",
+          "name": "Google Drive OAuth2"
+        }
+      },
+      "notes": "amex_*.png で _processed が含まれないファイルを検索"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "download-png",
+      "name": "PNGダウンロード",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1050, 200],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gdrive-oauth",
+          "name": "Google Drive OAuth2"
+        }
+      },
+      "notes": "PNG画像をダウンロードしてバイナリデータを取得"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Google Drive Downloadノードからバイナリデータを取得\nconst binaryPropertyName = Object.keys($input.item.binary)[0];\nconst mimeType = $input.item.binary[binaryPropertyName].mimeType || 'image/png';\n\n// n8n 2.4.0のfilesystemモードではgetBinaryDataBuffer()を使用\nconst binaryBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);\nconst base64String = binaryBuffer.toString('base64');\n\n// Google DriveのURL（証憑用）\nconst driveFileId = $json.id;\nconst driveFileName = $json.name;\nconst driveUrl = `https://drive.google.com/uc?export=view&id=${driveFileId}`;\n\n// Base64形式でdata URIを構築\nconst base64Image = `data:${mimeType};base64,${base64String}`;\n\n// 顧客情報を取得（Amex設定済み顧客フィルタノードから）\nconst clientData = $('Amex設定済み顧客フィルタ').item.json;\n\n// OpenAI APIリクエストボディを構築\nconst requestBody = {\n  model: \"gpt-4o\",\n  messages: [\n    {\n      role: \"system\",\n      content: `あなたは経理の専門家AIです。アップロードされたアメックス明細PNG画像から取引情報を抽出してください。\n\n# ルール\n1. **複数取引を配列で返す**: 1枚の画像に複数の取引が含まれる場合、配列形式で全て抽出してください。\n2. **transaction_date**: 取引日（ご利用明細の日付）を YYYY-MM-DD 形式で抽出。\n3. **merchant**: 店舗名・サービス名を正確に抽出（例: UBER EATS、アドビ(株)、大丸 東京店）。\n4. **amount**: 金額（数値のみ、カンマや円マークは除去）。\n5. **description**: 取引カテゴリ/詳細（例: 飲食店、専門店（コンピュータ販売）、通信/インターネットサービス）。\n6. **category**: 空文字列（後続処理で自動推定）。\n\n# 出力形式\nJSON配列のみを出力してください。説明文は不要です。\n\n[\n  {\n    \"transaction_date\": \"2025-01-15\",\n    \"merchant\": \"UBER EATS\",\n    \"amount\": 1500,\n    \"description\": \"飲食店\",\n    \"category\": \"\"\n  },\n  {\n    \"transaction_date\": \"2025-01-16\",\n    \"merchant\": \"アドビ(株)\",\n    \"amount\": 3980,\n    \"description\": \"通信/インターネットサービス\",\n    \"category\": \"\"\n  }\n]`\n    },\n    {\n      role: \"user\",\n      content: [\n        {\n          type: \"text\",\n          text: \"このアメックス明細画像から全ての取引情報を抽出してください。\"\n        },\n        {\n          type: \"image_url\",\n          image_url: {\n            url: base64Image\n          }\n        }\n      ]\n    }\n  ],\n  max_tokens: 2000,\n  temperature: 0.2\n};\n\n// 出力データ\nreturn {\n  json: {\n    requestBody: requestBody,\n    driveUrl: driveUrl,\n    driveFileId: driveFileId,\n    driveFileName: driveFileName,\n    client_code: clientData.client_code,\n    amex_sheet_id: clientData.amex_sheet_id\n  }\n};"
+      },
+      "id": "build-ocr-request",
+      "name": "OCRリクエスト構築",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 200],
+      "notes": "PNG画像をBase64エンコードしてOpenAI APIリクエストを構築（複数取引対応）"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "id": "ai-ocr-processing",
+      "name": "AI-OCR処理（GPT-4o）",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1450, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api",
+          "name": "OpenAI API"
+        }
+      },
+      "notes": "GPT-4oで画像から複数取引を抽出"
+    },
+    {
+      "parameters": {
+        "jsCode": "// AI-OCR結果をパース\nlet content = $input.item.json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\nlet ocrResult;\ntry {\n  ocrResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// 配列でない場合は配列に変換\nif (!Array.isArray(ocrResult)) {\n  ocrResult = [ocrResult];\n}\n\n// OCRリクエスト構築ノードからメタデータを取得\nconst metadata = $('OCRリクエスト構築').item.json;\n\n// 各取引にメタデータを追加して出力\nreturn ocrResult.map(transaction => ({\n  json: {\n    ...transaction,\n    driveUrl: metadata.driveUrl,\n    driveFileId: metadata.driveFileId,\n    driveFileName: metadata.driveFileName,\n    client_code: metadata.client_code,\n    amex_sheet_id: metadata.amex_sheet_id\n  }\n}));"
+      },
+      "id": "expand-transactions",
+      "name": "取引データ展開",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1650, 200],
+      "notes": "複数取引を個別アイテムに展開"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.amex_sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "勘定科目マスター",
+          "mode": "name"
+        },
+        "options": {
+          "returnAllMatches": true
+        }
+      },
+      "id": "get-account-master",
+      "name": "勘定科目マスター取得",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [1850, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "顧客別勘定科目ナレッジベースを取得",
+      "continueOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 取引データ展開ノードから取引情報を取得\nconst transaction = $input.item.json;\nconst merchant = transaction.merchant || '';\nconst description = transaction.description || '';\n\n// ナレッジベース取得（全行）- エラーハンドリング追加\nlet knowledgeBase = [];\ntry {\n  const kbData = $('勘定科目マスター取得').all();\n  if (kbData && Array.isArray(kbData) && kbData.length > 0) {\n    knowledgeBase = kbData.filter(item => item && item.json && !item.error);\n  }\n} catch (error) {\n  knowledgeBase = [];\n}\n\n// マッチング処理\nlet matchedCategory = null;\nlet maxConfidence = 0;\nlet matchSource = 'none';\n\nfor (let i = 0; i < knowledgeBase.length; i++) {\n  const rule = knowledgeBase[i].json;\n  const merchantKeyword = rule.merchant_keyword || '';\n  const descriptionKeyword = rule.description_keyword || '';\n  const confidence = parseInt(rule.confidence_score) || 0;\n  \n  // 店舗名での完全一致（最優先）\n  if (merchantKeyword && merchant.includes(merchantKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n  \n  // 取引内容での部分一致\n  if (!matchedCategory && descriptionKeyword && description.includes(descriptionKeyword)) {\n    if (confidence > maxConfidence) {\n      matchedCategory = rule.account_category;\n      maxConfidence = confidence;\n      matchSource = 'knowledge_base';\n    }\n  }\n}\n\n// ナレッジベースでマッチしなかった場合はAI推論が必要\nif (!matchedCategory) {\n  // AI推論ノードに渡すためのフラグ\n  return {\n    json: {\n      ...transaction,\n      needs_ai_inference: true,\n      match_source: 'pending'\n    }\n  };\n} else {\n  // ナレッジベースマッチ成功\n  return {\n    json: {\n      ...transaction,\n      category: matchedCategory,\n      match_source: matchSource,\n      matched_confidence: maxConfidence,\n      needs_ai_inference: false\n    }\n  };\n}"
+      },
+      "id": "account-matching",
+      "name": "勘定科目マッチング",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2050, 200],
+      "notes": "ナレッジベースから勘定科目をマッチング"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-needs-ai",
+              "leftValue": "={{ $json.needs_ai_inference }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-needs-ai-inference",
+      "name": "IF AI推論が必要",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2250, 200],
+      "notes": "ナレッジベースでマッチしなかった場合のみAI推論"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 取引情報を取得\nconst transaction = $input.item.json;\n\n// AI推論用プロンプト構築\nconst prompt = `以下の取引から適切な勘定科目を推定してください。\n\n店舗名: ${transaction.merchant}\n取引内容: ${transaction.description}\n金額: ${transaction.amount}円\n\n勘定科目の選択肢:\n- 消耗品費\n- 旅費交通費\n- 会議費\n- 交際費\n- 通信費\n- 水道光熱費\n- 広告宣伝費\n- 研修費\n- 新聞図書費\n- 車両費\n- 雑費\n\nJSON形式で出力してください:\n{\n  \"category\": \"推定した勘定科目\",\n  \"tax_rate\": 10\n}`;\n\nconst requestBody = {\n  model: \"gpt-4o-mini\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"あなたは経理の専門家AIです。取引内容から適切な勘定科目を推定してください。\"\n    },\n    {\n      role: \"user\",\n      content: prompt\n    }\n  ],\n  max_tokens: 200,\n  temperature: 0.2\n};\n\nreturn {\n  json: {\n    requestBody: requestBody,\n    transaction: transaction\n  }\n};"
+      },
+      "id": "build-ai-inference-request",
+      "name": "AI推論リクエスト構築",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2450, 100],
+      "notes": "ナレッジベースでマッチしなかった取引のみAI推論"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "id": "ai-account-inference",
+      "name": "AI勘定科目推論",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2650, 100],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-api",
+          "name": "OpenAI API"
+        }
+      },
+      "notes": "GPT-4o-miniで勘定科目を推論"
+    },
+    {
+      "parameters": {
+        "jsCode": "// AI推論結果をパース\nlet content = $input.item.json.choices[0].message.content;\ncontent = content.replace(/^```json\\s*\\n?/, '').replace(/\\n?```\\s*$/, '').trim();\n\nlet aiResult;\ntry {\n  aiResult = JSON.parse(content);\n} catch (error) {\n  throw new Error(`JSON解析エラー: ${error.message}\\n元のレスポンス: ${content}`);\n}\n\n// AI推論リクエスト構築ノードから元の取引データを取得\nconst transaction = $('AI推論リクエスト構築').item.json.transaction;\n\nreturn {\n  json: {\n    ...transaction,\n    category: aiResult.category,\n    tax_rate: aiResult.tax_rate,\n    match_source: 'ai_inference',\n    matched_confidence: 0,\n    needs_ai_inference: false\n  }\n};"
+      },
+      "id": "merge-ai-result",
+      "name": "AI推論結果マージ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2850, 100],
+      "notes": "AI推論結果を元の取引データにマージ"
+    },
+    {
+      "parameters": {
+        "mode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "merge-all-transactions",
+      "name": "全取引マージ",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [3050, 200],
+      "notes": "ナレッジベースマッチとAI推論の結果を統合"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 勘定科目判定結果を取得\nconst judgmentResult = $input.item.json;\n\n// 消費税率の判定（軽減税率対応）\nlet taxRate = 10; // デフォルトは標準税率\nconst merchant = judgmentResult.merchant || '';\n\n// 軽減税率（8%）対象店舗\nconst reducedTaxMerchants = [\n  'セブン', 'ローソン', 'ファミマ', 'ファミリーマート',\n  'イオン', '西友', 'UBER EATS', 'Uber Eats', '出前館'\n];\n\nfor (const keyword of reducedTaxMerchants) {\n  if (merchant.includes(keyword)) {\n    taxRate = 8;\n    break;\n  }\n}\n\n// 税区分の判定\nconst taxType = taxRate === 10 ? \"課10%\" : \"課8%\";\n\nreturn {\n  json: {\n    ...judgmentResult,\n    tax_rate: taxRate,\n    tax_type: taxType\n  }\n};"
+      },
+      "id": "tax-rate-judgment",
+      "name": "消費税率判定",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3250, 200],
+      "notes": "軽減税率（8%）対象を自動判定"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.amex_sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "仕訳台帳",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "id": "取引No",
+              "displayName": "取引No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "取引日",
+              "displayName": "取引日",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "借方勘定科目",
+              "displayName": "借方勘定科目",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "借方補助科目",
+              "displayName": "借方補助科目",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "借方部門",
+              "displayName": "借方部門",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "借方取引先",
+              "displayName": "借方取引先",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "借方税区分",
+              "displayName": "借方税区分",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "借方インボイス",
+              "displayName": "借方インボイス",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "借方金額(円)",
+              "displayName": "借方金額(円)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "貸方勘定科目",
+              "displayName": "貸方勘定科目",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "貸方補助科目",
+              "displayName": "貸方補助科目",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "貸方部門",
+              "displayName": "貸方部門",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "貸方取引先",
+              "displayName": "貸方取引先",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "貸方税区分",
+              "displayName": "貸方税区分",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "貸方インボイス",
+              "displayName": "貸方インボイス",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "貸方金額(円)",
+              "displayName": "貸方金額(円)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "摘要",
+              "displayName": "摘要",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "タグ",
+              "displayName": "タグ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "メモ",
+              "displayName": "メモ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "value": {
+            "取引No": "={{ $now.format('yyyyMMddHHmmss') }}-{{ $itemIndex }}",
+            "取引日": "={{ $json.transaction_date }}",
+            "借方勘定科目": "={{ $json.category }}",
+            "借方補助科目": "",
+            "借方部門": "",
+            "借方取引先": "={{ $json.merchant }}",
+            "借方税区分": "={{ $json.tax_type }}",
+            "借方インボイス": "",
+            "借方金額(円)": "={{ $json.amount }}",
+            "貸方勘定科目": "未払金",
+            "貸方補助科目": "",
+            "貸方部門": "",
+            "貸方取引先": "",
+            "貸方税区分": "",
+            "貸方インボイス": "",
+            "貸方金額(円)": "={{ $json.amount }}",
+            "摘要": "={{ $json.merchant }}（{{ $json.description || 'Amex明細' }}）",
+            "タグ": "={{ $json.match_source === 'knowledge_base' ? 'ナレッジベース' : 'AI推論' }}",
+            "メモ": "={{ $json.driveUrl }} | Client: {{ $json.client_code }}"
+          },
+          "matchingColumns": []
+        },
+        "options": {}
+      },
+      "id": "append-to-ledger",
+      "name": "仕訳台帳へ記帳",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [3450, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheet-oauth",
+          "name": "Google Sheets OAuth2"
+        }
+      },
+      "notes": "顧客別仕訳台帳に記帳（貸方は未払金）"
+    },
+    {
+      "parameters": {
+        "mode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "wait-all-transactions",
+      "name": "全取引完了待機",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [3650, 300],
+      "notes": "全取引の記帳完了を待機"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 全取引の記帳完了後、処理済みマーキング用のデータを準備\nconst firstTransaction = $('仕訳台帳へ記帳').first().json;\n\nreturn {\n  json: {\n    driveFileId: firstTransaction.driveFileId,\n    driveFileName: firstTransaction.driveFileName\n  }\n};"
+      },
+      "id": "prepare-rename",
+      "name": "リネーム準備",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3850, 300],
+      "notes": "処理済みファイル名を準備"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.driveFileId }}",
+          "mode": "id"
+        },
+        "updateFields": {
+          "fileName": "={{ $json.driveFileName.replace('.png', '_processed.png') }}"
+        },
+        "options": {}
+      },
+      "id": "mark-as-processed",
+      "name": "処理済みマーキング",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [4050, 300],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gdrive-oauth",
+          "name": "Google Drive OAuth2"
+        }
+      },
+      "notes": "PNG画像のファイル名に _processed を追加"
+    }
+  ],
+  "connections": {
+    "手動トリガー": {
+      "main": [
+        [
+          {
+            "node": "全顧客取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "全顧客取得": {
+      "main": [
+        [
+          {
+            "node": "Amex設定済み顧客フィルタ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amex設定済み顧客フィルタ": {
+      "main": [
+        [
+          {
+            "node": "未処理PNG一覧取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "未処理PNG一覧取得": {
+      "main": [
+        [
+          {
+            "node": "PNGダウンロード",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PNGダウンロード": {
+      "main": [
+        [
+          {
+            "node": "OCRリクエスト構築",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCRリクエスト構築": {
+      "main": [
+        [
+          {
+            "node": "AI-OCR処理（GPT-4o）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI-OCR処理（GPT-4o）": {
+      "main": [
+        [
+          {
+            "node": "取引データ展開",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "取引データ展開": {
+      "main": [
+        [
+          {
+            "node": "勘定科目マスター取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "勘定科目マスター取得": {
+      "main": [
+        [
+          {
+            "node": "勘定科目マッチング",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "勘定科目マッチング": {
+      "main": [
+        [
+          {
+            "node": "IF AI推論が必要",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF AI推論が必要": {
+      "main": [
+        [
+          {
+            "node": "AI推論リクエスト構築",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "全取引マージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI推論リクエスト構築": {
+      "main": [
+        [
+          {
+            "node": "AI勘定科目推論",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI勘定科目推論": {
+      "main": [
+        [
+          {
+            "node": "AI推論結果マージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI推論結果マージ": {
+      "main": [
+        [
+          {
+            "node": "全取引マージ",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "全取引マージ": {
+      "main": [
+        [
+          {
+            "node": "消費税率判定",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "消費税率判定": {
+      "main": [
+        [
+          {
+            "node": "仕訳台帳へ記帳",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "仕訳台帳へ記帳": {
+      "main": [
+        [
+          {
+            "node": "全取引完了待機",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "全取引完了待機": {
+      "main": [
+        [
+          {
+            "node": "リネーム準備",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "リネーム準備": {
+      "main": [
+        [
+          {
+            "node": "処理済みマーキング",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Accounting",
+      "id": "accounting"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2026-02-07T00:00:00.000Z",
+  "versionId": "1"
+}
