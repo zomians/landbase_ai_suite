@@ -650,7 +650,7 @@
           "value": "={{ $json.driveFileId }}",
           "mode": "id"
         },
-        "newUpdatedFileName": "=={{ $json.driveFileName.replace('.png', '_processed.png') }}",
+        "newUpdatedFileName": "={{ $json.driveFileName.replace('.png', '_processed.png') }}",
         "options": {}
       },
       "id": "65d909fd-21ba-427b-a9e0-7282dcb4d793",
