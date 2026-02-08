@@ -587,16 +587,11 @@
           ],
           "value": {
             "取引日": "={{ $json.transaction_date }}",
-            "借方科目": "={{ $json.debitAccount }}",
-            "借方金額": "={{ $json.amount }}",
-            "貸方科目": "={{ $json.creditAccount }}",
-            "貸方金額": "={{ $json.amount }}",
-            "摘要": "={{ $json.description }}",
-            "取引区分": "={{ $json.transaction_type }}",
-            "依頼人名": "={{ $json.payer_name || '' }}",
-            "ステータス": "={{ $json.category === 'Review_Required' ? 'Review_Required' : 'Processed' }}",
-            "ファイル名": "={{ $json.driveFileName }}",
-            "顧客コード": "={{ $json.client_code }}"
+            "借方勘定科目": "={{ $json.debitAccount }}",
+            "借方金額(円)": "={{ $json.amount }}",
+            "貸方勘定科目": "={{ $json.creditAccount }}",
+            "貸方金額(円)": "={{ $json.amount }}",
+            "摘要": "={{ $json.description }}"
           },
           "matchingColumns": []
         },
