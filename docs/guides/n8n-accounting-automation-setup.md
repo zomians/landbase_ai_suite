@@ -131,20 +131,33 @@ LINE返信（処理完了通知）
 
 **シート名:** `Master_User_Config`
 
-| A: line_user_id | B: customer_name | C: drive_folder_id | D: sheet_id | E: accounting_soft | F: registration_date |
-|---|---|---|---|---|---|
-| U1234567890abcdef... | 株式会社サンプル | 1A2B3C4D5E6F... | 1xYzAbCdEfGh... | freee | 2025-01-15T10:30:00.000Z |
-| U9876543210zyxwvu... | 合同会社テスト | 9Z8Y7X6W5V4U... | 9pQrStUvWxYz... | moneyforward | 2025-01-16T14:20:00.000Z |
-| Uabc123def456ghi... | 未設定 | | | freee | 2025-01-17T09:15:00.000Z |
+| 列 | 列名 | 説明 | 必須 | 使用サービス |
+|----|------|------|------|------------|
+| A | line_user_id | LINE UserID | ○ | 領収書処理 |
+| B | customer_name | 顧客名 | ○ | 全サービス |
+| C | drive_folder_id | 領収書用Google DriveフォルダID | ○ | 領収書処理 |
+| D | sheet_id | 領収書用仕訳台帳スプレッドシートID | ○ | 領収書処理 |
+| E | accounting_soft | 会計ソフト名 | - | - |
+| F | registration_date | 登録日時 | - | - |
+| G | amex_drive_folder_id | Amex明細PNG用Google DriveフォルダID | ○ | Amex明細処理 |
+| H | amex_sheet_id | Amex明細用仕訳台帳スプレッドシートID | ○ | Amex明細処理 |
+| I | gcp_service_account_json | GCPサービスアカウント認証情報（JSON） | ○ | OCR処理（全サービス） |
+| J | bank_drive_folder_id | 銀行明細PNG用Google DriveフォルダID | ○ | 銀行明細処理 |
+| K | bank_sheet_id | 銀行明細用仕訳台帳スプレッドシートID | ○ | 銀行明細処理 |
 
 **各列の説明:**
 
-- **line_user_id**: LINE User ID（Follow Eventで自動取得）
-- **customer_name**: 顧客名（初期値: "未設定"、管理者が後から更新）
-- **drive_folder_id**: Google DriveフォルダID（初期値: 空欄、管理者が後から設定）
-- **sheet_id**: 顧客別スプレッドシートID（初期値: 空欄、管理者が後から設定）
-- **accounting_soft**: 会計ソフト（初期値: "freee"）
-- **registration_date**: 登録日時（ISO 8601形式、自動記録）
+- **A列 (line_user_id)**: LINE User ID（Follow Eventで自動取得）
+- **B列 (customer_name)**: 顧客名（初期値: "未設定"、管理者が後から更新）
+- **C列 (drive_folder_id)**: 領収書用Google DriveフォルダID（初期値: 空欄、管理者が後から設定）
+- **D列 (sheet_id)**: 領収書用仕訳台帳スプレッドシートID（初期値: 空欄、管理者が後から設定）
+- **E列 (accounting_soft)**: 会計ソフト（初期値: "freee"）
+- **F列 (registration_date)**: 登録日時（ISO 8601形式、自動記録）
+- **G列 (amex_drive_folder_id)**: Amex明細PNG用Google DriveフォルダID（Amex明細処理を使用する場合に設定）
+- **H列 (amex_sheet_id)**: Amex明細用仕訳台帳スプレッドシートID（Amex明細処理を使用する場合に設定）
+- **I列 (gcp_service_account_json)**: GCPサービスアカウント認証情報（JSON形式、OCR処理で使用）
+- **J列 (bank_drive_folder_id)**: 銀行明細PNG用Google DriveフォルダID（銀行明細処理を使用する場合に設定）
+- **K列 (bank_sheet_id)**: 銀行明細用仕訳台帳スプレッドシートID（銀行明細処理を使用する場合に設定）
 
 **取得方法:**
 
@@ -166,7 +179,18 @@ LINE返信（処理完了通知）
 
 - 管理者は後から `customer_name`、`drive_folder_id`、`sheet_id` を設定します
 
-**ユーザー状態の定義**
+**運用パターン**
+
+顧客によって使用するサービスが異なります。以下のパターンで設定してください：
+
+| パターン | 使用サービス | 設定する列 | 空欄にする列 |
+|---------|------------|----------|------------|
+| **パターン1** | 領収書のみ | A, B, C, D, E, F, I | G, H, J, K |
+| **パターン2** | Amex明細のみ | B, E, F, G, H, I | A, C, D, J, K |
+| **パターン3** | 銀行明細のみ | B, E, F, I, J, K | A, C, D, G, H |
+| **パターン4** | すべて使用（推奨） | A-K すべて | なし |
+
+**ユーザー状態の定義（領収書処理）**
 
 | 状態 | 条件 | 動作 |
 |------|------|------|
