@@ -91,8 +91,9 @@
 
 #### 課税仕入10%（デフォルト）
 
-- `debit_tax_category`（出金時）: `"課税仕入10%"`
+- `debit_tax_category`（出金時）: `"課税仕入10%（非インボイス）"`
 - ほとんどの出金取引はこちらに該当
+- 銀行明細にはインボイス番号が記載されないため、デフォルトは「非インボイス」とする。Phase 2 でレシート/請求書突合後に「インボイス」へ変更可能
 
 #### 非課税
 
@@ -117,7 +118,7 @@
 
 - 銀行明細の取引は公共料金・借入返済・振込手数料等が中心のため、海外SaaS やリバースチャージが発生するケースは少ない
 - 入金時の貸方税区分は通常空文字とする（売掛金回収は課税対象外）
-- 判断が困難な場合は `"課税仕入10%"` を適用し、`memo` に「税率要確認」と記載する
+- 判断が困難な場合は `"課税仕入10%（非インボイス）"` を適用し、`memo` に「税率要確認」と記載する
 
 ### 仕訳台帳 19 カラムフォーマット
 
@@ -131,7 +132,7 @@
 | D | 借方補助科目 | `debit_sub_account` | 入金時: 「{銀行名}」、出金時: 通常は空文字 |
 | E | 借方部門 | `debit_department` | 通常は空文字 |
 | F | 借方取引先 | `debit_partner` | 取引先名（摘要から抽出） |
-| G | 借方税区分 | `debit_tax_category` | 出金時: 「課税仕入10%」等、入金時: 通常は空文字 |
+| G | 借方税区分 | `debit_tax_category` | 出金時: 「課税仕入10%（非インボイス）」等、入金時: 通常は空文字 |
 | H | 借方インボイス | `debit_invoice` | 通常は空文字 |
 | I | 借方金額(円) | `debit_amount` | 税込金額（整数） |
 | J | 貸方勘定科目 | `credit_account` | 出金時: 「普通預金」、入金時: 収益/債権科目 |
@@ -163,7 +164,7 @@
       "debit_sub_account": "",
       "debit_department": "",
       "debit_partner": "取引先名",
-      "debit_tax_category": "課税仕入10%",
+      "debit_tax_category": "課税仕入10%（非インボイス）",
       "debit_invoice": "",
       "debit_amount": 0,
       "credit_account": "普通預金",
@@ -226,7 +227,7 @@
       "debit_sub_account": "",
       "debit_department": "",
       "debit_partner": "ｵｷﾅﾜﾃﾞﾝﾘﾖｸ",
-      "debit_tax_category": "課税仕入10%",
+      "debit_tax_category": "課税仕入10%（非インボイス）",
       "debit_invoice": "",
       "debit_amount": 45000,
       "credit_account": "普通預金",
