@@ -285,6 +285,7 @@ CREATE TABLE journal_entries (
 CREATE TABLE account_masters (
   id BIGSERIAL PRIMARY KEY,
   client_code VARCHAR NOT NULL,          -- マルチテナント識別子
+  source_type VARCHAR,                   -- 入力元区別（NULLは全ソース共通）
   merchant_keyword VARCHAR,              -- 店舗名キーワード
   description_keyword VARCHAR,           -- 取引内容キーワード
   account_category VARCHAR NOT NULL,     -- 勘定科目カテゴリ
@@ -296,7 +297,7 @@ CREATE TABLE account_masters (
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL
 );
--- INDEX: client_code, merchant_keyword
+-- INDEX: client_code, (client_code, source_type), merchant_keyword
 ```
 
 **フロントサービス（別リポジトリ）**:

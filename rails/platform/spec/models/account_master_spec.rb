@@ -22,6 +22,26 @@ RSpec.describe AccountMaster, type: :model do
       end
     end
 
+    describe "source_type" do
+      %w[amex bank invoice receipt].each do |valid_type|
+        it "#{valid_type}は有効" do
+          subject.source_type = valid_type
+          expect(subject).to be_valid
+        end
+      end
+
+      it "nilは有効（全ソース共通）" do
+        subject.source_type = nil
+        expect(subject).to be_valid
+      end
+
+      it "無効なsource_typeの場合エラー" do
+        subject.source_type = "invalid"
+        expect(subject).not_to be_valid
+        expect(subject.errors[:source_type]).to be_present
+      end
+    end
+
     describe "confidence_score" do
       it "0は有効" do
         subject.confidence_score = 0
@@ -60,6 +80,17 @@ RSpec.describe AccountMaster, type: :model do
 
         result = described_class.for_client("client_a")
         expect(result).to contain_exactly(master_a)
+      end
+    end
+
+    describe ".for_source" do
+      it "指定source_typeとnilのマスターを取得する" do
+        amex_master = create(:account_master, :amex, client_code: "test_client")
+        common_master = create(:account_master, source_type: nil, client_code: "test_client")
+        create(:account_master, :bank, client_code: "test_client")
+
+        result = described_class.for_source("amex")
+        expect(result).to contain_exactly(amex_master, common_master)
       end
     end
   end
@@ -151,6 +182,49 @@ RSpec.describe AccountMaster, type: :model do
       it "ActiveRecord::Relationを返す" do
         result = described_class.search_by_description("タクシー", client_code: "test_client")
         expect(result).to be_a(ActiveRecord::Relation)
+      end
+    end
+
+    describe "source_typeフィルタリング" do
+      before do
+        @amex_rule = create(:account_master,
+                            client_code: "test_client",
+                            source_type: "amex",
+                            merchant_keyword: "タクシー東京",
+                            description_keyword: "タクシー代",
+                            account_category: "未払金",
+                            confidence_score: 85)
+        @common_rule = create(:account_master,
+                              client_code: "test_client",
+                              source_type: nil,
+                              merchant_keyword: "タクシー東京",
+                              description_keyword: "タクシー代",
+                              account_category: "旅費交通費",
+                              confidence_score: 80)
+        @bank_rule = create(:account_master,
+                            client_code: "test_client",
+                            source_type: "bank",
+                            merchant_keyword: "タクシー東京",
+                            description_keyword: "タクシー代",
+                            account_category: "普通預金",
+                            confidence_score: 85)
+      end
+
+      it "search_by_merchantでsource_type指定時、該当ソースと共通ルールのみ返す" do
+        result = described_class.search_by_merchant("タクシー", client_code: "test_client", source_type: "amex")
+        expect(result).to contain_exactly(@amex_rule, @common_rule)
+        expect(result).not_to include(@bank_rule)
+      end
+
+      it "search_by_descriptionでsource_type指定時、該当ソースと共通ルールのみ返す" do
+        result = described_class.search_by_description("タクシー", client_code: "test_client", source_type: "bank")
+        expect(result).to contain_exactly(@bank_rule, @common_rule)
+        expect(result).not_to include(@amex_rule)
+      end
+
+      it "source_type未指定時は全ルールを返す" do
+        result = described_class.search_by_merchant("タクシー", client_code: "test_client")
+        expect(result).to contain_exactly(@amex_rule, @common_rule, @bank_rule)
       end
     end
 

@@ -16,6 +16,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
 
   create_table "account_masters", force: :cascade do |t|
     t.string "client_code", null: false, comment: "マルチテナント識別子"
+    t.string "source_type", comment: "入力元区別: amex / bank / invoice / receipt（nilは全ソース共通）"
     t.string "merchant_keyword", comment: "店舗名キーワード（マッチング用）"
     t.string "description_keyword", comment: "取引内容キーワード（マッチング用）"
     t.string "account_category", null: false, comment: "勘定科目カテゴリ"
@@ -27,6 +28,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["client_code"], name: "idx_account_masters_client"
+    t.index ["client_code", "source_type"], name: "idx_account_masters_client_source"
     t.index ["merchant_keyword"], name: "idx_account_masters_merchant"
   end
 
