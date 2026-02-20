@@ -80,11 +80,11 @@
 |---|---|---|
 | ﾌﾘｺﾐ + 法人名/個人名 | 売掛金 | 売掛金回収 |
 | ﾘｿｸ | 受取利息 | 非課税 |
-| その他入金 | Review_Required | `status` を `"Review_Required"` に設定 |
+| その他入金 | review_required | `status` を `"review_required"` に設定 |
 
 #### AI 推論（低精度）
 
-上記ルールでマッチしない場合は、摘要から最も適切な勘定科目を推論する。ただし、推論に自信がない場合は `status` を `"Review_Required"` に設定し、`memo` に推論理由を記載する。
+上記ルールでマッチしない場合は、摘要から最も適切な勘定科目を推論する。ただし、推論に自信がない場合は `status` を `"review_required"` に設定し、`memo` に推論理由を記載する。
 
 ### 消費税率判定ルール
 
@@ -174,7 +174,7 @@
       "description": "摘要テキスト",
       "tag": "bank",
       "memo": "",
-      "status": "OK"
+      "status": "ok"
     }
   ],
   "summary": {
@@ -199,13 +199,13 @@
 
 **transactions[] の各要素**:
 - 19カラム仕訳データ + `status` フィールド
-- `status`: `"OK"`（推定に自信あり）または `"Review_Required"`（要確認）
+- `status`: `"ok"`（推定に自信あり）または `"review_required"`（要確認）
 
 **summary**:
 - `total_transactions`: 取引総件数
 - `total_withdrawals`: 出金合計金額（円）
 - `total_deposits`: 入金合計金額（円）
-- `review_required_count`: `status: "Review_Required"` の件数
+- `review_required_count`: `status: "review_required"` の件数
 - `accounts_breakdown`: 借方勘定科目ごとの金額集計（出金時の費用科目 + 入金時の「普通預金」）
 
 ### 出力例
@@ -237,7 +237,7 @@
       "description": "ﾃﾞﾝｷﾘﾖｳ ｵｷﾅﾜﾃﾞﾝﾘﾖｸ",
       "tag": "bank",
       "memo": "",
-      "status": "OK"
+      "status": "ok"
     },
     {
       "transaction_no": 2,
@@ -259,7 +259,7 @@
       "description": "ﾌﾘｺﾐﾃｽｳﾘﾖｳ",
       "tag": "bank",
       "memo": "非課税",
-      "status": "OK"
+      "status": "ok"
     },
     {
       "transaction_no": 3,
@@ -281,7 +281,7 @@
       "description": "ｺﾞﾍﾝｻｲ",
       "tag": "bank",
       "memo": "借入返済",
-      "status": "OK"
+      "status": "ok"
     },
     {
       "transaction_no": 4,
@@ -303,7 +303,7 @@
       "description": "ｺｳｻﾞﾌﾘｶｴ ｱﾒﾘｶﾝｴｷｽﾌﾟﾚｽ",
       "tag": "bank",
       "memo": "クレカ引落",
-      "status": "OK"
+      "status": "ok"
     },
     {
       "transaction_no": 5,
@@ -325,7 +325,7 @@
       "description": "ﾌﾘｺﾐ ｶ)ﾗﾝﾄﾞﾍﾞｰｽ",
       "tag": "bank",
       "memo": "売掛金回収",
-      "status": "OK"
+      "status": "ok"
     },
     {
       "transaction_no": 6,
@@ -347,7 +347,7 @@
       "description": "ﾘｿｸ",
       "tag": "bank",
       "memo": "非課税",
-      "status": "OK"
+      "status": "ok"
     }
   ],
   "summary": {
