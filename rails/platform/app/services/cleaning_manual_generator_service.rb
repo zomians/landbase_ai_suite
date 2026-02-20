@@ -2,6 +2,7 @@ require "ostruct"
 
 class CleaningManualGeneratorService
   MAX_IMAGES_PER_BATCH = 20
+  DEFAULT_MODEL = "claude-sonnet-4-20250514"
 
   SYSTEM_PROMPT = <<~PROMPT
     あなたは宿泊施設の清掃マニュアル作成の専門家です。
@@ -88,7 +89,7 @@ class CleaningManualGeneratorService
   def generate_for_batch(image_batch)
     content = build_content(image_batch)
     response = client.messages.create(
-      model: "claude-sonnet-4-20250514",
+      model: ENV.fetch("ANTHROPIC_MODEL", DEFAULT_MODEL),
       max_tokens: 8192,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: content }]
@@ -139,6 +140,7 @@ class CleaningManualGeneratorService
 
     image_batch.each_with_index do |image, i|
       image_data = Base64.strict_encode64(image.read)
+      image.rewind
       media_type = image.content_type
 
       content << {

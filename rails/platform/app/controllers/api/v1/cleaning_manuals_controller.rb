@@ -2,6 +2,7 @@ module Api
   module V1
     class CleaningManualsController < BaseController
       ALLOWED_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
+      MAX_IMAGE_SIZE = 10.megabytes
 
       def index
         manuals = CleaningManual.for_client(@client_code).recent
@@ -22,6 +23,11 @@ module Api
         invalid = images.reject { |img| img.content_type.in?(ALLOWED_CONTENT_TYPES) }
         if invalid.any?
           return render_error("対応していない画像形式が含まれています。JPEG, PNG, WebP のみ対応しています。")
+        end
+
+        oversized = images.select { |img| img.size > MAX_IMAGE_SIZE }
+        if oversized.any?
+          return render_error("画像は1枚あたり10MB以下にしてください。")
         end
 
         property_name = params[:property_name]

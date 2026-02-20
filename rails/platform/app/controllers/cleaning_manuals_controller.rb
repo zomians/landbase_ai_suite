@@ -9,7 +9,7 @@ class CleaningManualsController < ApplicationController
   end
 
   def show
-    @manual = CleaningManual.find(params[:id])
+    @manual = CleaningManual.for_client(params[:client_code]).find(params[:id])
   end
 
   def new

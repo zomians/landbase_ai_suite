@@ -9,6 +9,7 @@ export default class extends Controller {
 
   connect() {
     this.files = []
+    this.objectURLs = []
   }
 
   openFileDialog() {
@@ -64,6 +65,8 @@ export default class extends Controller {
     }
 
     this.previewTarget.classList.remove("hidden")
+    this.objectURLs.forEach(url => URL.revokeObjectURL(url))
+    this.objectURLs = []
     this.previewTarget.innerHTML = ""
 
     this.files.forEach((file, index) => {
@@ -72,7 +75,9 @@ export default class extends Controller {
 
       const img = document.createElement("img")
       img.className = "w-full h-24 object-cover rounded-lg"
-      img.src = URL.createObjectURL(file)
+      const objectURL = URL.createObjectURL(file)
+      this.objectURLs.push(objectURL)
+      img.src = objectURL
 
       const removeBtn = document.createElement("button")
       removeBtn.type = "button"
