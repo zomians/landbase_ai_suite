@@ -199,7 +199,9 @@ PostgreSQL 16-alpine
 ├── platform_development        # Platform基幹アプリDB
 │   ├── clients                 # クライアント管理
 │   ├── cleaning_standards      # 清掃基準
-│   └── cleaning_sessions       # 清掃報告
+│   ├── cleaning_sessions       # 清掃報告
+│   ├── journal_entries         # 仕訳データ（経理自動化）
+│   └── account_masters         # 勘定科目マスター（経理自動化）
 └── （将来）hotel_app_development
 ```
 
@@ -214,7 +216,6 @@ CREATE TABLE clients (
   code VARCHAR UNIQUE NOT NULL,      -- 'shrimp_shells'
   name VARCHAR NOT NULL,               -- 'Shrimp Shells'
   industry VARCHAR,                    -- 'restaurant'
-  subdomain VARCHAR UNIQUE,            -- 'shrimp-shells'
   services JSONB DEFAULT '{}',         -- サービス設定
   status VARCHAR DEFAULT 'active',     -- ステータス
   created_at TIMESTAMP,
@@ -246,6 +247,56 @@ CREATE TABLE cleaning_sessions (
   created_at TIMESTAMP,
   updated_at TIMESTAMP
 );
+
+-- 仕訳データ（経理自動化）
+CREATE TABLE journal_entries (
+  id BIGSERIAL PRIMARY KEY,
+  client_id BIGINT NOT NULL REFERENCES clients(id),  -- クライアント
+  source_type VARCHAR NOT NULL,          -- 'amex' / 'bank' / 'invoice' / 'receipt'
+  source_period VARCHAR,                 -- 明細期間（例: '2026-01'）
+  transaction_no INTEGER,                -- 取引番号
+  date DATE NOT NULL,                    -- 取引日
+  debit_account VARCHAR NOT NULL,        -- 借方勘定科目
+  debit_sub_account VARCHAR DEFAULT '',  -- 借方補助科目
+  debit_department VARCHAR DEFAULT '',   -- 借方部門
+  debit_partner VARCHAR DEFAULT '',      -- 借方取引先
+  debit_tax_category VARCHAR DEFAULT '', -- 借方税区分
+  debit_invoice VARCHAR DEFAULT '',      -- 借方インボイス
+  debit_amount INTEGER NOT NULL,         -- 借方金額
+  credit_account VARCHAR NOT NULL,       -- 貸方勘定科目
+  credit_sub_account VARCHAR DEFAULT '', -- 貸方補助科目
+  credit_department VARCHAR DEFAULT '',  -- 貸方部門
+  credit_partner VARCHAR DEFAULT '',     -- 貸方取引先
+  credit_tax_category VARCHAR DEFAULT '',-- 貸方税区分
+  credit_invoice VARCHAR DEFAULT '',     -- 貸方インボイス
+  credit_amount INTEGER NOT NULL,        -- 貸方金額
+  description TEXT DEFAULT '',           -- 摘要
+  tag VARCHAR DEFAULT '',                -- タグ
+  memo TEXT DEFAULT '',                  -- メモ
+  cardholder VARCHAR DEFAULT '',         -- カード利用者（Amex等の複数会員明細用）
+  status VARCHAR DEFAULT 'ok',           -- 'ok' / 'review_required'
+  created_at TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP NOT NULL
+);
+-- INDEX: client_id, (source_type, source_period), date, status
+
+-- 勘定科目マスター（経理自動化）
+CREATE TABLE account_masters (
+  id BIGSERIAL PRIMARY KEY,
+  client_id BIGINT NOT NULL REFERENCES clients(id),  -- クライアント
+  source_type VARCHAR,                   -- 入力元区別（NULLは全ソース共通）
+  merchant_keyword VARCHAR,              -- 店舗名キーワード
+  description_keyword VARCHAR,           -- 取引内容キーワード
+  account_category VARCHAR NOT NULL,     -- 勘定科目カテゴリ
+  confidence_score INTEGER DEFAULT 50,   -- 信頼度スコア（0-100）
+  last_used_date DATE,                   -- 最終使用日
+  usage_count INTEGER DEFAULT 0,         -- 使用回数
+  auto_learned BOOLEAN DEFAULT false,    -- 自動学習フラグ
+  notes TEXT DEFAULT '',                 -- 備考
+  created_at TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP NOT NULL
+);
+-- INDEX: client_id, (client_id, source_type), merchant_keyword
 ```
 
 **フロントサービス（別リポジトリ）**:
