@@ -9,10 +9,10 @@ RSpec.describe AccountMaster, type: :model do
         expect(subject).to be_valid
       end
 
-      it "client_codeが空の場合無効" do
-        subject.client_code = nil
+      it "clientが空の場合無効" do
+        subject.client = nil
         expect(subject).not_to be_valid
-        expect(subject.errors[:client_code]).to be_present
+        expect(subject.errors[:client]).to be_present
       end
 
       it "account_categoryが空の場合無効" do
@@ -75,8 +75,10 @@ RSpec.describe AccountMaster, type: :model do
   describe "スコープ" do
     describe ".for_client" do
       it "指定クライアントのマスターのみ取得する" do
-        master_a = create(:account_master, client_code: "client_a")
-        create(:account_master, client_code: "client_b")
+        client_a = create(:client, code: "client_a")
+        client_b = create(:client, code: "client_b")
+        master_a = create(:account_master, client: client_a)
+        create(:account_master, client: client_b)
 
         result = described_class.for_client("client_a")
         expect(result).to contain_exactly(master_a)
@@ -85,9 +87,10 @@ RSpec.describe AccountMaster, type: :model do
 
     describe ".for_source" do
       it "指定source_typeとnilのマスターを取得する" do
-        amex_master = create(:account_master, :amex, client_code: "test_client")
-        common_master = create(:account_master, source_type: nil, client_code: "test_client")
-        create(:account_master, :bank, client_code: "test_client")
+        client = create(:client, code: "test_client")
+        amex_master = create(:account_master, :amex, client: client)
+        common_master = create(:account_master, source_type: nil, client: client)
+        create(:account_master, :bank, client: client)
 
         result = described_class.for_source("amex")
         expect(result).to contain_exactly(amex_master, common_master)
@@ -96,25 +99,28 @@ RSpec.describe AccountMaster, type: :model do
   end
 
   describe "キーワードマッチング" do
+    let!(:test_client) { create(:client, code: "test_client") }
+    let!(:other_client) { create(:client, code: "other_client") }
+
     before do
       @high = create(:account_master,
-                     client_code: "test_client",
+                     client: test_client,
                      merchant_keyword: "タクシー東京",
                      description_keyword: "タクシー代",
                      account_category: "旅費交通費",
                      confidence_score: 90)
       @low = create(:account_master,
-                    client_code: "test_client",
+                    client: test_client,
                     merchant_keyword: "タクシー大阪",
                     description_keyword: "タクシー利用",
                     account_category: "旅費交通費",
                     confidence_score: 60)
-      @other_client = create(:account_master,
-                             client_code: "other_client",
-                             merchant_keyword: "タクシー福岡",
-                             description_keyword: "タクシー",
-                             account_category: "旅費交通費",
-                             confidence_score: 95)
+      @other_client_master = create(:account_master,
+                                    client: other_client,
+                                    merchant_keyword: "タクシー福岡",
+                                    description_keyword: "タクシー",
+                                    account_category: "旅費交通費",
+                                    confidence_score: 95)
     end
 
     describe ".find_by_merchant" do
@@ -142,7 +148,7 @@ RSpec.describe AccountMaster, type: :model do
 
       it "他クライアントのレコードは含まない" do
         result = described_class.search_by_merchant("タクシー", client_code: "test_client")
-        expect(result).not_to include(@other_client)
+        expect(result).not_to include(@other_client_master)
       end
 
       it "ActiveRecord::Relationを返す" do
@@ -176,7 +182,7 @@ RSpec.describe AccountMaster, type: :model do
 
       it "他クライアントのレコードは含まない" do
         result = described_class.search_by_description("タクシー", client_code: "test_client")
-        expect(result).not_to include(@other_client)
+        expect(result).not_to include(@other_client_master)
       end
 
       it "ActiveRecord::Relationを返す" do
@@ -188,21 +194,21 @@ RSpec.describe AccountMaster, type: :model do
     describe "source_typeフィルタリング" do
       before do
         @amex_rule = create(:account_master,
-                            client_code: "test_client",
+                            client: test_client,
                             source_type: "amex",
                             merchant_keyword: "タクシー東京",
                             description_keyword: "タクシー代",
                             account_category: "未払金",
                             confidence_score: 85)
         @common_rule = create(:account_master,
-                              client_code: "test_client",
+                              client: test_client,
                               source_type: nil,
                               merchant_keyword: "タクシー東京",
                               description_keyword: "タクシー代",
                               account_category: "旅費交通費",
                               confidence_score: 80)
         @bank_rule = create(:account_master,
-                            client_code: "test_client",
+                            client: test_client,
                             source_type: "bank",
                             merchant_keyword: "タクシー東京",
                             description_keyword: "タクシー代",
@@ -245,8 +251,10 @@ RSpec.describe AccountMaster, type: :model do
 
   describe "マルチテナント分離" do
     it "異なるクライアントのデータが混在しない" do
-      create(:account_master, client_code: "client_a", account_category: "旅費交通費")
-      create(:account_master, client_code: "client_b", account_category: "通信費")
+      client_a = create(:client, code: "client_a")
+      client_b = create(:client, code: "client_b")
+      create(:account_master, client: client_a, account_category: "旅費交通費")
+      create(:account_master, client: client_b, account_category: "通信費")
 
       client_a_masters = described_class.for_client("client_a")
       client_b_masters = described_class.for_client("client_b")

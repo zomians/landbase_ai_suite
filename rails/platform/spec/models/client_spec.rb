@@ -70,8 +70,8 @@ RSpec.describe Client, type: :model do
   describe "スコープ" do
     describe ".active" do
       it "activeステータスのクライアントのみ取得する" do
-        active_client = create(:client, code: "active_one", status: "active")
-        create(:client, code: "inactive_one", status: "inactive")
+        active_client = create(:client, status: "active")
+        create(:client, status: "inactive")
 
         result = described_class.active
         expect(result).to contain_exactly(active_client)
@@ -80,15 +80,15 @@ RSpec.describe Client, type: :model do
   end
 
   describe "関連" do
-    let!(:client) { create(:client, code: "assoc_test") }
+    let!(:client) { create(:client) }
 
     it "journal_entriesを持てる" do
-      entry = create(:journal_entry, client_code: "assoc_test")
+      entry = create(:journal_entry, client: client)
       expect(client.journal_entries).to contain_exactly(entry)
     end
 
     it "account_mastersを持てる" do
-      master = create(:account_master, client_code: "assoc_test")
+      master = create(:account_master, client: client)
       expect(client.account_masters).to contain_exactly(master)
     end
   end

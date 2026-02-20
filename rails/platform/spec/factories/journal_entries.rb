@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :journal_entry do
-    client_code { "test_client" }
+    client
     source_type { "amex" }
     source_period { "2026-01" }
     transaction_no { Faker::Number.between(from: 1, to: 9999) }

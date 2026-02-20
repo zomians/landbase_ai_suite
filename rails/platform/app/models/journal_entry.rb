@@ -2,10 +2,9 @@ require "csv"
 
 class JournalEntry < ApplicationRecord
   # === 関連 ===
-  belongs_to :client, primary_key: :code, foreign_key: :client_code, optional: true
+  belongs_to :client
 
   # === バリデーション ===
-  validates :client_code, presence: true
   validates :date, presence: true
   validates :debit_account, presence: true
   validates :credit_account, presence: true
@@ -13,11 +12,11 @@ class JournalEntry < ApplicationRecord
   validates :credit_amount, numericality: { greater_than_or_equal_to: 0 }
   validates :source_type, inclusion: { in: %w[amex bank invoice receipt] }
   validates :status, inclusion: { in: %w[ok review_required] }
-  validates :transaction_no, uniqueness: { scope: %i[client_code source_type source_period] }, allow_nil: true
+  validates :transaction_no, uniqueness: { scope: %i[client_id source_type source_period] }, allow_nil: true
   validate :amounts_must_match
 
   # === スコープ ===
-  scope :for_client, ->(code) { where(client_code: code) }
+  scope :for_client, ->(code) { where(client: Client.where(code: code)) }
   scope :by_source, ->(type) { where(source_type: type) }
   scope :review_required, -> { where(status: "review_required") }
   scope :in_period, ->(from, to) { where(date: from..to) }

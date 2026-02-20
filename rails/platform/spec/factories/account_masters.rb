@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :account_master do
-    client_code { "test_client" }
+    client
     source_type { nil }
     merchant_keyword { Faker::Company.name }
     description_keyword { Faker::Lorem.word }

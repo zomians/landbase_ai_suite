@@ -252,7 +252,7 @@ CREATE TABLE cleaning_sessions (
 -- 仕訳データ（経理自動化）
 CREATE TABLE journal_entries (
   id BIGSERIAL PRIMARY KEY,
-  client_code VARCHAR NOT NULL,          -- マルチテナント識別子
+  client_id BIGINT NOT NULL REFERENCES clients(id),  -- クライアント
   source_type VARCHAR NOT NULL,          -- 'amex' / 'bank' / 'invoice' / 'receipt'
   source_period VARCHAR,                 -- 明細期間（例: '2026-01'）
   transaction_no INTEGER,                -- 取引番号
@@ -279,12 +279,12 @@ CREATE TABLE journal_entries (
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL
 );
--- INDEX: client_code, (source_type, source_period), date, status
+-- INDEX: client_id, (source_type, source_period), date, status
 
 -- 勘定科目マスター（経理自動化）
 CREATE TABLE account_masters (
   id BIGSERIAL PRIMARY KEY,
-  client_code VARCHAR NOT NULL,          -- マルチテナント識別子
+  client_id BIGINT NOT NULL REFERENCES clients(id),  -- クライアント
   source_type VARCHAR,                   -- 入力元区別（NULLは全ソース共通）
   merchant_keyword VARCHAR,              -- 店舗名キーワード
   description_keyword VARCHAR,           -- 取引内容キーワード
@@ -297,7 +297,7 @@ CREATE TABLE account_masters (
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL
 );
--- INDEX: client_code, (client_code, source_type), merchant_keyword
+-- INDEX: client_id, (client_id, source_type), merchant_keyword
 ```
 
 **フロントサービス（別リポジトリ）**:

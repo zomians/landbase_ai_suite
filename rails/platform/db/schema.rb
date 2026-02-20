@@ -29,7 +29,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
   end
 
   create_table "account_masters", force: :cascade do |t|
-    t.string "client_code", null: false, comment: "マルチテナント識別子"
+    t.bigint "client_id", null: false, comment: "クライアント"
     t.string "source_type", comment: "入力元区別: amex / bank / invoice / receipt（nilは全ソース共通）"
     t.string "merchant_keyword", comment: "店舗名キーワード（マッチング用）"
     t.string "description_keyword", comment: "取引内容キーワード（マッチング用）"
@@ -41,13 +41,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
     t.text "notes", default: "", comment: "備考"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["client_code"], name: "idx_account_masters_client"
-    t.index ["client_code", "source_type"], name: "idx_account_masters_client_source"
+    t.index ["client_id", "source_type"], name: "idx_account_masters_client_source"
+    t.index ["client_id"], name: "index_account_masters_on_client_id"
     t.index ["merchant_keyword"], name: "idx_account_masters_merchant"
   end
 
   create_table "journal_entries", force: :cascade do |t|
-    t.string "client_code", null: false, comment: "マルチテナント識別子"
+    t.bigint "client_id", null: false, comment: "クライアント"
     t.string "source_type", null: false, comment: "入力元区別: amex / bank / invoice / receipt"
     t.string "source_period", comment: "明細期間（例: 2026-01）"
     t.integer "transaction_no", comment: "取引番号"
@@ -73,10 +73,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
     t.string "status", default: "ok", comment: "確認状態: ok / review_required"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["client_code"], name: "idx_journal_entries_client"
-    t.index ["client_code", "source_type", "source_period", "transaction_no"], name: "idx_journal_entries_unique_transaction", unique: true
+    t.index ["client_id", "source_type", "source_period", "transaction_no"], name: "idx_journal_entries_unique_transaction", unique: true
+    t.index ["client_id"], name: "index_journal_entries_on_client_id"
     t.index ["date"], name: "idx_journal_entries_date"
     t.index ["source_type", "source_period"], name: "idx_journal_entries_source"
     t.index ["status"], name: "idx_journal_entries_review_required", where: "((status)::text = 'review_required'::text)"
   end
+
+  add_foreign_key "account_masters", "clients"
+  add_foreign_key "journal_entries", "clients"
 end

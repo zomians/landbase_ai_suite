@@ -1,15 +1,14 @@
 class AccountMaster < ApplicationRecord
   # === 関連 ===
-  belongs_to :client, primary_key: :code, foreign_key: :client_code, optional: true
+  belongs_to :client
 
   # === バリデーション ===
-  validates :client_code, presence: true
   validates :account_category, presence: true
   validates :confidence_score, numericality: { in: 0..100 }, allow_nil: true
   validates :source_type, inclusion: { in: %w[amex bank invoice receipt] }, allow_nil: true
 
   # === スコープ ===
-  scope :for_client, ->(code) { where(client_code: code) }
+  scope :for_client, ->(code) { where(client: Client.where(code: code)) }
   scope :for_source, ->(type) { where(source_type: [type, nil]) }
 
   # === キーワードマッチング（merchant_keyword） ===

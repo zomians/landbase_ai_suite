@@ -9,10 +9,10 @@ RSpec.describe JournalEntry, type: :model do
         expect(subject).to be_valid
       end
 
-      it "client_codeが空の場合無効" do
-        subject.client_code = nil
+      it "clientが空の場合無効" do
+        subject.client = nil
         expect(subject).not_to be_valid
-        expect(subject.errors[:client_code]).to be_present
+        expect(subject.errors[:client]).to be_present
       end
 
       it "dateが空の場合無効" do
@@ -104,8 +104,10 @@ RSpec.describe JournalEntry, type: :model do
   describe "スコープ" do
     describe ".for_client" do
       it "指定クライアントの仕訳のみ取得する" do
-        entry_a = create(:journal_entry, client_code: "client_a")
-        create(:journal_entry, client_code: "client_b")
+        client_a = create(:client, code: "client_a")
+        client_b = create(:client, code: "client_b")
+        entry_a = create(:journal_entry, client: client_a)
+        create(:journal_entry, client: client_b)
 
         result = described_class.for_client("client_a")
         expect(result).to contain_exactly(entry_a)
@@ -165,8 +167,10 @@ RSpec.describe JournalEntry, type: :model do
 
   describe "マルチテナント分離" do
     it "異なるクライアントのデータが混在しない" do
-      create(:journal_entry, client_code: "client_a", debit_amount: 1000, credit_amount: 1000)
-      create(:journal_entry, client_code: "client_b", debit_amount: 2000, credit_amount: 2000)
+      client_a = create(:client, code: "client_a")
+      client_b = create(:client, code: "client_b")
+      create(:journal_entry, client: client_a, debit_amount: 1000, credit_amount: 1000)
+      create(:journal_entry, client: client_b, debit_amount: 2000, credit_amount: 2000)
 
       client_a_entries = described_class.for_client("client_a")
       client_b_entries = described_class.for_client("client_b")

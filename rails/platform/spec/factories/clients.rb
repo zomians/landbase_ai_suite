@@ -1,15 +1,13 @@
 FactoryBot.define do
   factory :client do
-    code { "test_client" }
-    name { "テストクライアント" }
+    sequence(:code) { |n| "client_#{n}" }
+    sequence(:name) { |n| "テストクライアント#{n}" }
     industry { "restaurant" }
     subdomain { nil }
     services { {} }
     status { "active" }
 
     trait :hotel do
-      code { "hotel_client" }
-      name { "テストホテル" }
       industry { "hotel" }
     end
 
