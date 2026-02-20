@@ -2,7 +2,8 @@ require "rails_helper"
 require "ostruct"
 
 RSpec.describe "Api::V1::CleaningManuals", type: :request do
-  let(:client_code) { "test_client" }
+  let(:client) { create(:client, code: "test_client") }
+  let(:client_code) { client.code }
 
   describe "GET /api/v1/cleaning_manuals" do
     it "client_code がない場合400を返すこと" do
@@ -12,8 +13,9 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
     end
 
     it "指定した client_code のマニュアル一覧を返すこと" do
-      create(:cleaning_manual, client_code: client_code, property_name: "施設A")
-      create(:cleaning_manual, client_code: "other_client", property_name: "施設B")
+      other_client = create(:client, code: "other_client")
+      create(:cleaning_manual, client: client, property_name: "施設A")
+      create(:cleaning_manual, client: other_client, property_name: "施設B")
 
       get "/api/v1/cleaning_manuals", params: { client_code: client_code }
 
@@ -23,17 +25,16 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
       expect(data.first["property_name"]).to eq("施設A")
     end
 
-    it "空の一覧を返すこと" do
+    it "存在しないクライアントの場合404を返すこと" do
       get "/api/v1/cleaning_manuals", params: { client_code: "nonexistent" }
 
-      expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body)).to eq([])
+      expect(response).to have_http_status(:not_found)
     end
   end
 
   describe "GET /api/v1/cleaning_manuals/:id" do
     it "マニュアル詳細を返すこと" do
-      manual = create(:cleaning_manual, client_code: client_code)
+      manual = create(:cleaning_manual, client: client)
 
       get "/api/v1/cleaning_manuals/#{manual.id}", params: { client_code: client_code }
 
@@ -45,7 +46,8 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
     end
 
     it "他テナントのマニュアルにアクセスできないこと" do
-      manual = create(:cleaning_manual, client_code: "other_client")
+      other_client = create(:client, code: "other_client")
+      manual = create(:cleaning_manual, client: other_client)
 
       get "/api/v1/cleaning_manuals/#{manual.id}", params: { client_code: client_code }
 

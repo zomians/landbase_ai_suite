@@ -5,12 +5,12 @@ module Api
       MAX_IMAGE_SIZE = 10.megabytes
 
       def index
-        manuals = CleaningManual.for_client(@client_code).recent
+        manuals = @current_client.cleaning_manuals.recent
         render json: manuals.map { |m| manual_summary(m) }
       end
 
       def show
-        manual = CleaningManual.for_client(@client_code).find_by(id: params[:id])
+        manual = @current_client.cleaning_manuals.find_by(id: params[:id])
         return render_not_found unless manual
 
         render json: manual_detail(manual)
@@ -49,8 +49,7 @@ module Api
           return render_error(result.error)
         end
 
-        manual = CleaningManual.new(
-          client_code: @client_code,
+        manual = @current_client.cleaning_manuals.new(
           property_name: property_name,
           room_type: room_type,
           manual_data: result.data,
@@ -82,7 +81,7 @@ module Api
       def manual_detail(manual)
         {
           id: manual.id,
-          client_code: manual.client_code,
+          client_code: manual.client.code,
           property_name: manual.property_name,
           room_type: manual.room_type,
           status: manual.status,

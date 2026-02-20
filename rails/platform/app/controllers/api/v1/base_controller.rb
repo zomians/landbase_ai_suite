@@ -1,13 +1,16 @@
 module Api
   module V1
     class BaseController < ActionController::API
-      before_action :set_client_code
+      before_action :set_current_client
 
       private
 
-      def set_client_code
-        @client_code = params[:client_code]
-        render_error("client_code は必須です", :bad_request) if @client_code.blank?
+      def set_current_client
+        client_code = params[:client_code]
+        return render_error("client_code は必須です", :bad_request) if client_code.blank?
+
+        @current_client = Client.find_by(code: client_code)
+        render_error("クライアントが見つかりません", :not_found) unless @current_client
       end
 
       def render_error(message, status = :unprocessable_entity)

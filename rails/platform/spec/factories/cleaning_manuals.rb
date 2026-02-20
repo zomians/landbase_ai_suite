@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :cleaning_manual do
-    client_code { "test_client" }
+    client
     property_name { "テスト施設" }
     room_type { "スタンダード" }
     manual_data do

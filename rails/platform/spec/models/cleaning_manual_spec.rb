@@ -7,10 +7,10 @@ RSpec.describe CleaningManual, type: :model do
       expect(manual).to be_valid
     end
 
-    it "client_code が必須であること" do
-      manual = build(:cleaning_manual, client_code: nil)
+    it "client が必須であること" do
+      manual = build(:cleaning_manual, client: nil)
       expect(manual).not_to be_valid
-      expect(manual.errors[:client_code]).to be_present
+      expect(manual.errors[:client]).to be_present
     end
 
     it "property_name が必須であること" do
@@ -51,8 +51,10 @@ RSpec.describe CleaningManual, type: :model do
   describe "スコープ" do
     describe ".for_client" do
       it "指定した client_code のレコードのみ返すこと" do
-        manual_a = create(:cleaning_manual, client_code: "client_a")
-        _manual_b = create(:cleaning_manual, client_code: "client_b")
+        client_a = create(:client, code: "client_a")
+        client_b = create(:client, code: "client_b")
+        manual_a = create(:cleaning_manual, client: client_a)
+        _manual_b = create(:cleaning_manual, client: client_b)
 
         result = CleaningManual.for_client("client_a")
         expect(result).to contain_exactly(manual_a)
@@ -82,9 +84,11 @@ RSpec.describe CleaningManual, type: :model do
   end
 
   describe "マルチテナント分離" do
-    it "異なる client_code のデータが混在しないこと" do
-      create(:cleaning_manual, client_code: "tenant_a", property_name: "施設A")
-      create(:cleaning_manual, client_code: "tenant_b", property_name: "施設B")
+    it "異なるクライアントのデータが混在しないこと" do
+      client_a = create(:client, code: "tenant_a")
+      client_b = create(:client, code: "tenant_b")
+      create(:cleaning_manual, client: client_a, property_name: "施設A")
+      create(:cleaning_manual, client: client_b, property_name: "施設B")
 
       tenant_a_manuals = CleaningManual.for_client("tenant_a")
       expect(tenant_a_manuals.pluck(:property_name)).to eq(["施設A"])
