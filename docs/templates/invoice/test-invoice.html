@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>請求書 - 株式会社テックソリューション</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f5f5;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 40px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        line-height: 1.6;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 40px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 20px;
+      }
+
+      .logo-section {
+        flex: 1;
+      }
+
+      .logo-section .company-name {
+        font-size: 22px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .title-section {
+        flex: 1;
+        text-align: right;
+      }
+
+      .title-section h1 {
+        font-size: 32px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .invoice-number {
+        font-size: 14px;
+        color: #666;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        margin-bottom: 40px;
+      }
+
+      .section {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .section-title {
+        font-weight: bold;
+        font-size: 13px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .company-info {
+        font-size: 13px;
+        line-height: 1.8;
+        color: #333;
+      }
+
+      .company-info p {
+        margin-bottom: 4px;
+      }
+
+      .client-info {
+        font-size: 13px;
+        line-height: 1.8;
+        color: #333;
+      }
+
+      .client-info p {
+        margin-bottom: 4px;
+      }
+
+      .client-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 8px;
+      }
+
+      .invoice-reg {
+        font-size: 13px;
+        color: #333;
+        margin-top: 8px;
+        padding: 8px 12px;
+        background-color: #f0f8ff;
+        border-left: 3px solid #4a90d9;
+      }
+
+      .dates {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 40px;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-left: 3px solid #333;
+      }
+
+      .date-item {
+        font-size: 13px;
+      }
+
+      .date-label {
+        color: #666;
+        margin-bottom: 4px;
+      }
+
+      .date-value {
+        font-weight: bold;
+        color: #333;
+      }
+
+      .items-table {
+        width: 100%;
+        margin-bottom: 40px;
+        border-collapse: collapse;
+      }
+
+      .items-table thead {
+        background-color: #f0f0f0;
+        border-top: 2px solid #333;
+        border-bottom: 2px solid #333;
+      }
+
+      .items-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: bold;
+        font-size: 13px;
+        color: #333;
+      }
+
+      .items-table td {
+        padding: 16px;
+        border-bottom: 1px solid #ddd;
+        font-size: 13px;
+        color: #333;
+      }
+
+      .items-table .item-name {
+        font-weight: 500;
+      }
+
+      .items-table .description {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+      }
+
+      .items-table .price-column {
+        text-align: right;
+        width: 120px;
+      }
+
+      .quantity-column {
+        text-align: center;
+        width: 80px;
+      }
+
+      .subtotal-row td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .tax-row td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .total-row {
+        background-color: #f9f9f9;
+        font-weight: bold;
+        border-top: 2px solid #333;
+      }
+
+      .total-row td {
+        padding: 16px;
+      }
+
+      .summary-section {
+        display: grid;
+        grid-template-columns: 1fr 250px;
+        gap: 40px;
+        margin-bottom: 40px;
+      }
+
+      .bank-info {
+        font-size: 13px;
+        line-height: 1.8;
+        color: #333;
+        padding: 16px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+      }
+
+      .bank-info-title {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+      }
+
+      .bank-info p {
+        margin-bottom: 4px;
+      }
+
+      .total-box {
+        text-align: right;
+      }
+
+      .total-label {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 8px;
+      }
+
+      .total-amount {
+        font-size: 28px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      .terms {
+        font-size: 12px;
+        color: #666;
+        line-height: 1.8;
+        margin-bottom: 20px;
+      }
+
+      .terms-title {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+      }
+
+      .terms p {
+        margin-bottom: 6px;
+      }
+
+      .footer {
+        border-top: 1px solid #ddd;
+        padding-top: 20px;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+      }
+
+      .print-button {
+        display: block;
+        margin: 20px auto;
+        padding: 12px 32px;
+        background-color: #333;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .print-button:hover {
+        background-color: #555;
+      }
+
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+
+        .container {
+          box-shadow: none;
+          padding: 0;
+        }
+
+        .print-button {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-section">
+          <div class="company-name">株式会社テックソリューション</div>
+        </div>
+        <div class="title-section">
+          <h1>請求書</h1>
+          <p class="invoice-number">No. INV-2026-0201</p>
+        </div>
+      </div>
+
+      <!-- From/To Section -->
+      <div class="content">
+        <div class="section">
+          <div class="section-title">請求元</div>
+          <div class="company-info">
+            <p><strong>株式会社テックソリューション</strong></p>
+            <p>〒100-0001</p>
+            <p>東京都千代田区千代田1-1-1</p>
+            <p>TEL: 03-1234-5678</p>
+            <p>Email: billing@tech-solution.example.jp</p>
+            <div class="invoice-reg">
+              <strong>適格請求書発行事業者登録番号</strong><br />
+              T1234567890123
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">請求先</div>
+          <div class="client-info">
+            <p class="client-name">株式会社 AI.LandBase 御中</p>
+            <p>〒905-0401</p>
+            <p>沖縄県国頭郡今帰仁村湧川 852-2</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="dates">
+        <div class="date-item">
+          <div class="date-label">請求日</div>
+          <div class="date-value">2026年2月1日</div>
+        </div>
+        <div class="date-item">
+          <div class="date-label">対象期間</div>
+          <div class="date-value">2026年1月分</div>
+        </div>
+        <div class="date-item">
+          <div class="date-label">お支払期限</div>
+          <div class="date-value">2026年2月28日</div>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width: 50%">項目</th>
+            <th class="quantity-column">数量</th>
+            <th class="price-column">単価</th>
+            <th class="price-column">金額</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="item-name">システム開発業務委託費</div>
+              <div class="description">
+                予約管理システム機能追加開発（2026年1月分）<br />
+                ・ゲスト管理画面の改修<br />
+                ・予約API連携機能の実装
+              </div>
+            </td>
+            <td class="quantity-column">1式</td>
+            <td class="price-column">¥400,000</td>
+            <td class="price-column">¥400,000</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="item-name">サーバー保守・運用費</div>
+              <div class="description">
+                本番環境・ステージング環境の監視・保守（月額）
+              </div>
+            </td>
+            <td class="quantity-column">1ヶ月</td>
+            <td class="price-column">¥100,000</td>
+            <td class="price-column">¥100,000</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td style="text-align: right; padding-right: 16px">小計</td>
+            <td class="quantity-column"></td>
+            <td class="price-column"></td>
+            <td class="price-column">¥500,000</td>
+          </tr>
+          <tr class="tax-row">
+            <td style="text-align: right; padding-right: 16px">
+              消費税（10%）
+            </td>
+            <td class="quantity-column"></td>
+            <td class="price-column"></td>
+            <td class="price-column">¥50,000</td>
+          </tr>
+          <tr class="total-row">
+            <td style="text-align: right; padding-right: 16px">
+              <strong>合計（税込）</strong>
+            </td>
+            <td class="quantity-column"></td>
+            <td class="price-column"></td>
+            <td class="price-column"><strong>¥550,000</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Summary Section -->
+      <div class="summary-section">
+        <div>
+          <!-- Bank Info -->
+          <div class="bank-info">
+            <div class="bank-info-title">お振込先</div>
+            <p>琉球銀行 名護支店</p>
+            <p>普通 1234567</p>
+            <p>カ）テックソリューション</p>
+          </div>
+
+          <!-- Terms -->
+          <div class="terms" style="margin-top: 16px">
+            <div class="terms-title">備考</div>
+            <p>
+              ・恐れ入りますが、振込手数料はご負担くださいますようお願いいたします
+            </p>
+            <p>・お支払期限までにお振込みをお願いいたします</p>
+          </div>
+        </div>
+
+        <div class="total-box">
+          <div class="total-label">ご請求金額（税込）</div>
+          <div class="total-amount">¥550,000</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          本請求書は適格請求書等保存方式（インボイス制度）に基づき発行しています。
+        </p>
+      </div>
+    </div>
+
+    <button class="print-button" onclick="window.print()">
+      📄 PDFで保存 / 印刷
+    </button>
+  </body>
+</html>
