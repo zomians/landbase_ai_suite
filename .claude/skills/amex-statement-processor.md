@@ -92,7 +92,7 @@
 
 #### 優先度3: AI 推論（低精度）
 
-上記ルールでマッチしない場合は、店舗名・取引内容から最も適切な勘定科目を推論する。ただし、推論に自信がない場合は `status` を `"Review_Required"` に設定し、`memo` に推論理由を記載する。
+上記ルールでマッチしない場合は、店舗名・取引内容から最も適切な勘定科目を推論する。ただし、推論に自信がない場合は `status` を `"review_required"` に設定し、`memo` に推論理由を記載する。
 
 ### 消費税率判定ルール
 
@@ -203,7 +203,7 @@
       "tag": "amex",
       "memo": "",
       "cardholder": "カード会員名",
-      "status": "OK"
+      "status": "ok"
     }
   ],
   "summary": {
@@ -227,12 +227,12 @@
 **transactions[] の各要素**:
 - 20カラム仕訳データ + `status` フィールド
 - `cardholder`: カード会員名（複数会員の明細で利用者を識別）
-- `status`: `"OK"`（推定に自信あり）または `"Review_Required"`（要確認）
+- `status`: `"ok"`（推定に自信あり）または `"review_required"`（要確認）
 
 **summary**:
 - `total_transactions`: 取引総件数
 - `total_amount`: 合計金額（円）
-- `review_required_count`: `status: "Review_Required"` の件数
+- `review_required_count`: `status: "review_required"` の件数
 - `accounts_breakdown`: 借方勘定科目ごとの金額集計
 
 ### 出力例
@@ -264,7 +264,7 @@
       "tag": "amex",
       "memo": "",
       "cardholder": "山田太郎",
-      "status": "OK"
+      "status": "ok"
     },
     {
       "transaction_no": 2,
@@ -287,7 +287,7 @@
       "tag": "amex",
       "memo": "軽減税率対象",
       "cardholder": "山田太郎",
-      "status": "OK"
+      "status": "ok"
     }
   ],
   "summary": {
