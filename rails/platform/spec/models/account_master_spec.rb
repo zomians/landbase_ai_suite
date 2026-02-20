@@ -192,44 +192,46 @@ RSpec.describe AccountMaster, type: :model do
     end
 
     describe "source_typeフィルタリング" do
+      let!(:source_client) { create(:client, code: "source_client") }
+
       before do
         @amex_rule = create(:account_master,
-                            client: test_client,
+                            client: source_client,
                             source_type: "amex",
-                            merchant_keyword: "タクシー東京",
-                            description_keyword: "タクシー代",
+                            merchant_keyword: "コンビニ東京",
+                            description_keyword: "コンビニ代",
                             account_category: "未払金",
                             confidence_score: 85)
         @common_rule = create(:account_master,
-                              client: test_client,
+                              client: source_client,
                               source_type: nil,
-                              merchant_keyword: "タクシー東京",
-                              description_keyword: "タクシー代",
+                              merchant_keyword: "コンビニ東京",
+                              description_keyword: "コンビニ代",
                               account_category: "旅費交通費",
                               confidence_score: 80)
         @bank_rule = create(:account_master,
-                            client: test_client,
+                            client: source_client,
                             source_type: "bank",
-                            merchant_keyword: "タクシー東京",
-                            description_keyword: "タクシー代",
+                            merchant_keyword: "コンビニ東京",
+                            description_keyword: "コンビニ代",
                             account_category: "普通預金",
                             confidence_score: 85)
       end
 
       it "search_by_merchantでsource_type指定時、該当ソースと共通ルールのみ返す" do
-        result = described_class.search_by_merchant("タクシー", client_code: "test_client", source_type: "amex")
+        result = described_class.search_by_merchant("コンビニ", client_code: "source_client", source_type: "amex")
         expect(result).to contain_exactly(@amex_rule, @common_rule)
         expect(result).not_to include(@bank_rule)
       end
 
       it "search_by_descriptionでsource_type指定時、該当ソースと共通ルールのみ返す" do
-        result = described_class.search_by_description("タクシー", client_code: "test_client", source_type: "bank")
+        result = described_class.search_by_description("コンビニ", client_code: "source_client", source_type: "bank")
         expect(result).to contain_exactly(@bank_rule, @common_rule)
         expect(result).not_to include(@amex_rule)
       end
 
       it "source_type未指定時は全ルールを返す" do
-        result = described_class.search_by_merchant("タクシー", client_code: "test_client")
+        result = described_class.search_by_merchant("コンビニ", client_code: "source_client")
         expect(result).to contain_exactly(@amex_rule, @common_rule, @bank_rule)
       end
     end

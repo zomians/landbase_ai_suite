@@ -216,7 +216,6 @@ CREATE TABLE clients (
   code VARCHAR UNIQUE NOT NULL,      -- 'shrimp_shells'
   name VARCHAR NOT NULL,               -- 'Shrimp Shells'
   industry VARCHAR,                    -- 'restaurant'
-  subdomain VARCHAR UNIQUE,            -- 'shrimp-shells'
   services JSONB DEFAULT '{}',         -- サービス設定
   status VARCHAR DEFAULT 'active',     -- ステータス
   created_at TIMESTAMP,

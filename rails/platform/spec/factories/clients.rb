@@ -3,7 +3,6 @@ FactoryBot.define do
     sequence(:code) { |n| "client_#{n}" }
     sequence(:name) { |n| "テストクライアント#{n}" }
     industry { "restaurant" }
-    subdomain { nil }
     services { {} }
     status { "active" }
 
