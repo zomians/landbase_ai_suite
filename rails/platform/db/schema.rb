@@ -14,6 +14,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
+  create_table "clients", force: :cascade do |t|
+    t.string "code", null: false, comment: "クライアント識別子 (例: shrimp_shells)"
+    t.string "name", null: false, comment: "クライアント名"
+    t.string "industry", comment: "業種: restaurant / hotel / tour"
+    t.string "subdomain", comment: "サブドメイン (例: shrimp-shells)"
+    t.jsonb "services", default: {}, comment: "サービス設定"
+    t.string "status", default: "active", comment: "ステータス: active / trial / inactive"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "idx_clients_code", unique: true
+    t.index ["services"], name: "idx_clients_services", using: :gin
+    t.index ["subdomain"], name: "idx_clients_subdomain", unique: true
+  end
+
   create_table "account_masters", force: :cascade do |t|
     t.string "client_code", null: false, comment: "マルチテナント識別子"
     t.string "source_type", comment: "入力元区別: amex / bank / invoice / receipt（nilは全ソース共通）"

@@ -1,4 +1,7 @@
 class AccountMaster < ApplicationRecord
+  # === 関連 ===
+  belongs_to :client, primary_key: :code, foreign_key: :client_code, optional: true
+
   # === バリデーション ===
   validates :client_code, presence: true
   validates :account_category, presence: true
