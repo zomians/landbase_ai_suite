@@ -35,23 +35,23 @@ RSpec.describe JournalEntry, type: :model do
     end
 
     describe "金額" do
-      it "debit_amountが0以下の場合無効" do
+      it "debit_amountが0の場合有効（調整仕訳対応）" do
         subject.debit_amount = 0
         subject.credit_amount = 0
+        expect(subject).to be_valid
+      end
+
+      it "debit_amountが負の場合無効" do
+        subject.debit_amount = -1
         expect(subject).not_to be_valid
         expect(subject.errors[:debit_amount]).to be_present
       end
 
-      it "credit_amountが0以下の場合無効" do
+      it "credit_amountが負の場合無効" do
         subject.debit_amount = 1000
-        subject.credit_amount = 0
+        subject.credit_amount = -1
         expect(subject).not_to be_valid
         expect(subject.errors[:credit_amount]).to be_present
-      end
-
-      it "debit_amountが負の場合無効" do
-        subject.debit_amount = -100
-        expect(subject).not_to be_valid
       end
     end
 
@@ -145,17 +145,21 @@ RSpec.describe JournalEntry, type: :model do
 
   describe ".to_csv" do
     it "CSV形式でエクスポートされる" do
-      create(:journal_entry, date: Date.new(2026, 1, 15), debit_account: "旅費交通費",
-             credit_account: "未払金", debit_amount: 5000, credit_amount: 5000)
+      create(:journal_entry, transaction_no: 1, date: Date.new(2026, 1, 15),
+             debit_account: "旅費交通費", credit_account: "未払金",
+             debit_amount: 5000, credit_amount: 5000, status: "ok")
 
       csv_string = described_class.to_csv
       csv = CSV.parse(csv_string, headers: true)
 
       expect(csv.headers).to eq(JournalEntry::CSV_HEADERS)
       expect(csv.size).to eq(1)
+      expect(csv.first["取引No"]).to eq("1")
+      expect(csv.first["取引日"]).to eq("2026-01-15")
       expect(csv.first["借方勘定科目"]).to eq("旅費交通費")
       expect(csv.first["貸方勘定科目"]).to eq("未払金")
-      expect(csv.first["借方金額"]).to eq("5000")
+      expect(csv.first["借方金額(円)"]).to eq("5000")
+      expect(csv.first["ステータス"]).to eq("ok")
     end
   end
 

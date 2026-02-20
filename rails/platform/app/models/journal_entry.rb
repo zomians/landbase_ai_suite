@@ -6,8 +6,8 @@ class JournalEntry < ApplicationRecord
   validates :date, presence: true
   validates :debit_account, presence: true
   validates :credit_account, presence: true
-  validates :debit_amount, numericality: { greater_than: 0 }
-  validates :credit_amount, numericality: { greater_than: 0 }
+  validates :debit_amount, numericality: { greater_than_or_equal_to: 0 }
+  validates :credit_amount, numericality: { greater_than_or_equal_to: 0 }
   validates :source_type, inclusion: { in: %w[amex bank invoice receipt] }
   validates :status, inclusion: { in: %w[ok review_required] }
   validates :transaction_no, uniqueness: { scope: %i[client_code source_type source_period] }, allow_nil: true
@@ -21,9 +21,9 @@ class JournalEntry < ApplicationRecord
 
   # === CSVエクスポート ===
   CSV_HEADERS = %w[
-    日付 借方勘定科目 借方補助科目 借方部門 借方取引先 借方税区分
-    借方インボイス 借方金額 貸方勘定科目 貸方補助科目 貸方部門
-    貸方取引先 貸方税区分 貸方インボイス 貸方金額 摘要 タグ メモ カード利用者 取引番号
+    取引No 取引日 借方勘定科目 借方補助科目 借方部門 借方取引先 借方税区分
+    借方インボイス 借方金額(円) 貸方勘定科目 貸方補助科目 貸方部門
+    貸方取引先 貸方税区分 貸方インボイス 貸方金額(円) 摘要 タグ メモ カード利用者 ステータス
   ].freeze
 
   def self.to_csv
@@ -32,6 +32,7 @@ class JournalEntry < ApplicationRecord
 
       find_each do |entry|
         csv << [
+          entry.transaction_no,
           entry.date,
           entry.debit_account,
           entry.debit_sub_account,
@@ -51,7 +52,7 @@ class JournalEntry < ApplicationRecord
           entry.tag,
           entry.memo,
           entry.cardholder,
-          entry.transaction_no
+          entry.status
         ]
       end
     end
