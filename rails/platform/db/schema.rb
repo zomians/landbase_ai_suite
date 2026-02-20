@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_20_112300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -30,6 +30,47 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
     t.index ["client_id", "source_type"], name: "idx_account_masters_client_source"
     t.index ["client_id"], name: "index_account_masters_on_client_id"
     t.index ["merchant_keyword"], name: "idx_account_masters_merchant"
+  end
+
+  create_table "active_storage_attachments", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "record_type", null: false
+    t.bigint "record_id", null: false
+    t.bigint "blob_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
+    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+  end
+
+  create_table "active_storage_blobs", force: :cascade do |t|
+    t.string "key", null: false
+    t.string "filename", null: false
+    t.string "content_type"
+    t.text "metadata"
+    t.string "service_name", null: false
+    t.bigint "byte_size", null: false
+    t.string "checksum"
+    t.datetime "created_at", null: false
+    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+  end
+
+  create_table "active_storage_variant_records", force: :cascade do |t|
+    t.bigint "blob_id", null: false
+    t.string "variation_digest", null: false
+    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "cleaning_manuals", force: :cascade do |t|
+    t.string "client_code", null: false
+    t.string "property_name", null: false
+    t.string "room_type", null: false
+    t.jsonb "manual_data", default: {}, null: false
+    t.string "status", default: "draft", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_code", "property_name"], name: "index_cleaning_manuals_on_client_code_and_property_name"
+    t.index ["client_code"], name: "index_cleaning_manuals_on_client_code"
+    t.index ["status"], name: "index_cleaning_manuals_on_status"
   end
 
   create_table "clients", force: :cascade do |t|
@@ -79,5 +120,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
   end
 
   add_foreign_key "account_masters", "clients"
+  add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "journal_entries", "clients"
 end

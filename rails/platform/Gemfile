@@ -52,6 +52,9 @@ gem "rails-i18n"
 # === API ===
 gem "rack-cors"
 
+# === AI ===
+gem "anthropic"
+
 # === CSV出力（Ruby 3.4+で必須） ===
 gem "csv"
 
