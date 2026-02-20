@@ -10,6 +10,7 @@ class JournalEntry < ApplicationRecord
   validates :credit_amount, numericality: { greater_than: 0 }
   validates :source_type, inclusion: { in: %w[amex bank invoice receipt] }
   validates :status, inclusion: { in: %w[ok review_required] }
+  validates :transaction_no, uniqueness: { scope: %i[client_code source_type source_period] }, allow_nil: true
   validate :amounts_must_match
 
   # === スコープ ===

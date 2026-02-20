@@ -14,7 +14,7 @@ class AccountMaster < ApplicationRecord
 
   def self.search_by_merchant(keyword, client_code:)
     for_client(client_code)
-      .where("merchant_keyword ILIKE ?", "%#{keyword}%")
+      .where("merchant_keyword ILIKE ?", "%#{sanitize_sql_like(keyword)}%")
       .order(confidence_score: :desc)
   end
 
@@ -25,7 +25,7 @@ class AccountMaster < ApplicationRecord
 
   def self.search_by_description(keyword, client_code:)
     for_client(client_code)
-      .where("description_keyword ILIKE ?", "%#{keyword}%")
+      .where("description_keyword ILIKE ?", "%#{sanitize_sql_like(keyword)}%")
       .order(confidence_score: :desc)
   end
 end

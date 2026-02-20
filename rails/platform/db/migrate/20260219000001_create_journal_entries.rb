@@ -1,5 +1,5 @@
 class CreateJournalEntries < ActiveRecord::Migration[8.0]
-  def up
+  def change
     create_table :journal_entries do |t|
       t.string :client_code, null: false, comment: "マルチテナント識別子"
       t.string :source_type, null: false, comment: "入力元区別: amex / bank / invoice / receipt"
@@ -31,11 +31,10 @@ class CreateJournalEntries < ActiveRecord::Migration[8.0]
 
     add_index :journal_entries, :client_code, name: "idx_journal_entries_client"
     add_index :journal_entries, [:source_type, :source_period], name: "idx_journal_entries_source"
+    add_index :journal_entries, [:client_code, :source_type, :source_period, :transaction_no],
+              unique: true, name: "idx_journal_entries_unique_transaction"
     add_index :journal_entries, :date, name: "idx_journal_entries_date"
-    add_index :journal_entries, :status, name: "idx_journal_entries_status"
-  end
-
-  def down
-    drop_table :journal_entries
+    add_index :journal_entries, :status, where: "status = 'review_required'",
+              name: "idx_journal_entries_review_required"
   end
 end

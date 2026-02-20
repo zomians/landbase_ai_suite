@@ -1,5 +1,5 @@
 class CreateAccountMasters < ActiveRecord::Migration[8.0]
-  def up
+  def change
     create_table :account_masters do |t|
       t.string :client_code, null: false, comment: "マルチテナント識別子"
       t.string :merchant_keyword, comment: "店舗名キーワード（マッチング用）"
@@ -16,9 +16,5 @@ class CreateAccountMasters < ActiveRecord::Migration[8.0]
 
     add_index :account_masters, :client_code, name: "idx_account_masters_client"
     add_index :account_masters, :merchant_keyword, name: "idx_account_masters_merchant"
-  end
-
-  def down
-    drop_table :account_masters
   end
 end

@@ -58,8 +58,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["client_code"], name: "idx_journal_entries_client"
+    t.index ["client_code", "source_type", "source_period", "transaction_no"], name: "idx_journal_entries_unique_transaction", unique: true
     t.index ["date"], name: "idx_journal_entries_date"
     t.index ["source_type", "source_period"], name: "idx_journal_entries_source"
-    t.index ["status"], name: "idx_journal_entries_status"
+    t.index ["status"], name: "idx_journal_entries_review_required", where: "((status)::text = 'review_required'::text)"
   end
 end
