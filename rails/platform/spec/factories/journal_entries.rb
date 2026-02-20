@@ -22,10 +22,12 @@ FactoryBot.define do
     description { Faker::Lorem.sentence }
     tag { "" }
     memo { "" }
+    cardholder { "" }
     status { "ok" }
 
     trait :amex do
       source_type { "amex" }
+      cardholder { "山田太郎" }
     end
 
     trait :bank do

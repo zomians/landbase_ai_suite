@@ -22,7 +22,7 @@ class JournalEntry < ApplicationRecord
   CSV_HEADERS = %w[
     日付 借方勘定科目 借方補助科目 借方部門 借方取引先 借方税区分
     借方インボイス 借方金額 貸方勘定科目 貸方補助科目 貸方部門
-    貸方取引先 貸方税区分 貸方インボイス 貸方金額 摘要 タグ メモ 取引番号
+    貸方取引先 貸方税区分 貸方インボイス 貸方金額 摘要 タグ メモ カード利用者 取引番号
   ].freeze
 
   def self.to_csv
@@ -49,6 +49,7 @@ class JournalEntry < ApplicationRecord
           entry.description,
           entry.tag,
           entry.memo,
+          entry.cardholder,
           entry.transaction_no
         ]
       end

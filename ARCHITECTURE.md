@@ -274,6 +274,7 @@ CREATE TABLE journal_entries (
   description TEXT DEFAULT '',           -- 摘要
   tag VARCHAR DEFAULT '',                -- タグ
   memo TEXT DEFAULT '',                  -- メモ
+  cardholder VARCHAR DEFAULT '',         -- カード利用者（Amex等の複数会員明細用）
   status VARCHAR DEFAULT 'ok',           -- 'ok' / 'review_required'
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL

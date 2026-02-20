@@ -23,6 +23,7 @@ class CreateJournalEntries < ActiveRecord::Migration[8.0]
       t.text :description, default: "", comment: "摘要"
       t.string :tag, default: "", comment: "タグ"
       t.text :memo, default: "", comment: "メモ"
+      t.string :cardholder, default: "", comment: "カード利用者（Amex等の複数会員明細用）"
       t.string :status, default: "ok", comment: "確認状態: ok / review_required"
 
       t.timestamps

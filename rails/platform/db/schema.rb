@@ -53,6 +53,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_000002) do
     t.text "description", default: "", comment: "摘要"
     t.string "tag", default: "", comment: "タグ"
     t.text "memo", default: "", comment: "メモ"
+    t.string "cardholder", default: "", comment: "カード利用者（Amex等の複数会員明細用）"
     t.string "status", default: "ok", comment: "確認状態: ok / review_required"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
