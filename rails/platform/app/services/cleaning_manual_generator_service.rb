@@ -69,6 +69,10 @@ class CleaningManualGeneratorService
   end
 
   def call
+    unless ENV["ANTHROPIC_API_KEY"].present?
+      return Result.new(success: false, data: {}, error: "ANTHROPIC_API_KEY が設定されていません")
+    end
+
     batches = @images.each_slice(MAX_IMAGES_PER_BATCH).to_a
 
     if batches.size == 1
@@ -93,7 +97,7 @@ class CleaningManualGeneratorService
   def generate_for_batch(image_batch)
     content = build_content(image_batch)
     response = client.messages.create(
-      model: ENV.fetch("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
+      model: ENV.fetch("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
       max_tokens: 8192,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: content }]
@@ -125,13 +129,25 @@ class CleaningManualGeneratorService
       all_supplies.concat(result.data[:supplies_needed] || [])
     end
 
-    total_minutes = all_areas.sum { |a| a[:cleaning_steps]&.sum { |s| s[:estimated_minutes].to_i } || 0 }
+    merged_areas = all_areas.group_by { |a| a[:area_name] }.map do |area_name, areas|
+      steps = areas.flat_map { |a| a[:cleaning_steps] || [] }
+      standards = areas.flat_map { |a| a[:quality_standards] || [] }.uniq
+      images = areas.flat_map { |a| a[:reference_images] || [] }.uniq
+      {
+        area_name: area_name,
+        reference_images: images,
+        cleaning_steps: steps.each_with_index.map { |s, i| s.merge(order: i + 1) },
+        quality_standards: standards
+      }
+    end
+
+    total_minutes = merged_areas.sum { |a| a[:cleaning_steps]&.sum { |s| s[:estimated_minutes].to_i } || 0 }
 
     data = {
       property_name: @property_name,
       room_type: @room_type,
       generated_at: Time.current.iso8601,
-      areas: all_areas,
+      areas: merged_areas,
       supplies_needed: all_supplies.uniq,
       total_estimated_minutes: total_minutes
     }
@@ -173,7 +189,10 @@ class CleaningManualGeneratorService
     result = processor.resize_to_limit(MAX_IMAGE_LONG_EDGE, MAX_IMAGE_LONG_EDGE).convert("jpeg").saver(quality: 80).call
     { data: File.binread(result.path), media_type: "image/jpeg" }
   ensure
-    result&.close if result.respond_to?(:close)
+    if result.respond_to?(:close)
+      result.close
+      result.unlink if result.respond_to?(:unlink)
+    end
     image.rewind
   end
 

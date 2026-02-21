@@ -11,7 +11,8 @@ class CleaningManualsController < ApplicationController
   end
 
   def show
-    @manual = CleaningManual.find(params[:id])
+    @client_code = params[:client_code]
+    @manual = CleaningManual.for_client(@client_code).find(params[:id])
   end
 
   def new

@@ -16,6 +16,9 @@ Rails.application.routes.draw do
         collection do
           post :generate
         end
+        member do
+          get :status
+        end
       end
     end
   end

@@ -39,32 +39,37 @@ module Api
 
         labels = params[:labels] || []
 
-        service = CleaningManualGeneratorService.new(
-          images: images,
-          property_name: property_name,
-          room_type: room_type,
-          labels: labels
-        )
-        result = service.call
-
-        unless result.success?
-          return render_error(result.error)
-        end
-
         manual = @current_client.cleaning_manuals.new(
           property_name: property_name,
           room_type: room_type,
-          manual_data: result.data,
-          status: "draft"
+          manual_data: {},
+          status: "processing"
         )
 
         images.each { |img| manual.images.attach(img) }
 
         if manual.save
-          render json: manual_detail(manual), status: :created
+          CleaningManualGenerateJob.perform_later(manual.id, labels: labels.map(&:to_s))
+          render json: { id: manual.id, status: "processing" }, status: :accepted
         else
           render_error(manual.errors.full_messages.join(", "))
         end
+      end
+
+      def status
+        manual = @current_client.cleaning_manuals.find_by(id: params[:id])
+        return render_not_found unless manual
+
+        response = { id: manual.id, status: manual.status }
+
+        case manual.status
+        when "draft", "published"
+          response.merge!(manual_detail(manual))
+        when "failed"
+          response[:error_message] = manual.error_message
+        end
+
+        render json: response
       end
 
       private

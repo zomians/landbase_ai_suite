@@ -66,6 +66,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_20_112300) do
     t.string "room_type", null: false
     t.jsonb "manual_data", default: {}, null: false
     t.string "status", default: "draft", null: false
+    t.text "error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["client_id", "property_name"], name: "index_cleaning_manuals_on_client_id_and_property_name"

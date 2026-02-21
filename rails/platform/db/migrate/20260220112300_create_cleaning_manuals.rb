@@ -6,6 +6,7 @@ class CreateCleaningManuals < ActiveRecord::Migration[8.0]
       t.string :room_type, null: false
       t.jsonb :manual_data, null: false, default: {}
       t.string :status, null: false, default: "draft"
+      t.text :error_message
 
       t.timestamps
     end

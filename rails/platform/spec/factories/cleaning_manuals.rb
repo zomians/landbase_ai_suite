@@ -33,5 +33,16 @@ FactoryBot.define do
     trait :published do
       status { "published" }
     end
+
+    trait :processing do
+      status { "processing" }
+      manual_data { {} }
+    end
+
+    trait :failed do
+      status { "failed" }
+      manual_data { {} }
+      error_message { "APIエラーが発生しました" }
+    end
   end
 end

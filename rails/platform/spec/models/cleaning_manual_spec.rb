@@ -31,7 +31,7 @@ RSpec.describe CleaningManual, type: :model do
       expect(manual.errors[:manual_data]).to be_present
     end
 
-    it "status が draft または published であること" do
+    it "status が不正な値の場合バリデーションエラーになること" do
       manual = build(:cleaning_manual, status: "invalid")
       expect(manual).not_to be_valid
       expect(manual.errors[:status]).to be_present
@@ -44,6 +44,27 @@ RSpec.describe CleaningManual, type: :model do
 
     it "status が published で有効であること" do
       manual = build(:cleaning_manual, status: "published")
+      expect(manual).to be_valid
+    end
+
+    it "status が processing で有効であること" do
+      manual = build(:cleaning_manual, status: "processing", manual_data: {})
+      expect(manual).to be_valid
+    end
+
+    it "status が failed で有効であること" do
+      manual = build(:cleaning_manual, status: "failed", manual_data: {})
+      expect(manual).to be_valid
+    end
+
+    it "status が draft の場合 manual_data が必須であること" do
+      manual = build(:cleaning_manual, status: "draft", manual_data: nil)
+      expect(manual).not_to be_valid
+      expect(manual.errors[:manual_data]).to be_present
+    end
+
+    it "status が processing の場合 manual_data が空でも有効であること" do
+      manual = build(:cleaning_manual, status: "processing", manual_data: {})
       expect(manual).to be_valid
     end
   end

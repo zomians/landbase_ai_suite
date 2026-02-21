@@ -133,7 +133,6 @@ export default class extends Controller {
     this.submitButtonTarget.disabled = true
 
     const formData = new FormData()
-    formData.append("client_code", clientCode)
     formData.append("property_name", propertyName)
     formData.append("room_type", roomType)
     this.files.forEach(file => formData.append("images[]", file))
@@ -149,17 +148,50 @@ export default class extends Controller {
 
       const data = await response.json()
 
-      if (response.ok) {
-        this.showResult(data)
-      } else {
+      if (!response.ok) {
         this.showError(data.error || "マニュアルの生成に失敗しました。")
+        this.hideLoading()
+        this.submitButtonTarget.disabled = false
+        return
       }
+
+      await this.pollStatus(data.id, clientCode)
     } catch (error) {
       this.showError(`通信エラー: ${error.message}`)
     } finally {
       this.hideLoading()
       this.submitButtonTarget.disabled = false
     }
+  }
+
+  async pollStatus(manualId, clientCode) {
+    const POLL_INTERVAL = 3000
+    const MAX_POLLS = 120
+
+    for (let i = 0; i < MAX_POLLS; i++) {
+      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL))
+
+      try {
+        const response = await fetch(
+          `/api/v1/cleaning_manuals/${manualId}/status?client_code=${encodeURIComponent(clientCode)}`
+        )
+        const data = await response.json()
+
+        if (data.status === "draft" || data.status === "published") {
+          this.showResult(data)
+          return
+        }
+
+        if (data.status === "failed") {
+          this.showError(data.error_message || "マニュアルの生成に失敗しました。")
+          return
+        }
+      } catch (error) {
+        console.warn("Polling error:", error.message)
+      }
+    }
+
+    this.showError("マニュアルの生成がタイムアウトしました。しばらく待ってからページを再読み込みしてください。")
   }
 
   showLoading() {
@@ -197,7 +229,7 @@ export default class extends Controller {
     html += `<div class="flex items-center justify-between mb-4">`
     html += `<h2 class="text-xl font-bold">${this.escapeHTML(data.property_name)} - ${this.escapeHTML(data.room_type)}</h2>`
     if (data.id) {
-      html += `<a href="/cleaning_manuals/${data.id}" class="text-blue-600 hover:text-blue-800 text-sm">詳細ページ →</a>`
+      html += `<a href="/cleaning_manuals/${data.id}?client_code=${encodeURIComponent(data.client_code)}" class="text-blue-600 hover:text-blue-800 text-sm">詳細ページ →</a>`
     }
     html += `</div>`
 
