@@ -156,7 +156,7 @@ class AmexStatementProcessorService
   end
 
   def call
-    unless ENV["ANTHROPIC_API_KEY"].present?
+    unless ENV.key?("ANTHROPIC_API_KEY")
       return Result.new(success: false, data: {}, error: "ANTHROPIC_API_KEY が設定されていません")
     end
 

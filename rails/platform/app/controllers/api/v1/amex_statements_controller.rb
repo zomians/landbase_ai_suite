@@ -7,7 +7,7 @@ module Api
         pdf = params[:pdf]
         return render_error("PDFファイルをアップロードしてください") if pdf.blank?
 
-        unless pdf.respond_to?(:content_type) && Marcel::MimeType.for(pdf.tempfile, name: pdf.original_filename) == "application/pdf"
+        unless Marcel::MimeType.for(pdf.tempfile, name: pdf.original_filename) == "application/pdf"
           return render_error("PDF形式のファイルのみ対応しています")
         end
 

@@ -22,12 +22,14 @@ class AmexStatementProcessJob < ApplicationJob
     result = service.call
 
     if result.success?
-      create_journal_entries(batch, result.data)
-      batch.update!(
-        status: "completed",
-        summary: result.data[:summary] || {},
-        error_message: nil
-      )
+      ActiveRecord::Base.transaction do
+        create_journal_entries(batch, result.data)
+        batch.update!(
+          status: "completed",
+          summary: result.data[:summary] || {},
+          error_message: nil
+        )
+      end
     else
       batch.update!(status: "failed", error_message: result.error)
     end

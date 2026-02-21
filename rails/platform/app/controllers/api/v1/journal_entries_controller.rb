@@ -7,7 +7,11 @@ module Api
         entries = entries.by_source(params[:source_type]) if params[:source_type].present?
         entries = entries.review_required if params[:review_required] == "true"
         if params[:date_from].present? && params[:date_to].present?
-          entries = entries.in_period(Date.parse(params[:date_from]), Date.parse(params[:date_to]))
+          begin
+            entries = entries.in_period(Date.parse(params[:date_from]), Date.parse(params[:date_to]))
+          rescue Date::Error
+            return render_error("日付の形式が不正です（YYYY-MM-DD）")
+          end
         end
         if params[:statement_batch_id].present?
           entries = entries.where(statement_batch_id: params[:statement_batch_id])

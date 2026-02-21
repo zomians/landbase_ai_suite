@@ -82,13 +82,14 @@ export default class extends Controller {
 
     const formData = new FormData()
     formData.append("pdf", this.file)
+    formData.append("client_code", clientCode)
     if (this.hasStatementPeriodTarget) {
       const period = this.statementPeriodTarget.value.trim()
       if (period) formData.append("statement_period", period)
     }
 
     try {
-      const response = await fetch(`/api/v1/amex_statements/process_statement?client_code=${encodeURIComponent(clientCode)}`, {
+      const response = await fetch("/api/v1/amex_statements/process_statement", {
         method: "POST",
         body: formData,
         headers: {

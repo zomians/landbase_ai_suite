@@ -169,9 +169,8 @@ RSpec.describe AmexStatementProcessorService do
 
     context "ANTHROPIC_API_KEYが未設定の場合" do
       before do
-        allow(ENV).to receive(:[]).and_call_original
-        allow(ENV).to receive(:[]).with("ANTHROPIC_API_KEY").and_return(nil)
-        allow(ENV).to receive(:fetch).and_call_original
+        allow(ENV).to receive(:key?).and_call_original
+        allow(ENV).to receive(:key?).with("ANTHROPIC_API_KEY").and_return(false)
       end
 
       it "エラーを返すこと" do
