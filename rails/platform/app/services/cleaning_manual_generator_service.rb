@@ -1,6 +1,8 @@
-require "ostruct"
-
 class CleaningManualGeneratorService
+  Result = Data.define(:success, :data, :error) do
+    alias_method :success?, :success
+  end
+
   MAX_IMAGES_PER_BATCH = 20
 
   SYSTEM_PROMPT = <<~PROMPT
@@ -69,18 +71,18 @@ class CleaningManualGeneratorService
     if batches.size == 1
       result = generate_for_batch(batches.first)
       return result unless result.success?
-      OpenStruct.new(success?: true, data: result.data)
+      Result.new(success: true, data: result.data, error: nil)
     else
       merged = merge_batch_results(batches)
       return merged unless merged.success?
-      OpenStruct.new(success?: true, data: merged.data)
+      Result.new(success: true, data: merged.data, error: nil)
     end
   rescue Anthropic::Errors::APIError => e
-    OpenStruct.new(success?: false, data: {}, error: "Anthropic API エラー: #{e.message}")
+    Result.new(success: false, data: {}, error: "Anthropic API エラー: #{e.message}")
   rescue JSON::ParserError => e
-    OpenStruct.new(success?: false, data: {}, error: "JSON パースエラー: #{e.message}")
+    Result.new(success: false, data: {}, error: "JSON パースエラー: #{e.message}")
   rescue StandardError => e
-    OpenStruct.new(success?: false, data: {}, error: "予期しないエラー: #{e.message}")
+    Result.new(success: false, data: {}, error: "予期しないエラー: #{e.message}")
   end
 
   private
@@ -88,7 +90,7 @@ class CleaningManualGeneratorService
   def generate_for_batch(image_batch)
     content = build_content(image_batch)
     response = client.messages.create(
-      model: "claude-sonnet-4-20250514",
+      model: ENV.fetch("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
       max_tokens: 8192,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: content }]
@@ -105,7 +107,7 @@ class CleaningManualGeneratorService
     data[:room_type] = @room_type
     data[:generated_at] = Time.current.iso8601
 
-    OpenStruct.new(success?: true, data: data)
+    Result.new(success: true, data: data, error: nil)
   end
 
   def merge_batch_results(batches)
@@ -131,7 +133,7 @@ class CleaningManualGeneratorService
       total_estimated_minutes: total_minutes
     }
 
-    OpenStruct.new(success?: true, data: data)
+    Result.new(success: true, data: data, error: nil)
   end
 
   def build_content(image_batch)
@@ -172,6 +174,6 @@ class CleaningManualGeneratorService
   end
 
   def client
-    @client ||= Anthropic::Client.new
+    @client ||= Anthropic::Client.new(timeout: 120.0)
   end
 end

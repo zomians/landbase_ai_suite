@@ -3,6 +3,7 @@ module Api
     class CleaningManualsController < BaseController
       ALLOWED_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
       MAX_IMAGE_SIZE = 10.megabytes
+      MAX_IMAGE_COUNT = 50
 
       def index
         manuals = @current_client.cleaning_manuals.recent
@@ -19,8 +20,9 @@ module Api
       def generate
         images = params[:images] || []
         return render_error("画像を1枚以上アップロードしてください") if images.empty?
+        return render_error("画像は#{MAX_IMAGE_COUNT}枚以下にしてください") if images.size > MAX_IMAGE_COUNT
 
-        invalid = images.reject { |img| img.content_type.in?(ALLOWED_CONTENT_TYPES) }
+        invalid = images.reject { |img| Marcel::MimeType.for(img.tempfile, name: img.original_filename).in?(ALLOWED_CONTENT_TYPES) }
         if invalid.any?
           return render_error("対応していない画像形式が含まれています。JPEG, PNG, WebP のみ対応しています。")
         end

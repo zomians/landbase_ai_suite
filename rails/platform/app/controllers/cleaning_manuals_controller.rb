@@ -1,4 +1,6 @@
 class CleaningManualsController < ApplicationController
+  rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
+
   def index
     @client_code = params[:client_code] || ""
     @manuals = if @client_code.present?
@@ -9,9 +11,15 @@ class CleaningManualsController < ApplicationController
   end
 
   def show
-    @manual = CleaningManual.for_client(params[:client_code]).find(params[:id])
+    @manual = CleaningManual.find(params[:id])
   end
 
   def new
+  end
+
+  private
+
+  def record_not_found
+    redirect_to cleaning_manuals_path, alert: "マニュアルが見つかりません"
   end
 end

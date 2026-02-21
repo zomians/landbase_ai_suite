@@ -1,5 +1,4 @@
 require "rails_helper"
-require "ostruct"
 
 RSpec.describe CleaningManualGeneratorService do
   let(:image_file) do

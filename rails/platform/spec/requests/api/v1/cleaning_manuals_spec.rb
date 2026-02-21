@@ -1,5 +1,4 @@
 require "rails_helper"
-require "ostruct"
 
 RSpec.describe "Api::V1::CleaningManuals", type: :request do
   let(:client) { create(:client, code: "test_client") }
@@ -73,8 +72,8 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
     end
 
     let(:mock_result) do
-      OpenStruct.new(
-        success?: true,
+      CleaningManualGeneratorService::Result.new(
+        success: true,
         data: {
           property_name: "テスト施設",
           room_type: "スタンダード",
@@ -97,12 +96,15 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
           ],
           supplies_needed: ["クロス"],
           total_estimated_minutes: 10
-        }
+        },
+        error: nil
       )
     end
 
+    let(:mock_service) { instance_double(CleaningManualGeneratorService, call: mock_result) }
+
     before do
-      allow_any_instance_of(CleaningManualGeneratorService).to receive(:call).and_return(mock_result)
+      allow(CleaningManualGeneratorService).to receive(:new).and_return(mock_service)
     end
 
     it "マニュアルを生成して保存できること" do
@@ -150,7 +152,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
 
     context "サービスがエラーを返した場合" do
       let(:mock_result) do
-        OpenStruct.new(success?: false, data: {}, error: "API エラーが発生しました")
+        CleaningManualGeneratorService::Result.new(success: false, data: {}, error: "API エラーが発生しました")
       end
 
       it "エラーレスポンスを返すこと" do

@@ -12,6 +12,11 @@ export default class extends Controller {
     this.objectURLs = []
   }
 
+  disconnect() {
+    this.objectURLs.forEach(url => URL.revokeObjectURL(url))
+    this.objectURLs = []
+  }
+
   openFileDialog() {
     this.fileInputTarget.click()
   }
@@ -203,7 +208,7 @@ export default class extends Controller {
 
       ;(area.cleaning_steps || []).forEach(step => {
         html += `<li class="flex gap-3">`
-        html += `<span class="flex-shrink-0 w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm">${step.order}</span>`
+        html += `<span class="flex-shrink-0 w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm">${this.escapeHTML(String(step.order))}</span>`
         html += `<div><p class="font-medium text-sm">${this.escapeHTML(step.task)}</p>`
         html += `<p class="text-xs text-gray-600">${this.escapeHTML(step.description)}</p></div>`
         html += `</li>`
