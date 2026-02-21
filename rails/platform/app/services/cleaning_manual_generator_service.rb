@@ -1,9 +1,12 @@
+require "image_processing/vips"
+
 class CleaningManualGeneratorService
   Result = Data.define(:success, :data, :error) do
     alias_method :success?, :success
   end
 
   MAX_IMAGES_PER_BATCH = 20
+  MAX_IMAGE_LONG_EDGE = 1568
 
   SYSTEM_PROMPT = <<~PROMPT
     あなたは宿泊施設の清掃マニュアル作成の専門家です。
@@ -140,9 +143,9 @@ class CleaningManualGeneratorService
     content = []
 
     image_batch.each_with_index do |image, i|
-      image_data = Base64.strict_encode64(image.read)
-      image.rewind
-      media_type = image.content_type
+      resized = resize_image(image)
+      image_data = Base64.strict_encode64(resized[:data])
+      media_type = resized[:media_type]
 
       content << {
         type: "image",
@@ -163,6 +166,15 @@ class CleaningManualGeneratorService
     }
 
     content
+  end
+
+  def resize_image(image)
+    processor = ImageProcessing::Vips.source(image.tempfile.path)
+    result = processor.resize_to_limit(MAX_IMAGE_LONG_EDGE, MAX_IMAGE_LONG_EDGE).convert("jpeg").saver(quality: 80).call
+    { data: File.binread(result.path), media_type: "image/jpeg" }
+  ensure
+    result&.close if result.respond_to?(:close)
+    image.rewind
   end
 
   def extract_json(text)
