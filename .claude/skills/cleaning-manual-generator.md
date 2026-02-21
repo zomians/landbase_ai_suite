@@ -156,3 +156,34 @@
    - 推定所要時間
    - 必要備品数
    - 出力ファイルパス
+
+---
+
+## API / Web UI 経由での使用方法
+
+Claude Code を使わずにブラウザや curl から清掃マニュアルを生成することもできます。
+
+### Web UI
+
+ブラウザで `http://localhost:3000/cleaning_manuals/new` にアクセスし、画像をドラッグ&ドロップして生成できます。
+
+- 一覧: `http://localhost:3000/cleaning_manuals?client_code=<クライアントコード>`
+- 詳細: `http://localhost:3000/cleaning_manuals/:id`
+
+### API（curl）
+
+```bash
+# マニュアル生成
+curl -X POST http://localhost:3000/api/v1/cleaning_manuals/generate \
+  -F "client_code=<クライアントコード>" \
+  -F "property_name=施設名" \
+  -F "room_type=部屋タイプ" \
+  -F "images[]=@画像1.jpg" \
+  -F "images[]=@画像2.jpg"
+
+# 一覧取得
+curl "http://localhost:3000/api/v1/cleaning_manuals?client_code=<クライアントコード>"
+
+# 詳細取得
+curl "http://localhost:3000/api/v1/cleaning_manuals/:id?client_code=<クライアントコード>"
+```

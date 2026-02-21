@@ -2,6 +2,7 @@ class Client < ApplicationRecord
   # === 関連 ===
   has_many :journal_entries, dependent: :restrict_with_error
   has_many :account_masters, dependent: :restrict_with_error
+  has_many :cleaning_manuals, dependent: :restrict_with_error
 
   # === バリデーション ===
   validates :code, presence: true, uniqueness: true
