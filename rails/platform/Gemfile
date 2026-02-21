@@ -55,6 +55,9 @@ gem "rack-cors"
 # === AI ===
 gem "anthropic"
 
+# === PDF処理 ===
+gem "combine_pdf"
+
 # === CSV出力（Ruby 3.4+で必須） ===
 gem "csv"
 

@@ -1,7 +1,11 @@
+require "combine_pdf"
+
 class AmexStatementProcessorService
   Result = Data.define(:success, :data, :error) do
     alias_method :success?, :success
   end
+
+  MAX_PAGES_PER_BATCH = 5
 
   SYSTEM_PROMPT = <<~PROMPT
     あなたは日本の経理・簿記の専門家です。以下のルールに厳密に従い、Amex 利用明細 PDF から抽出した取引データを仕訳台帳データに変換してください。
@@ -156,17 +160,138 @@ class AmexStatementProcessorService
   end
 
   def call
-    unless ENV.key?("ANTHROPIC_API_KEY")
+    unless ENV["ANTHROPIC_API_KEY"].present?
       return Result.new(success: false, data: {}, error: "ANTHROPIC_API_KEY が設定されていません")
     end
 
-    pdf_data = read_pdf
+    pdf_binary = read_pdf_binary
     account_master_context = build_account_master_context
     user_prompt = build_user_prompt(account_master_context)
+    page_count = count_pages(pdf_binary)
 
-    response = client.messages.create(
+    if page_count <= MAX_PAGES_PER_BATCH
+      pdf_data = Base64.strict_encode64(pdf_binary)
+      process_single_pdf(pdf_data, user_prompt)
+    else
+      batches = split_pdf(pdf_binary)
+      batch_results = []
+
+      batches.each_with_index do |batch_pdf_binary, index|
+        batch_pdf_data = Base64.strict_encode64(batch_pdf_binary)
+        previous_transaction_count = batch_results.sum { |r| r[:transactions]&.size || 0 }
+        result = process_batch(batch_pdf_data, index, batches.size, page_count, user_prompt, previous_transaction_count)
+        return result unless result.success?
+        batch_results << result.data
+      end
+
+      merged_data = merge_batch_results(batch_results)
+      Result.new(success: true, data: merged_data, error: nil)
+    end
+  rescue Anthropic::Errors::APIError => e
+    Result.new(success: false, data: {}, error: "Anthropic API エラー: #{e.message}")
+  rescue JSON::ParserError => e
+    Result.new(success: false, data: {}, error: "JSON パースエラー: #{e.message}")
+  rescue StandardError => e
+    Result.new(success: false, data: {}, error: "予期しないエラー: #{e.message}")
+  end
+
+  private
+
+  def read_pdf_binary
+    if @pdf.respond_to?(:download)
+      @pdf.download
+    elsif @pdf.respond_to?(:read)
+      @pdf.rewind if @pdf.respond_to?(:rewind)
+      @pdf.read
+    else
+      File.binread(@pdf.to_s)
+    end
+  end
+
+  def count_pages(pdf_binary)
+    pdf = CombinePDF.parse(pdf_binary)
+    pdf.pages.size
+  end
+
+  def split_pdf(pdf_binary)
+    pdf = CombinePDF.parse(pdf_binary)
+    pages = pdf.pages
+
+    pages.each_slice(MAX_PAGES_PER_BATCH).map do |page_group|
+      batch_pdf = CombinePDF.new
+      page_group.each { |page| batch_pdf << page }
+      batch_pdf.to_pdf
+    end
+  end
+
+  def process_single_pdf(pdf_data, user_prompt)
+    response = call_api(pdf_data, user_prompt)
+
+    if response.respond_to?(:stop_reason) && response.stop_reason == "max_tokens"
+      raise JSON::ParserError, "APIの応答がmax_tokensで切り詰められました。PDFのページ数が多すぎる可能性があります"
+    end
+
+    data = parse_response(response)
+    Result.new(success: true, data: data, error: nil)
+  end
+
+  def process_batch(batch_pdf_data, batch_index, total_batches, total_pages, user_prompt, previous_transaction_count)
+    start_page = batch_index * MAX_PAGES_PER_BATCH + 1
+    end_page = [ start_page + MAX_PAGES_PER_BATCH - 1, total_pages ].min
+
+    batch_context = <<~CONTEXT
+      #{user_prompt}
+
+      【バッチ処理情報】
+      このPDFは全#{total_pages}ページ中のページ#{start_page}〜#{end_page}です（バッチ#{batch_index + 1}/#{total_batches}）。
+      前のバッチまでに#{previous_transaction_count}件の取引を処理済みです。transaction_noは#{previous_transaction_count + 1}から開始してください。
+      前のページからのカード会員情報がある場合は引き継いでください。
+    CONTEXT
+
+    response = call_api(batch_pdf_data, batch_context)
+
+    if response.respond_to?(:stop_reason) && response.stop_reason == "max_tokens"
+      raise JSON::ParserError, "バッチ#{batch_index + 1}/#{total_batches}でAPIの応答がmax_tokensで切り詰められました"
+    end
+
+    data = parse_response(response)
+    Result.new(success: true, data: data, error: nil)
+  end
+
+  def merge_batch_results(batch_results)
+    all_transactions = batch_results.flat_map { |r| r[:transactions] || [] }
+
+    all_transactions.each_with_index do |txn, index|
+      txn[:transaction_no] = index + 1
+    end
+
+    total_amount = all_transactions.sum { |t| t[:debit_amount].to_i }
+    review_required_count = all_transactions.count { |t| t[:status] == "review_required" }
+
+    accounts_breakdown = {}
+    all_transactions.each do |t|
+      account = t[:debit_account]
+      accounts_breakdown[account] = (accounts_breakdown[account] || 0) + t[:debit_amount].to_i
+    end
+
+    {
+      statement_period: batch_results.first[:statement_period],
+      card_type: batch_results.first[:card_type],
+      generated_at: Time.current.iso8601,
+      transactions: all_transactions,
+      summary: {
+        total_transactions: all_transactions.size,
+        total_amount: total_amount,
+        review_required_count: review_required_count,
+        accounts_breakdown: accounts_breakdown
+      }
+    }
+  end
+
+  def call_api(pdf_data, prompt_text)
+    client.messages.create(
       model: ENV.fetch("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
-      max_tokens: 16384,
+      max_tokens: 65536,
       system: SYSTEM_PROMPT,
       messages: [{
         role: "user",
@@ -181,39 +306,20 @@ class AmexStatementProcessorService
           },
           {
             type: "text",
-            text: user_prompt
+            text: prompt_text
           }
         ]
       }]
     )
+  end
 
+  def parse_response(response)
     text_block = response.content.find { |c| c.respond_to?(:type) && c.type.to_s == "text" }
     text = text_block&.respond_to?(:text) ? text_block.text : text_block.to_s
     raise JSON::ParserError, "APIからテキスト応答がありませんでした" if text.blank?
 
     json_str = extract_json(text)
-    data = JSON.parse(json_str, symbolize_names: true)
-
-    Result.new(success: true, data: data, error: nil)
-  rescue Anthropic::Errors::APIError => e
-    Result.new(success: false, data: {}, error: "Anthropic API エラー: #{e.message}")
-  rescue JSON::ParserError => e
-    Result.new(success: false, data: {}, error: "JSON パースエラー: #{e.message}")
-  rescue StandardError => e
-    Result.new(success: false, data: {}, error: "予期しないエラー: #{e.message}")
-  end
-
-  private
-
-  def read_pdf
-    if @pdf.respond_to?(:download)
-      Base64.strict_encode64(@pdf.download)
-    elsif @pdf.respond_to?(:read)
-      @pdf.rewind if @pdf.respond_to?(:rewind)
-      Base64.strict_encode64(@pdf.read)
-    else
-      Base64.strict_encode64(File.binread(@pdf.to_s))
-    end
+    JSON.parse(json_str, symbolize_names: true)
   end
 
   def build_account_master_context
@@ -246,14 +352,16 @@ class AmexStatementProcessorService
   end
 
   def extract_json(text)
-    if text =~ /```(?:json)?\s*\n?(.*?)\n?```/m
+    if text =~ /```(?:json)?\s*\n(.*)\n\s*```/m
       $1.strip
+    elsif (start = text.index("{")) && (finish = text.rindex("}"))
+      text[start..finish]
     else
       text.strip
     end
   end
 
   def client
-    @client ||= Anthropic::Client.new(timeout: 180.0)
+    @client ||= Anthropic::Client.new(timeout: 300.0)
   end
 end
