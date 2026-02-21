@@ -1,0 +1,52 @@
+module Api
+  module V1
+    class AmexStatementsController < BaseController
+      MAX_PDF_SIZE = 20.megabytes
+
+      def process_statement
+        pdf = params[:pdf]
+        return render_error("PDFファイルをアップロードしてください") if pdf.blank?
+
+        unless pdf.respond_to?(:content_type) && Marcel::MimeType.for(pdf.tempfile, name: pdf.original_filename) == "application/pdf"
+          return render_error("PDF形式のファイルのみ対応しています")
+        end
+
+        if pdf.size > MAX_PDF_SIZE
+          return render_error("PDFファイルは20MB以下にしてください")
+        end
+
+        batch = @current_client.statement_batches.new(
+          source_type: "amex",
+          statement_period: params[:statement_period] || "",
+          status: "processing"
+        )
+
+        batch.pdf.attach(pdf)
+
+        if batch.save
+          AmexStatementProcessJob.perform_later(batch.id)
+          render json: { id: batch.id, status: "processing" }, status: :accepted
+        else
+          render_error(batch.errors.full_messages.join(", "))
+        end
+      end
+
+      def status
+        batch = @current_client.statement_batches.find_by(id: params[:id])
+        return render_not_found unless batch
+
+        response = { id: batch.id, status: batch.status }
+
+        case batch.status
+        when "completed"
+          response[:summary] = batch.summary
+          response[:journal_entries_count] = batch.journal_entries.count
+        when "failed"
+          response[:error_message] = batch.error_message
+        end
+
+        render json: response
+      end
+    end
+  end
+end

@@ -1,0 +1,83 @@
+<% content_for(:title) { "仕訳一覧" } %>
+
+<div class="w-full max-w-6xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">仕訳一覧</h1>
+    <%= link_to "Amex明細処理", new_amex_statement_path, class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
+  </div>
+
+  <form method="get" class="mb-6 flex flex-wrap gap-4 items-end">
+    <div>
+      <label for="client_code" class="block text-sm font-medium text-gray-700 mb-1">クライアントコード</label>
+      <input type="text" name="client_code" id="client_code" value="<%= @client_code %>"
+             class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+    </div>
+    <div>
+      <label for="source_type" class="block text-sm font-medium text-gray-700 mb-1">ソースタイプ</label>
+      <select name="source_type" id="source_type"
+              class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+        <option value="">全て</option>
+        <option value="amex" <%= "selected" if @source_type == "amex" %>>Amex</option>
+        <option value="bank" <%= "selected" if @source_type == "bank" %>>銀行</option>
+        <option value="invoice" <%= "selected" if @source_type == "invoice" %>>請求書</option>
+        <option value="receipt" <%= "selected" if @source_type == "receipt" %>>レシート</option>
+      </select>
+    </div>
+    <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
+      検索
+    </button>
+    <% if @client_code.present? %>
+      <%= link_to "CSVエクスポート",
+            export_api_v1_journal_entries_path(client_code: @client_code, source_type: @source_type.presence),
+            class: "bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors" %>
+    <% end %>
+  </form>
+
+  <% if @client_code.blank? %>
+    <p class="text-gray-500">クライアントコードを入力して検索してください。</p>
+  <% elsif @entries.empty? %>
+    <p class="text-gray-500">仕訳が見つかりません。</p>
+  <% else %>
+    <div class="bg-white shadow rounded-lg overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">取引日</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">借方勘定科目</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">借方取引先</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">金額</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">摘要</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ステータス</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <% @entries.each do |entry| %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-4 py-3 text-sm text-gray-900"><%= entry.transaction_no %></td>
+              <td class="px-4 py-3 text-sm text-gray-900"><%= entry.date %></td>
+              <td class="px-4 py-3 text-sm text-gray-900"><%= entry.debit_account %></td>
+              <td class="px-4 py-3 text-sm text-gray-900 max-w-[200px] truncate"><%= entry.debit_partner %></td>
+              <td class="px-4 py-3 text-sm text-gray-900 text-right"><%= number_with_delimiter(entry.debit_amount) %>円</td>
+              <td class="px-4 py-3 text-sm text-gray-500 max-w-[250px] truncate"><%= entry.description %></td>
+              <td class="px-4 py-3 text-sm">
+                <% if entry.status == "review_required" %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">要確認</span>
+                <% else %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">OK</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 text-sm text-right space-x-2">
+                <%= link_to "詳細", journal_entry_path(entry, client_code: @client_code), class: "text-blue-600 hover:text-blue-800" %>
+                <% if entry.status == "review_required" %>
+                  <%= link_to "編集", edit_journal_entry_path(entry, client_code: @client_code), class: "text-orange-600 hover:text-orange-800" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

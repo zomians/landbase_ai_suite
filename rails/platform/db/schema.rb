@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_20_112300) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_21_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -113,11 +113,27 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_20_112300) do
     t.string "status", default: "ok", comment: "確認状態: ok / review_required"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "statement_batch_id"
     t.index ["client_id", "source_type", "source_period", "transaction_no"], name: "idx_journal_entries_unique_transaction", unique: true
     t.index ["client_id"], name: "index_journal_entries_on_client_id"
     t.index ["date"], name: "idx_journal_entries_date"
     t.index ["source_type", "source_period"], name: "idx_journal_entries_source"
+    t.index ["statement_batch_id"], name: "index_journal_entries_on_statement_batch_id"
     t.index ["status"], name: "idx_journal_entries_review_required", where: "((status)::text = 'review_required'::text)"
+  end
+
+  create_table "statement_batches", force: :cascade do |t|
+    t.bigint "client_id", null: false
+    t.string "source_type", default: "amex", null: false, comment: "入力元区別: amex / bank / invoice / receipt"
+    t.string "statement_period", comment: "明細期間（例: 2026年1月）"
+    t.string "status", default: "processing", null: false, comment: "処理状態: processing / completed / failed"
+    t.text "error_message", comment: "エラーメッセージ"
+    t.jsonb "summary", default: {}, comment: "処理結果サマリー"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id", "status"], name: "idx_statement_batches_client_status"
+    t.index ["client_id"], name: "index_statement_batches_on_client_id"
+    t.index ["status"], name: "index_statement_batches_on_status"
   end
 
   add_foreign_key "account_masters", "clients"
@@ -125,4 +141,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_20_112300) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "cleaning_manuals", "clients"
   add_foreign_key "journal_entries", "clients"
+  add_foreign_key "journal_entries", "statement_batches"
+  add_foreign_key "statement_batches", "clients"
 end

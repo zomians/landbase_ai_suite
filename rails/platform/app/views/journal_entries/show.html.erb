@@ -1,0 +1,134 @@
+<% content_for(:title) { "仕訳詳細 ##{@entry.transaction_no}" } %>
+
+<div class="w-full max-w-4xl mx-auto">
+  <div class="mb-6">
+    <%= link_to "← 一覧に戻る", journal_entries_path(client_code: @client_code), class: "text-blue-600 hover:text-blue-800 text-sm" %>
+  </div>
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">仕訳詳細 #<%= @entry.transaction_no %></h1>
+    <div class="flex items-center gap-3">
+      <% if @entry.status == "review_required" %>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">要確認</span>
+        <%= link_to "編集", edit_journal_entry_path(@entry, client_code: @client_code),
+              class: "bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors text-sm" %>
+      <% else %>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">OK</span>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- 基本情報 -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold mb-4 border-b pb-2">基本情報</h2>
+      <dl class="space-y-3">
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">取引日</dt>
+          <dd class="text-sm font-medium"><%= @entry.date %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">ソースタイプ</dt>
+          <dd class="text-sm font-medium"><%= @entry.source_type %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">明細期間</dt>
+          <dd class="text-sm font-medium"><%= @entry.source_period %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">カード利用者</dt>
+          <dd class="text-sm font-medium"><%= @entry.cardholder.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">タグ</dt>
+          <dd class="text-sm font-medium"><%= @entry.tag.presence || "-" %></dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- 摘要・メモ -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold mb-4 border-b pb-2">摘要・メモ</h2>
+      <dl class="space-y-3">
+        <div>
+          <dt class="text-sm text-gray-500">摘要</dt>
+          <dd class="text-sm font-medium mt-1"><%= @entry.description.presence || "-" %></dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500">メモ</dt>
+          <dd class="text-sm font-medium mt-1"><%= @entry.memo.presence || "-" %></dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- 借方 -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-blue-700">借方</h2>
+      <dl class="space-y-3">
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">勘定科目</dt>
+          <dd class="text-sm font-medium"><%= @entry.debit_account %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">補助科目</dt>
+          <dd class="text-sm font-medium"><%= @entry.debit_sub_account.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">部門</dt>
+          <dd class="text-sm font-medium"><%= @entry.debit_department.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">取引先</dt>
+          <dd class="text-sm font-medium"><%= @entry.debit_partner.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">税区分</dt>
+          <dd class="text-sm font-medium"><%= @entry.debit_tax_category.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">インボイス</dt>
+          <dd class="text-sm font-medium"><%= @entry.debit_invoice.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">金額</dt>
+          <dd class="text-lg font-bold text-blue-700"><%= number_with_delimiter(@entry.debit_amount) %>円</dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- 貸方 -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-red-700">貸方</h2>
+      <dl class="space-y-3">
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">勘定科目</dt>
+          <dd class="text-sm font-medium"><%= @entry.credit_account %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">補助科目</dt>
+          <dd class="text-sm font-medium"><%= @entry.credit_sub_account.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">部門</dt>
+          <dd class="text-sm font-medium"><%= @entry.credit_department.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">取引先</dt>
+          <dd class="text-sm font-medium"><%= @entry.credit_partner.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">税区分</dt>
+          <dd class="text-sm font-medium"><%= @entry.credit_tax_category.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">インボイス</dt>
+          <dd class="text-sm font-medium"><%= @entry.credit_invoice.presence || "-" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">金額</dt>
+          <dd class="text-lg font-bold text-red-700"><%= number_with_delimiter(@entry.credit_amount) %>円</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>

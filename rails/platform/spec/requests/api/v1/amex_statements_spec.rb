@@ -1,0 +1,121 @@
+require "rails_helper"
+
+RSpec.describe "Api::V1::AmexStatements", type: :request do
+  let(:client) { create(:client, code: "test_client") }
+  let(:client_code) { client.code }
+
+  describe "POST /api/v1/amex_statements/process_statement" do
+    let(:test_pdf) { fixture_file_upload("test_statement.pdf", "application/pdf") }
+    let(:valid_params) do
+      {
+        client_code: client_code,
+        pdf: test_pdf,
+        statement_period: "2026年1月"
+      }
+    end
+
+    before do
+      allow(AmexStatementProcessJob).to receive(:perform_later)
+    end
+
+    it "202を返しジョブをエンキューすること" do
+      post "/api/v1/amex_statements/process_statement", params: valid_params
+
+      expect(response).to have_http_status(:accepted)
+      data = JSON.parse(response.body)
+      expect(data["status"]).to eq("processing")
+      expect(data["id"]).to be_present
+      expect(AmexStatementProcessJob).to have_received(:perform_later).with(anything)
+      expect(StatementBatch.count).to eq(1)
+      expect(StatementBatch.last.status).to eq("processing")
+      expect(StatementBatch.last.source_type).to eq("amex")
+    end
+
+    it "PDFがない場合エラーを返すこと" do
+      post "/api/v1/amex_statements/process_statement", params: {
+        client_code: client_code
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["error"]).to include("PDF")
+    end
+
+    it "PDF以外のファイルの場合エラーを返すこと" do
+      non_pdf = fixture_file_upload("test_image.jpg", "image/jpeg")
+
+      post "/api/v1/amex_statements/process_statement", params: {
+        client_code: client_code,
+        pdf: non_pdf
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["error"]).to include("PDF")
+    end
+
+    it "client_codeがない場合400を返すこと" do
+      post "/api/v1/amex_statements/process_statement", params: { pdf: test_pdf }
+
+      expect(response).to have_http_status(:bad_request)
+    end
+
+    it "存在しないクライアントの場合404を返すこと" do
+      post "/api/v1/amex_statements/process_statement", params: {
+        client_code: "nonexistent",
+        pdf: test_pdf
+      }
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe "GET /api/v1/amex_statements/:id/status" do
+    it "processing状態のバッチのステータスを返すこと" do
+      batch = create(:statement_batch, :processing, client: client)
+
+      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }
+
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)
+      expect(data["status"]).to eq("processing")
+      expect(data).not_to have_key("summary")
+    end
+
+    it "完了したバッチのサマリーを返すこと" do
+      batch = create(:statement_batch, :completed, client: client)
+
+      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }
+
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)
+      expect(data["status"]).to eq("completed")
+      expect(data["summary"]).to be_present
+      expect(data["journal_entries_count"]).to eq(0)
+    end
+
+    it "失敗したバッチのエラーメッセージを返すこと" do
+      batch = create(:statement_batch, :failed, client: client)
+
+      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }
+
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)
+      expect(data["status"]).to eq("failed")
+      expect(data["error_message"]).to be_present
+    end
+
+    it "他テナントのバッチにアクセスできないこと" do
+      other_client = create(:client, code: "other_client")
+      batch = create(:statement_batch, client: other_client)
+
+      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "存在しないIDの場合404を返すこと" do
+      get "/api/v1/amex_statements/99999/status", params: { client_code: client_code }
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+end
