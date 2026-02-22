@@ -5,8 +5,8 @@ class AmexStatementProcessJob < ApplicationJob
 
   discard_on ActiveRecord::RecordNotFound
 
-  after_discard do |_job, exception|
-    batch_id = _job.arguments.first
+  after_discard do |job, exception|
+    batch_id = job.arguments.first
     batch = StatementBatch.find_by(id: batch_id)
     batch&.update(status: "failed", error_message: "ジョブ実行エラー: #{exception.message}")
   end
