@@ -7,11 +7,13 @@ class CreateStatementBatches < ActiveRecord::Migration[8.0]
       t.string :status, null: false, default: "processing", comment: "処理状態: processing / completed / failed"
       t.text :error_message, comment: "エラーメッセージ"
       t.jsonb :summary, default: {}, comment: "処理結果サマリー"
+      t.string :pdf_fingerprint, comment: "PDFファイルのSHA256ハッシュ（重複検知用）"
 
       t.timestamps
     end
 
     add_index :statement_batches, :status
     add_index :statement_batches, [:client_id, :status], name: "idx_statement_batches_client_status"
+    add_index :statement_batches, [:client_id, :pdf_fingerprint], name: "idx_statement_batches_client_fingerprint"
   end
 end
