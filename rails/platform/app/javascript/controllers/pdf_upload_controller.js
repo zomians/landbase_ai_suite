@@ -117,7 +117,7 @@ export default class extends Controller {
 
   async pollStatus(batchId, clientCode) {
     const POLL_INTERVAL = 3000
-    const MAX_POLLS = 120
+    const MAX_POLLS = 300
 
     for (let i = 0; i < MAX_POLLS; i++) {
       await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL))
