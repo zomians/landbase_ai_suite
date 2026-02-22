@@ -47,6 +47,6 @@ class JournalEntriesController < ApplicationController
   end
 
   def record_not_found
-    redirect_to journal_entries_path, alert: "仕訳が見つかりません"
+    redirect_to journal_entries_path(client_code: @client_code), alert: "仕訳が見つかりません"
   end
 end
