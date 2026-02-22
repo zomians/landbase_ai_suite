@@ -20,11 +20,11 @@ module Api
 
         unless ActiveModel::Type::Boolean.new.cast(params[:force])
           existing = @current_client.statement_batches
-            .where(pdf_fingerprint: fingerprint, status: "completed")
+            .where(pdf_fingerprint: fingerprint, status: %w[processing completed])
             .first
           if existing
             return render json: {
-              error: "この明細は処理済みです",
+              error: existing.status == "processing" ? "この明細は現在処理中です" : "この明細は処理済みです",
               duplicate: true,
               existing_batch_id: existing.id
             }, status: :conflict

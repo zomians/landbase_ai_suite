@@ -54,6 +54,10 @@ export default class extends Controller {
       this.showError("PDF形式のファイルのみ対応しています。")
       return
     }
+    if (file.size > 20 * 1024 * 1024) {
+      this.showError("PDFファイルは20MB以下にしてください。")
+      return
+    }
     this.file = file
     this.fileNameTarget.textContent = file.name
     this.fileNameTarget.classList.remove("hidden")

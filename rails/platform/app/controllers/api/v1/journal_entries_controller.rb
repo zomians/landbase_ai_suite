@@ -56,7 +56,7 @@ module Api
           entries = entries.where(statement_batch_id: params[:statement_batch_id])
         end
 
-        csv = entries.order(date: :asc, transaction_no: :asc).to_csv
+        csv = "\uFEFF" + entries.order(date: :asc, transaction_no: :asc).to_csv
 
         send_data csv, filename: "journal_entries_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
                        type: "text/csv; charset=utf-8"
