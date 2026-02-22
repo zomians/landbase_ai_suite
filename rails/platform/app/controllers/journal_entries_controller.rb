@@ -7,7 +7,7 @@ class JournalEntriesController < ApplicationController
     @entries = if @client_code.present?
                  scope = JournalEntry.for_client(@client_code)
                  scope = scope.by_source(@source_type) if @source_type.present?
-                 scope.order(date: :desc, transaction_no: :asc)
+                 scope.order(date: :desc, transaction_no: :asc).page(params[:page]).per(25)
                else
                  JournalEntry.none
                end

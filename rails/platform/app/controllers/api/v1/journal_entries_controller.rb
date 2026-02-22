@@ -18,8 +18,16 @@ module Api
         end
 
         entries = entries.order(date: :desc, transaction_no: :asc)
+                        .page(params[:page]).per(params[:per_page] || 25)
 
-        render json: entries.map { |e| entry_json(e) }
+        render json: {
+          entries: entries.map { |e| entry_json(e) },
+          meta: {
+            current_page: entries.current_page,
+            total_pages: entries.total_pages,
+            total_count: entries.total_count
+          }
+        }
       end
 
       def show

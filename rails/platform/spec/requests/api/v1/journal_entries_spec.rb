@@ -19,8 +19,8 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
-      expect(data.length).to eq(1)
-      expect(data.first["debit_account"]).to eq("旅費交通費")
+      expect(data["entries"].length).to eq(1)
+      expect(data["entries"].first["debit_account"]).to eq("旅費交通費")
     end
 
     it "source_typeでフィルタできること" do
@@ -30,8 +30,8 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       get "/api/v1/journal_entries", params: { client_code: client_code, source_type: "amex" }
 
       data = JSON.parse(response.body)
-      expect(data.length).to eq(1)
-      expect(data.first["source_type"]).to eq("amex")
+      expect(data["entries"].length).to eq(1)
+      expect(data["entries"].first["source_type"]).to eq("amex")
     end
 
     it "review_requiredでフィルタできること" do
@@ -41,8 +41,8 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       get "/api/v1/journal_entries", params: { client_code: client_code, review_required: "true" }
 
       data = JSON.parse(response.body)
-      expect(data.length).to eq(1)
-      expect(data.first["status"]).to eq("review_required")
+      expect(data["entries"].length).to eq(1)
+      expect(data["entries"].first["status"]).to eq("review_required")
     end
 
     it "日付範囲でフィルタできること" do
@@ -56,7 +56,40 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       }
 
       data = JSON.parse(response.body)
-      expect(data.length).to eq(1)
+      expect(data["entries"].length).to eq(1)
+    end
+
+    it "ページネーションのメタ情報を返すこと" do
+      create(:journal_entry, client: client, debit_amount: 1000, credit_amount: 1000)
+
+      get "/api/v1/journal_entries", params: { client_code: client_code }
+
+      data = JSON.parse(response.body)
+      expect(data["meta"]["current_page"]).to eq(1)
+      expect(data["meta"]["total_pages"]).to eq(1)
+      expect(data["meta"]["total_count"]).to eq(1)
+    end
+
+    it "per_pageパラメータでページサイズを変更できること" do
+      3.times { create(:journal_entry, client: client, debit_amount: 1000, credit_amount: 1000) }
+
+      get "/api/v1/journal_entries", params: { client_code: client_code, per_page: 2 }
+
+      data = JSON.parse(response.body)
+      expect(data["entries"].length).to eq(2)
+      expect(data["meta"]["current_page"]).to eq(1)
+      expect(data["meta"]["total_pages"]).to eq(2)
+      expect(data["meta"]["total_count"]).to eq(3)
+    end
+
+    it "pageパラメータで指定ページを取得できること" do
+      3.times { create(:journal_entry, client: client, debit_amount: 1000, credit_amount: 1000) }
+
+      get "/api/v1/journal_entries", params: { client_code: client_code, per_page: 2, page: 2 }
+
+      data = JSON.parse(response.body)
+      expect(data["entries"].length).to eq(1)
+      expect(data["meta"]["current_page"]).to eq(2)
     end
   end
 
