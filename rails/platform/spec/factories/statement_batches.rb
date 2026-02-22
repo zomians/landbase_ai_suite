@@ -2,7 +2,6 @@ FactoryBot.define do
   factory :statement_batch do
     client
     source_type { "amex" }
-    statement_period { "2026年1月" }
     status { "processing" }
     summary { {} }
 

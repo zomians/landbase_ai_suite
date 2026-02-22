@@ -33,7 +33,6 @@ module Api
 
         batch = @current_client.statement_batches.new(
           source_type: "amex",
-          statement_period: params[:statement_period] || "",
           status: "processing",
           pdf_fingerprint: fingerprint
         )

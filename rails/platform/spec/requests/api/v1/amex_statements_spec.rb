@@ -9,8 +9,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
     let(:valid_params) do
       {
         client_code: client_code,
-        pdf: test_pdf,
-        statement_period: "2026年1月"
+        pdf: test_pdf
       }
     end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_21_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_22_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -125,7 +125,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_21_000001) do
   create_table "statement_batches", force: :cascade do |t|
     t.bigint "client_id", null: false
     t.string "source_type", default: "amex", null: false, comment: "入力元区別: amex / bank / invoice / receipt"
-    t.string "statement_period", comment: "明細期間（例: 2026年1月）"
     t.string "status", default: "processing", null: false, comment: "処理状態: processing / completed / failed"
     t.text "error_message", comment: "エラーメッセージ"
     t.jsonb "summary", default: {}, comment: "処理結果サマリー"
