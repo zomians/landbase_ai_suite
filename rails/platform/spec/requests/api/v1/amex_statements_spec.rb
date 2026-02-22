@@ -66,6 +66,34 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
 
       expect(response).to have_http_status(:not_found)
     end
+
+    context "重複PDF検知" do
+      it "同一PDFが処理済みの場合409を返すこと" do
+        pdf_content = File.read(Rails.root.join("spec/fixtures/files/test_statement.pdf"))
+        fingerprint = Digest::SHA256.hexdigest(pdf_content)
+        create(:statement_batch, :completed, client: client, pdf_fingerprint: fingerprint)
+
+        post "/api/v1/amex_statements/process_statement", params: valid_params
+
+        expect(response).to have_http_status(:conflict)
+        data = JSON.parse(response.body)
+        expect(data["duplicate"]).to be true
+        expect(data["existing_batch_id"]).to be_present
+        expect(data["error"]).to include("処理済み")
+      end
+
+      it "force: trueで重複チェックをスキップできること" do
+        pdf_content = File.read(Rails.root.join("spec/fixtures/files/test_statement.pdf"))
+        fingerprint = Digest::SHA256.hexdigest(pdf_content)
+        create(:statement_batch, :completed, client: client, pdf_fingerprint: fingerprint)
+
+        post "/api/v1/amex_statements/process_statement", params: valid_params.merge(force: "true")
+
+        expect(response).to have_http_status(:accepted)
+        data = JSON.parse(response.body)
+        expect(data["status"]).to eq("processing")
+      end
+    end
   end
 
   describe "GET /api/v1/amex_statements/:id/status" do

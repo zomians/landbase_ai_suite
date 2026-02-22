@@ -15,10 +15,27 @@ module Api
           return render_error("PDFファイルは20MB以下にしてください")
         end
 
+        fingerprint = Digest::SHA256.hexdigest(pdf.read)
+        pdf.rewind
+
+        unless ActiveModel::Type::Boolean.new.cast(params[:force])
+          existing = @current_client.statement_batches
+            .where(pdf_fingerprint: fingerprint, status: "completed")
+            .first
+          if existing
+            return render json: {
+              error: "この明細は処理済みです",
+              duplicate: true,
+              existing_batch_id: existing.id
+            }, status: :conflict
+          end
+        end
+
         batch = @current_client.statement_batches.new(
           source_type: "amex",
           statement_period: params[:statement_period] || "",
-          status: "processing"
+          status: "processing",
+          pdf_fingerprint: fingerprint
         )
 
         batch.pdf.attach(pdf)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_21_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_22_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -131,6 +131,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_21_000002) do
     t.jsonb "summary", default: {}, comment: "処理結果サマリー"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "pdf_fingerprint", comment: "PDFファイルのSHA256ハッシュ（重複検知用）"
+    t.index ["client_id", "pdf_fingerprint"], name: "idx_statement_batches_client_fingerprint"
     t.index ["client_id", "status"], name: "idx_statement_batches_client_status"
     t.index ["client_id"], name: "index_statement_batches_on_client_id"
     t.index ["status"], name: "index_statement_batches_on_status"

@@ -99,10 +99,51 @@ export default class extends Controller {
 
       const data = await response.json()
 
+      if (response.status === 409 && data.duplicate) {
+        this.hideLoading()
+        this.submitButtonTarget.disabled = false
+        if (confirm("この明細は既に処理済みです。再処理しますか？")) {
+          await this.submitWithForce(formData)
+        }
+        return
+      }
+
       if (!response.ok) {
         this.showError(data.error || "明細の処理に失敗しました。")
         this.hideLoading()
         this.submitButtonTarget.disabled = false
+        return
+      }
+
+      await this.pollStatus(data.id, clientCode)
+    } catch (error) {
+      this.showError(`通信エラー: ${error.message}`)
+    } finally {
+      this.hideLoading()
+      this.submitButtonTarget.disabled = false
+    }
+  }
+
+  async submitWithForce(formData) {
+    this.showLoading()
+    this.submitButtonTarget.disabled = true
+
+    formData.append("force", "true")
+    const clientCode = formData.get("client_code")
+
+    try {
+      const response = await fetch("/api/v1/amex_statements/process_statement", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "X-CSRF-Token": document.querySelector("meta[name='csrf-token']")?.content
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        this.showError(data.error || "明細の処理に失敗しました。")
         return
       }
 
