@@ -167,7 +167,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
 
       get "/api/v1/journal_entries/export", params: { client_code: client_code, source_type: "amex" }
 
-      csv = CSV.parse(response.body, headers: true)
+      csv = CSV.parse(response.body.sub("\uFEFF", ""), headers: true)
       expect(csv.size).to eq(1)
     end
   end
