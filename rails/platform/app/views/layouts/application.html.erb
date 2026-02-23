@@ -23,8 +23,41 @@
   </head>
 
   <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+    <% if user_signed_in? %>
+      <nav class="bg-white border-b border-gray-200 fixed w-full z-10 top-0">
+        <div class="container mx-auto px-5 py-3 flex items-center justify-between">
+          <span class="font-semibold text-gray-800">LandBase Platform</span>
+          <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600"><%= current_user.email %></span>
+            <%= button_to "ログアウト", destroy_user_session_path, method: :delete,
+                class: "text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded transition" %>
+          </div>
+        </div>
+      </nav>
+    <% end %>
+
+    <% flash_top = user_signed_in? ? "top-14" : "top-0" %>
+    <% if notice %>
+      <div class="fixed <%= flash_top %> left-0 right-0 z-20 flex justify-center px-5 pt-2">
+        <div class="bg-green-50 border border-green-300 text-green-800 text-sm px-4 py-2 rounded shadow max-w-xl w-full">
+          <%= notice %>
+        </div>
+      </div>
+    <% end %>
+    <% if alert %>
+      <div class="fixed <%= flash_top %> left-0 right-0 z-20 flex justify-center px-5 pt-2">
+        <div class="bg-red-50 border border-red-300 text-red-800 text-sm px-4 py-2 rounded shadow max-w-xl w-full">
+          <%= alert %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if user_signed_in? %>
+      <main class="container mx-auto mt-20 px-5 flex">
+        <%= yield %>
+      </main>
+    <% else %>
       <%= yield %>
-    </main>
+    <% end %>
   </body>
 </html>
