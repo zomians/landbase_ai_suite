@@ -3,10 +3,12 @@ require "rails_helper"
 RSpec.describe "Api::V1::JournalEntries", type: :request do
   let(:client) { create(:client, code: "test_client") }
   let(:client_code) { client.code }
+  let(:api_token_record) { create(:api_token) }
+  let(:authorization_header) { { "Authorization" => "Bearer #{api_token_record.raw_token}" } }
 
   describe "GET /api/v1/journal_entries" do
     it "client_codeがない場合400を返すこと" do
-      get "/api/v1/journal_entries"
+      get "/api/v1/journal_entries", headers: authorization_header
       expect(response).to have_http_status(:bad_request)
     end
 
@@ -15,7 +17,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       create(:journal_entry, client: client, debit_account: "旅費交通費", debit_amount: 1000, credit_amount: 1000)
       create(:journal_entry, client: other_client, debit_account: "消耗品費", debit_amount: 2000, credit_amount: 2000)
 
-      get "/api/v1/journal_entries", params: { client_code: client_code }
+      get "/api/v1/journal_entries", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -27,7 +29,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       create(:journal_entry, :amex, client: client, debit_amount: 1000, credit_amount: 1000)
       create(:journal_entry, :bank, client: client, debit_amount: 2000, credit_amount: 2000)
 
-      get "/api/v1/journal_entries", params: { client_code: client_code, source_type: "amex" }
+      get "/api/v1/journal_entries", params: { client_code: client_code, source_type: "amex" }, headers: authorization_header
 
       data = JSON.parse(response.body)
       expect(data["entries"].length).to eq(1)
@@ -38,7 +40,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       create(:journal_entry, client: client, status: "ok", debit_amount: 1000, credit_amount: 1000)
       create(:journal_entry, :review_required, client: client, debit_amount: 2000, credit_amount: 2000)
 
-      get "/api/v1/journal_entries", params: { client_code: client_code, review_required: "true" }
+      get "/api/v1/journal_entries", params: { client_code: client_code, review_required: "true" }, headers: authorization_header
 
       data = JSON.parse(response.body)
       expect(data["entries"].length).to eq(1)
@@ -53,7 +55,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
         client_code: client_code,
         date_from: "2026-01-01",
         date_to: "2026-01-31"
-      }
+      }, headers: authorization_header
 
       data = JSON.parse(response.body)
       expect(data["entries"].length).to eq(1)
@@ -62,7 +64,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
     it "ページネーションのメタ情報を返すこと" do
       create(:journal_entry, client: client, debit_amount: 1000, credit_amount: 1000)
 
-      get "/api/v1/journal_entries", params: { client_code: client_code }
+      get "/api/v1/journal_entries", params: { client_code: client_code }, headers: authorization_header
 
       data = JSON.parse(response.body)
       expect(data["meta"]["current_page"]).to eq(1)
@@ -73,7 +75,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
     it "per_pageパラメータでページサイズを変更できること" do
       3.times { create(:journal_entry, client: client, debit_amount: 1000, credit_amount: 1000) }
 
-      get "/api/v1/journal_entries", params: { client_code: client_code, per_page: 2 }
+      get "/api/v1/journal_entries", params: { client_code: client_code, per_page: 2 }, headers: authorization_header
 
       data = JSON.parse(response.body)
       expect(data["entries"].length).to eq(2)
@@ -85,7 +87,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
     it "pageパラメータで指定ページを取得できること" do
       3.times { create(:journal_entry, client: client, debit_amount: 1000, credit_amount: 1000) }
 
-      get "/api/v1/journal_entries", params: { client_code: client_code, per_page: 2, page: 2 }
+      get "/api/v1/journal_entries", params: { client_code: client_code, per_page: 2, page: 2 }, headers: authorization_header
 
       data = JSON.parse(response.body)
       expect(data["entries"].length).to eq(1)
@@ -97,7 +99,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
     it "仕訳詳細を返すこと" do
       entry = create(:journal_entry, client: client, debit_amount: 5000, credit_amount: 5000)
 
-      get "/api/v1/journal_entries/#{entry.id}", params: { client_code: client_code }
+      get "/api/v1/journal_entries/#{entry.id}", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -109,7 +111,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       other_client = create(:client, code: "other_client")
       entry = create(:journal_entry, client: other_client, debit_amount: 1000, credit_amount: 1000)
 
-      get "/api/v1/journal_entries/#{entry.id}", params: { client_code: client_code }
+      get "/api/v1/journal_entries/#{entry.id}", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
     end
@@ -124,7 +126,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
         client_code: client_code,
         debit_account: "旅費交通費",
         status: "ok"
-      }
+      }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -139,7 +141,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       patch "/api/v1/journal_entries/#{entry.id}", params: {
         client_code: client_code,
         debit_account: "旅費交通費"
-      }
+      }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
     end
@@ -151,7 +153,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
              debit_account: "旅費交通費", credit_account: "未払金",
              debit_amount: 5000, credit_amount: 5000)
 
-      get "/api/v1/journal_entries/export", params: { client_code: client_code }
+      get "/api/v1/journal_entries/export", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/csv")
@@ -165,7 +167,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       create(:journal_entry, :amex, client: client, debit_amount: 1000, credit_amount: 1000)
       create(:journal_entry, :bank, client: client, debit_amount: 2000, credit_amount: 2000)
 
-      get "/api/v1/journal_entries/export", params: { client_code: client_code, source_type: "amex" }
+      get "/api/v1/journal_entries/export", params: { client_code: client_code, source_type: "amex" }, headers: authorization_header
 
       csv = CSV.parse(response.body.sub("\uFEFF", ""), headers: true)
       expect(csv.size).to eq(1)

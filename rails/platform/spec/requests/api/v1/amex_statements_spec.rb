@@ -3,6 +3,8 @@ require "rails_helper"
 RSpec.describe "Api::V1::AmexStatements", type: :request do
   let(:client) { create(:client, code: "test_client") }
   let(:client_code) { client.code }
+  let(:api_token_record) { create(:api_token) }
+  let(:authorization_header) { { "Authorization" => "Bearer #{api_token_record.raw_token}" } }
 
   describe "POST /api/v1/amex_statements/process_statement" do
     let(:test_pdf) { fixture_file_upload("test_statement.pdf", "application/pdf") }
@@ -18,7 +20,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
     end
 
     it "202を返しジョブをエンキューすること" do
-      post "/api/v1/amex_statements/process_statement", params: valid_params
+      post "/api/v1/amex_statements/process_statement", params: valid_params, headers: authorization_header
 
       expect(response).to have_http_status(:accepted)
       data = JSON.parse(response.body)
@@ -33,7 +35,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
     it "PDFがない場合エラーを返すこと" do
       post "/api/v1/amex_statements/process_statement", params: {
         client_code: client_code
-      }
+      }, headers: authorization_header
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)["error"]).to include("PDF")
@@ -45,14 +47,14 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
       post "/api/v1/amex_statements/process_statement", params: {
         client_code: client_code,
         pdf: non_pdf
-      }
+      }, headers: authorization_header
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)["error"]).to include("PDF")
     end
 
     it "client_codeがない場合400を返すこと" do
-      post "/api/v1/amex_statements/process_statement", params: { pdf: test_pdf }
+      post "/api/v1/amex_statements/process_statement", params: { pdf: test_pdf }, headers: authorization_header
 
       expect(response).to have_http_status(:bad_request)
     end
@@ -61,7 +63,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
       post "/api/v1/amex_statements/process_statement", params: {
         client_code: "nonexistent",
         pdf: test_pdf
-      }
+      }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
     end
@@ -72,7 +74,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
         fingerprint = Digest::SHA256.hexdigest(pdf_content)
         create(:statement_batch, :completed, client: client, pdf_fingerprint: fingerprint)
 
-        post "/api/v1/amex_statements/process_statement", params: valid_params
+        post "/api/v1/amex_statements/process_statement", params: valid_params, headers: authorization_header
 
         expect(response).to have_http_status(:conflict)
         data = JSON.parse(response.body)
@@ -86,7 +88,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
         fingerprint = Digest::SHA256.hexdigest(pdf_content)
         create(:statement_batch, :processing, client: client, pdf_fingerprint: fingerprint)
 
-        post "/api/v1/amex_statements/process_statement", params: valid_params
+        post "/api/v1/amex_statements/process_statement", params: valid_params, headers: authorization_header
 
         expect(response).to have_http_status(:conflict)
         data = JSON.parse(response.body)
@@ -99,7 +101,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
         fingerprint = Digest::SHA256.hexdigest(pdf_content)
         create(:statement_batch, :completed, client: client, pdf_fingerprint: fingerprint)
 
-        post "/api/v1/amex_statements/process_statement", params: valid_params.merge(force: "true")
+        post "/api/v1/amex_statements/process_statement", params: valid_params.merge(force: "true"), headers: authorization_header
 
         expect(response).to have_http_status(:accepted)
         data = JSON.parse(response.body)
@@ -112,7 +114,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
     it "processing状態のバッチのステータスを返すこと" do
       batch = create(:statement_batch, :processing, client: client)
 
-      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }
+      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -123,7 +125,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
     it "完了したバッチのサマリーを返すこと" do
       batch = create(:statement_batch, :completed, client: client)
 
-      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }
+      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -135,7 +137,7 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
     it "失敗したバッチのエラーメッセージを返すこと" do
       batch = create(:statement_batch, :failed, client: client)
 
-      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }
+      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -147,13 +149,13 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
       other_client = create(:client, code: "other_client")
       batch = create(:statement_batch, client: other_client)
 
-      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }
+      get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
     end
 
     it "存在しないIDの場合404を返すこと" do
-      get "/api/v1/amex_statements/99999/status", params: { client_code: client_code }
+      get "/api/v1/amex_statements/99999/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
     end
