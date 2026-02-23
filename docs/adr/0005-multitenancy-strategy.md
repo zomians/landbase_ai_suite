@@ -45,7 +45,7 @@ ADR 0001 で LandBase AI Suite をマルチテナント SaaS として開発す�
 **実装方法**:
 ```
 単一 n8n インスタンス
-  ├── Project: Shrimp Shells（クライアント1）
+  ├── Project: Ikigai Stay（クライアント1）
   ├── Project: Hotel Example（クライアント2）
   └── Project: Tour Company（クライアント3）
 ```
@@ -63,7 +63,7 @@ ADR 0001 で LandBase AI Suite をマルチテナント SaaS として開発す�
 
 **実装方法**:
 ```
-n8n インスタンス1（Shrimp Shells専用）
+n8n インスタンス1（Ikigai Stay専用）
 n8n インスタンス2（Hotel Example専用）
 n8n インスタンス3（Tour Company専用）
 ```
@@ -88,7 +88,7 @@ n8n インスタンス3（Tour Company専用）
 **実装方法**:
 ```
 単一 Mattermost インスタンス
-  ├── Team: Shrimp Shells Team（クライアント1）
+  ├── Team: Ikigai Stay Team（クライアント1）
   ├── Team: Hotel Example Team（クライアント2）
   └── Team: Tour Company Team（クライアント3）
 ```
@@ -106,7 +106,7 @@ n8n インスタンス3（Tour Company専用）
 
 **実装方法**:
 ```
-Mattermost インスタンス1（Shrimp Shells専用）
+Mattermost インスタンス1（Ikigai Stay専用）
 Mattermost インスタンス2（Hotel Example専用）
 Mattermost インスタンス3（Tour Company専用）
 ```
@@ -132,7 +132,7 @@ Mattermost インスタンス3（Tour Company専用）
 -- 単一データベース、client_code で分離
 CREATE TABLE clients (
   id SERIAL PRIMARY KEY,
-  code VARCHAR UNIQUE NOT NULL,  -- 'shrimp_shells'
+  code VARCHAR UNIQUE NOT NULL,  -- 'ikigai_stay'
   name VARCHAR NOT NULL
 );
 
@@ -145,7 +145,7 @@ CREATE TABLE spree_products (
 );
 
 -- クエリ時にテナント分離
-SELECT * FROM spree_products WHERE client_code = 'shrimp_shells';
+SELECT * FROM spree_products WHERE client_code = 'ikigai_stay';
 ```
 
 **メリット**:
@@ -164,7 +164,7 @@ SELECT * FROM spree_products WHERE client_code = 'shrimp_shells';
 **実装方法**:
 ```
 PostgreSQL インスタンス
-  ├── DB: shrimp_shells_production
+  ├── DB: ikigai_stay_production
   ├── DB: hotel_example_production
   └── DB: tour_company_production
 ```
@@ -189,10 +189,10 @@ PostgreSQL インスタンス
 **実装方法**:
 ```sql
 -- 単一DB、スキーマ毎に分離
-CREATE SCHEMA shrimp_shells;
+CREATE SCHEMA ikigai_stay;
 CREATE SCHEMA hotel_example;
 
-CREATE TABLE shrimp_shells.products (...);
+CREATE TABLE ikigai_stay.products (...);
 CREATE TABLE hotel_example.products (...);
 ```
 
@@ -294,7 +294,7 @@ end
 **必須ルール**:
 ```ruby
 # ✅ GOOD: client_code スコープを必ず使用
-Spree::Product.for_client('shrimp_shells')
+Spree::Product.for_client('ikigai_stay')
 
 # ❌ BAD: スコープなしのクエリ（全テナントデータ取得）
 Spree::Product.all  # 危険！
@@ -359,14 +359,14 @@ end
 │                                                         │
 │  ┌─────────────────────────────────────────────────┐   │
 │  │ n8n (単一インスタンス)                           │   │
-│  │   ├── Project: Shrimp Shells                    │   │
+│  │   ├── Project: Ikigai Stay                    │   │
 │  │   ├── Project: Hotel Example                    │   │
 │  │   └── Project: Tour Company                     │   │
 │  └─────────────────────────────────────────────────┘   │
 │                                                         │
 │  ┌─────────────────────────────────────────────────┐   │
 │  │ Mattermost (単一インスタンス)                    │   │
-│  │   ├── Team: Shrimp Shells Team                  │   │
+│  │   ├── Team: Ikigai Stay Team                  │   │
 │  │   ├── Team: Hotel Example Team                  │   │
 │  │   └── Team: Tour Company Team                   │   │
 │  └─────────────────────────────────────────────────┘   │
@@ -374,7 +374,7 @@ end
 │  ┌─────────────────────────────────────────────────┐   │
 │  │ PostgreSQL (単一DB)                              │   │
 │  │   └── client_code で論理分離                     │   │
-│  │       ├── 'shrimp_shells'                       │   │
+│  │       ├── 'ikigai_stay'                       │   │
 │  │       ├── 'hotel_example'                       │   │
 │  │       └── 'tour_company'                        │   │
 │  └─────────────────────────────────────────────────┘   │

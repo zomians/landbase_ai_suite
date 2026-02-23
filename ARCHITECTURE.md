@@ -143,12 +143,12 @@ LandBase AI Suite は、**バックオフィス（共通基盤）とフロント
         │           ┌────────────────────────┼─────────┐
         │           │                        │         │
    ┌────▼───────────▼────┐          ┌───────▼────┐ ┌──▼──────────┐
-   │ Platform (Rails 8) │          │  Shrimp    │ │  Hotel App  │
-   │ :3000              │          │  Shells EC │ │  (将来)     │
-   │                    │          │  :3002     │ │  :3004      │
+   │ Platform (Rails 8) │          │ Ikigai     │ │  Hotel App  │
+   │ :3000              │          │ Stay       │ │  (将来)     │
+   │                    │          │ :3002      │ │  :3004      │
    │ - クライアント管理  │          │            │ │             │
    │ - OperationAI      │          │            │ │ - 予約      │
-   │ - 清掃管理         │          │ - EC       │ │ - 清掃      │
+   │ - 清掃管理         │          │ - 予約     │ │ - 清掃      │
    │ - プラットフォームAPI│         └────────────┘ └─────────────┘
    └────────────────────┘           フロントサービス
     バックオフィス（共通）          (クライアント固有)
@@ -213,9 +213,9 @@ PostgreSQL 16-alpine
 -- クライアント管理
 CREATE TABLE clients (
   id SERIAL PRIMARY KEY,
-  code VARCHAR UNIQUE NOT NULL,      -- 'shrimp_shells'
-  name VARCHAR NOT NULL,               -- 'Shrimp Shells'
-  industry VARCHAR,                    -- 'restaurant'
+  code VARCHAR UNIQUE NOT NULL,      -- 'ikigai_stay'
+  name VARCHAR NOT NULL,               -- 'Ikigai Stay'
+  industry VARCHAR,                    -- 'hotel'
   services JSONB DEFAULT '{}',         -- サービス設定
   status VARCHAR DEFAULT 'active',     -- ステータス
   created_at TIMESTAMP,
@@ -311,7 +311,7 @@ CREATE TABLE account_masters (
 
 ```ruby
 # ✅ GOOD: client_code スコープを必ず使用
-CleaningStandard.for_client('shrimp_shells')
+CleaningStandard.for_client('ikigai_stay')
 
 # ❌ BAD: スコープなしのクエリ（全テナントデータ取得）
 CleaningStandard.all  # 危険！
@@ -394,7 +394,7 @@ rails/platform/
 ### フロントサービス（クライアント固有）
 
 フロントサービスはクライアント別に独立し、別リポジトリで管理します。
-（例: Shrimp Shells EC）
+（例: Ikigai Stay）
 
 ---
 
@@ -481,9 +481,9 @@ class ProductsQuery
   end
 
   def filter(params)
-    @relation = by_shrimp_size(params[:shrimp_size])
-    @relation = by_origin(params[:shrimp_origin])
-    @relation = exclude_allergens(params[:exclude_allergens])
+    @relation = by_room_type(params[:room_type])
+    @relation = by_capacity(params[:capacity])
+    @relation = by_amenities(params[:amenities])
     @relation = sort_by(params[:sort])
     self
   end
@@ -494,8 +494,8 @@ class ProductsQuery
 
   private
 
-  def by_shrimp_size(size)
-    size.present? ? @relation.by_shrimp_size(size) : @relation
+  def by_room_type(type)
+    type.present? ? @relation.by_room_type(type) : @relation
   end
 
   def exclude_allergens(allergens)
@@ -561,7 +561,7 @@ POST   /api/v1/cleaning_images                   # 画像保存
 ```ruby
 # リクエストヘッダー
 Authorization: Bearer <JWT_TOKEN>
-X-Client-Code: shrimp_shells
+X-Client-Code: ikigai_stay
 
 # コントローラー
 class Api::V1::BaseController < ApplicationController
@@ -595,7 +595,7 @@ end
     "message": "バリデーションエラーが発生しました",
     "details": [
       {
-        "field": "shrimp_size",
+        "field": "room_type",
         "message": "は一覧にありません"
       }
     ]
@@ -728,7 +728,7 @@ end
 **頻繁に検索するカラムにインデックス**:
 
 ```ruby
-add_index :spree_products, :shrimp_size
+add_index :spree_products, :room_type
 add_index :spree_products, :client_code
 add_index :spree_orders, [:user_id, :created_at]
 add_index :clients, :code, unique: true

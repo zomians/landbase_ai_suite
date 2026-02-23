@@ -104,7 +104,7 @@ ADR 0001 で n8n + Mattermost + Rails の統合アーキテクチャを採用し
 ```
 バックオフィス: 共通
 フロント: 単一アプリでサブドメイン分離
-  - shrimp-shells.landbase.ai → restaurant向け
+  - ikigai-stay.landbase.ai → hotel向け
   - hotel-example.landbase.ai → hotel向け
 ```
 
@@ -228,8 +228,8 @@ rails/
                  ┌───────────────────────┼───────────────┐
                  │                       │               │
         ┌────────▼────────┐    ┌────────▼────────┐  ┌──▼──────┐
-        │ Shrimp Shells   │    │ Hotel Booking   │  │  Tour   │
-        │ EC (restaurant) │    │ (hotel)         │  │ (tour)  │
+        │ Ikigai Stay     │    │ Hotel Booking   │  │  Tour   │
+        │ (hotel)         │    │ (hotel)         │  │ (tour)  │
         │                 │    │                 │  │         │
         │ - 独立コンテナ   │    │ - 独立コンテナ   │  │ - 独立  │
         │ - 独立ディレクトリ│   │ - 独立ディレクトリ│ │   コンテナ│
@@ -274,7 +274,7 @@ rails/
 
 ### 今後の展開
 
-1. **Phase 1** (2025): Shrimp Shells EC 実装
+1. **Phase 1** (2025): Ikigai Stay 実装
 2. **Phase 2** (2026): Hotel 予約サイト実装
 3. **Phase 3** (2026): Tour サイト実装
 4. **Phase 4** (成長期): 必要に応じて個別サーバーへ分離
