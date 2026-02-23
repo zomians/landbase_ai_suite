@@ -13,7 +13,7 @@ Rails.application.routes.draw do
   # API
   namespace :api do
     namespace :v1 do
-      resources :cleaning_manuals, only: [:index, :show] do
+      resources :cleaning_manuals, only: [ :index, :show ] do
         collection do
           post :generate
         end
@@ -31,7 +31,7 @@ Rails.application.routes.draw do
         end
       end
 
-      resources :journal_entries, only: [:index, :show, :update] do
+      resources :journal_entries, only: [ :index, :show, :update ] do
         collection do
           get :export
         end
@@ -40,9 +40,9 @@ Rails.application.routes.draw do
   end
 
   # Web UI
-  resources :cleaning_manuals, only: [:index, :show, :new]
-  resources :amex_statements, only: [:new]
-  resources :journal_entries, only: [:index, :show, :edit, :update]
+  resources :cleaning_manuals, only: [ :index, :show, :new ]
+  resources :amex_statements, only: [ :new ]
+  resources :journal_entries, only: [ :index, :show, :edit, :update ]
 
   root "journal_entries#index"
 end
