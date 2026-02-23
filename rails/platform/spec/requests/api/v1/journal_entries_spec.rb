@@ -156,7 +156,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/csv")
 
-      csv = CSV.parse(response.body, headers: true)
+      csv = CSV.parse(response.body.sub("\uFEFF", ""), headers: true)
       expect(csv.headers).to eq(JournalEntry::CSV_HEADERS)
       expect(csv.size).to eq(1)
     end

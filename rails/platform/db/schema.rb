@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_20_112300) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_23_020920) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -111,9 +111,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_20_112300) do
     t.text "memo", default: "", comment: "メモ"
     t.string "cardholder", default: "", comment: "カード利用者（Amex等の複数会員明細用）"
     t.string "status", default: "ok", comment: "確認状態: ok / review_required"
-    t.bigint "statement_batch_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "statement_batch_id"
     t.index ["client_id", "source_type", "source_period", "transaction_no"], name: "idx_journal_entries_unique_transaction", unique: true
     t.index ["client_id"], name: "index_journal_entries_on_client_id"
     t.index ["date"], name: "idx_journal_entries_date"
@@ -128,13 +128,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_20_112300) do
     t.string "status", default: "processing", null: false, comment: "処理状態: processing / completed / failed"
     t.text "error_message", comment: "エラーメッセージ"
     t.jsonb "summary", default: {}, comment: "処理結果サマリー"
-    t.string "pdf_fingerprint", comment: "PDFファイルのSHA256ハッシュ（重複検知用）"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "pdf_fingerprint", comment: "PDFファイルのSHA256ハッシュ（重複検知用）"
     t.index ["client_id", "pdf_fingerprint"], name: "idx_statement_batches_client_fingerprint"
     t.index ["client_id", "status"], name: "idx_statement_batches_client_status"
     t.index ["client_id"], name: "index_statement_batches_on_client_id"
     t.index ["status"], name: "index_statement_batches_on_status"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "email", default: "", null: false
+    t.string "encrypted_password", default: "", null: false
+    t.string "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.datetime "remember_created_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
   add_foreign_key "account_masters", "clients"
