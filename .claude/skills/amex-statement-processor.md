@@ -324,6 +324,49 @@
 
 ---
 
-## Phase 2 向け参照情報
+## Phase 2 実装情報（issue#137: Rails API化 + Web UI）
 
-Phase 2（#137: Rails API 化）では、本ファイルのプロンプトセクション（「## プロンプト」以降）を `AmexStatementProcessorService` から参照する想定。プロンプト部分は独立して読み込み可能な構造としている。
+Phase 2 は実装済み。プロンプトセクションは `AmexStatementProcessorService` の `SYSTEM_PROMPT` 定数に埋め込み済み。
+
+### アーキテクチャ
+
+```
+[Web UI] → POST /api/v1/amex_statements/process_statement (PDF)
+              → StatementBatch 作成 (processing)
+              → AmexStatementProcessJob (非同期)
+                 → AmexStatementProcessorService
+                    → Anthropic API (document type で PDF 送信)
+                    → AccountMaster でキーワードマッチ補強
+                 → JournalEntry レコード一括作成
+                 → StatementBatch を completed/failed に更新
+[Web UI] ← GET /api/v1/amex_statements/:id/status (ポーリング)
+```
+
+### API エンドポイント
+
+| メソッド | パス | 説明 |
+|---|---|---|
+| POST | `/api/v1/amex_statements/process_statement` | PDF アップロード → 非同期処理開始（202 Accepted） |
+| GET | `/api/v1/amex_statements/:id/status` | バッチ処理ステータス確認（ポーリング用） |
+| GET | `/api/v1/journal_entries` | 仕訳一覧（フィルタ対応） |
+| GET | `/api/v1/journal_entries/:id` | 仕訳詳細 |
+| PATCH | `/api/v1/journal_entries/:id` | 仕訳更新（勘定科目修正・ステータス切替） |
+| GET | `/api/v1/journal_entries/export` | CSV エクスポート |
+
+### Web UI
+
+| パス | 説明 |
+|---|---|
+| `/amex_statements/new` | PDF アップロードフォーム |
+| `/journal_entries` | 仕訳一覧 |
+| `/journal_entries/:id` | 仕訳詳細 |
+| `/journal_entries/:id/edit` | 仕訳編集 |
+
+### 主要ファイル
+
+- `app/services/amex_statement_processor_service.rb` - Anthropic API 呼び出し・プロンプト
+- `app/jobs/amex_statement_process_job.rb` - 非同期ジョブ
+- `app/models/statement_batch.rb` - バッチ処理ステータス管理
+- `app/controllers/api/v1/amex_statements_controller.rb` - API コントローラー
+- `app/controllers/api/v1/journal_entries_controller.rb` - 仕訳 API
+- `app/javascript/controllers/pdf_upload_controller.js` - Stimulus（D&D + ポーリング）

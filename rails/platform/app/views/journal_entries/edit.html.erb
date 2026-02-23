@@ -1,0 +1,148 @@
+<% content_for(:title) { "仕訳編集 ##{@entry.transaction_no}" } %>
+
+<div class="w-full max-w-4xl mx-auto">
+  <div class="mb-6">
+    <%= link_to "← 詳細に戻る", journal_entry_path(@entry, client_code: @client_code), class: "text-blue-600 hover:text-blue-800 text-sm" %>
+  </div>
+
+  <h1 class="text-2xl font-bold mb-6">仕訳編集 #<%= @entry.transaction_no %></h1>
+
+  <% if @entry.errors.any? %>
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+      <ul class="list-disc list-inside text-red-800 text-sm">
+        <% @entry.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= form_with(model: @entry, url: journal_entry_path(@entry, client_code: @client_code), method: :patch, class: "space-y-6") do |f| %>
+    <!-- 基本情報（読み取り専用） -->
+    <div class="bg-gray-50 shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold mb-4">基本情報（読み取り専用）</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+          <span class="text-gray-500">取引日:</span>
+          <span class="font-medium ml-1"><%= @entry.date %></span>
+        </div>
+        <div>
+          <span class="text-gray-500">取引No:</span>
+          <span class="font-medium ml-1"><%= @entry.transaction_no %></span>
+        </div>
+        <div>
+          <span class="text-gray-500">ソース:</span>
+          <span class="font-medium ml-1"><%= @entry.source_type %></span>
+        </div>
+        <div>
+          <span class="text-gray-500">期間:</span>
+          <span class="font-medium ml-1"><%= @entry.source_period %></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- 借方 -->
+      <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-semibold mb-4 text-blue-700">借方</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">勘定科目</label>
+            <%= f.text_field :debit_account, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">補助科目</label>
+            <%= f.text_field :debit_sub_account, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">部門</label>
+            <%= f.text_field :debit_department, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">取引先</label>
+            <%= f.text_field :debit_partner, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">税区分</label>
+            <%= f.text_field :debit_tax_category, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">インボイス</label>
+            <%= f.text_field :debit_invoice, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">金額</label>
+            <%= f.number_field :debit_amount, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+        </div>
+      </div>
+
+      <!-- 貸方 -->
+      <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-semibold mb-4 text-red-700">貸方</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">勘定科目</label>
+            <%= f.text_field :credit_account, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">補助科目</label>
+            <%= f.text_field :credit_sub_account, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">部門</label>
+            <%= f.text_field :credit_department, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">取引先</label>
+            <%= f.text_field :credit_partner, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">税区分</label>
+            <%= f.text_field :credit_tax_category, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">インボイス</label>
+            <%= f.text_field :credit_invoice, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">金額</label>
+            <%= f.number_field :credit_amount, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 摘要・メモ・ステータス -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-lg font-semibold mb-4">その他</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">摘要</label>
+          <%= f.text_field :description, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">カード利用者</label>
+            <%= f.text_field :cardholder, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ステータス</label>
+            <%= f.select :status, [["OK", "ok"], ["要確認", "review_required"]],
+                  {}, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">メモ</label>
+          <%= f.text_area :memo, rows: 3, class: "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-4">
+      <%= link_to "キャンセル", journal_entry_path(@entry, client_code: @client_code),
+            class: "bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300 transition-colors" %>
+      <%= f.submit "保存", class: "bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors cursor-pointer" %>
+    </div>
+  <% end %>
+</div>
