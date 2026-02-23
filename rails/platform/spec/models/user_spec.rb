@@ -6,8 +6,8 @@ RSpec.describe User, type: :model do
       expect(User.devise_modules).to include(:database_authenticatable)
     end
 
-    it "recoverable が有効であること" do
-      expect(User.devise_modules).to include(:recoverable)
+    it "recoverable が無効であること（パスワードリセット不要）" do
+      expect(User.devise_modules).not_to include(:recoverable)
     end
 
     it "rememberable が有効であること" do
