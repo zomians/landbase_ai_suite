@@ -228,8 +228,8 @@
         │           ┌────────────────────────┼─────────┐
         │           │                        │         │
    ┌────▼───────────▼────┐          ┌───────▼────┐ ┌──▼──────────┐
-   │ Rails Platform     │          │  Shrimp    │ │  Hotel App  │
-   │ (API/管理画面)      │          │  Shells EC │ │  (将来)     │
+   │ Rails Platform     │          │ Ikigai     │ │  Hotel App  │
+   │ (API/管理画面)      │          │ Stay       │ │  (将来)     │
    │ - OperationAI      │          └────────────┘ └─────────────┘
    │ - MarketingAI      │
    └────────────────────┘

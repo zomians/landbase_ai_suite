@@ -85,7 +85,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_040806) do
   end
 
   create_table "clients", force: :cascade do |t|
-    t.string "code", null: false, comment: "クライアント識別子 (例: shrimp_shells)"
+    t.string "code", null: false, comment: "クライアント識別子 (例: ikigai_stay)"
     t.string "name", null: false, comment: "クライアント名"
     t.string "industry", comment: "業種: restaurant / hotel / tour"
     t.jsonb "services", default: {}, comment: "サービス設定"

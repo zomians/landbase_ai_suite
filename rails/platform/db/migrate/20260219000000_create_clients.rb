@@ -1,7 +1,7 @@
 class CreateClients < ActiveRecord::Migration[8.0]
   def change
     create_table :clients do |t|
-      t.string :code, null: false, comment: "クライアント識別子 (例: shrimp_shells)"
+      t.string :code, null: false, comment: "クライアント識別子 (例: ikigai_stay)"
       t.string :name, null: false, comment: "クライアント名"
       t.string :industry, comment: "業種: restaurant / hotel / tour"
       t.jsonb :services, default: {}, comment: "サービス設定"

@@ -222,7 +222,7 @@ landbase_ai_suite/
 #### フロントサービス（クライアント固有）
 
 フロントサービスはクライアント別に独立し、別リポジトリで管理します。
-例: Shrimp Shells EC（restaurant 向け冷凍食品 EC）
+例: Ikigai Stay（hotel 向け予約サイト）
 
 #### Hotel App（将来）
 
