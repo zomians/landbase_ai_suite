@@ -3,6 +3,7 @@ require "csv"
 class JournalEntry < ApplicationRecord
   # === 関連 ===
   belongs_to :client
+  belongs_to :statement_batch, optional: true
 
   # === バリデーション ===
   validates :date, presence: true

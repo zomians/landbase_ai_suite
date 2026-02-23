@@ -55,8 +55,14 @@ gem "rack-cors"
 # === AI ===
 gem "anthropic"
 
+# === PDF処理 ===
+gem "combine_pdf"
+
 # === CSV出力（Ruby 3.4+で必須） ===
 gem "csv"
+
+# === ページネーション ===
+gem "kaminari"
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

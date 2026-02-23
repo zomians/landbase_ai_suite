@@ -20,11 +20,28 @@ Rails.application.routes.draw do
           get :status
         end
       end
+
+      resources :amex_statements, only: [] do
+        collection do
+          post :process_statement
+        end
+        member do
+          get :status
+        end
+      end
+
+      resources :journal_entries, only: [:index, :show, :update] do
+        collection do
+          get :export
+        end
+      end
     end
   end
 
   # Web UI
   resources :cleaning_manuals, only: [:index, :show, :new]
+  resources :amex_statements, only: [:new]
+  resources :journal_entries, only: [:index, :show, :edit, :update]
 
   # Defines the root path route ("/")
   # root "posts#index"

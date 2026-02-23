@@ -25,6 +25,7 @@ class CreateJournalEntries < ActiveRecord::Migration[8.0]
       t.text :memo, default: "", comment: "メモ"
       t.string :cardholder, default: "", comment: "カード利用者（Amex等の複数会員明細用）"
       t.string :status, default: "ok", comment: "確認状態: ok / review_required"
+      t.references :statement_batch, null: true, foreign_key: true
 
       t.timestamps
     end
