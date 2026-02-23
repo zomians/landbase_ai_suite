@@ -1,0 +1,28 @@
+# Caddy Reverse Proxy - 独立スタック
+# 共有ネットワーク web-proxy-net 経由で各アプリにルーティング
+#
+# 起動: make prod-proxy-up
+# 停止: make prod-proxy-down
+
+services:
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - web-proxy-net
+    restart: unless-stopped
+
+networks:
+  web-proxy-net:
+    external: true
+
+volumes:
+  caddy_data:
+  caddy_config:
