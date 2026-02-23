@@ -69,7 +69,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
         client_code: client_code,
         property_name: "テスト施設",
         room_type: "スタンダード",
-        images: [ test_image ]
+        images: [test_image]
       }
     end
 
@@ -107,7 +107,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
       post "/api/v1/cleaning_manuals/generate", params: {
         client_code: client_code,
         room_type: "スタンダード",
-        images: [ test_image ]
+        images: [test_image]
       }, headers: authorization_header
 
       expect(response).to have_http_status(:unprocessable_entity)
@@ -118,7 +118,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
       post "/api/v1/cleaning_manuals/generate", params: {
         client_code: client_code,
         property_name: "テスト施設",
-        images: [ test_image ]
+        images: [test_image]
       }, headers: authorization_header
 
       expect(response).to have_http_status(:unprocessable_entity)
