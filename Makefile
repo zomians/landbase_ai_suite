@@ -123,3 +123,30 @@ ngrok-status: ## ngrokの状態確認
 		echo "${RED}❌ ngrok: 停止中${NC}"; \
 	fi
 	@echo ""
+
+# ================================
+# Production Deployment
+# ================================
+
+.PHONY: prod-deploy
+prod-deploy: ## 本番: Platformデプロイ（build → up → db:prepare）
+	@echo "${GREEN}Deploying Platform...${NC}"
+	docker compose -f compose.production.yaml --env-file .env.production build --no-cache
+	docker compose -f compose.production.yaml --env-file .env.production down
+	docker compose -f compose.production.yaml --env-file .env.production up -d
+	docker compose -f compose.production.yaml --env-file .env.production exec app-suite rails db:prepare
+	@echo "${GREEN}Platform deployed successfully.${NC}"
+
+.PHONY: prod-logs
+prod-logs: ## 本番: ログ表示
+	docker compose -f compose.production.yaml --env-file .env.production logs -f
+
+.PHONY: prod-db-reset
+prod-db-reset: ## 本番: DBリセット（データ削除）
+	@echo "${RED}WARNING: This will reset the production database!${NC}"
+	@read -p "Are you sure? (y/N): " confirm && [ "$$confirm" = "y" ] || exit 1
+	docker compose -f compose.production.yaml --env-file .env.production exec app-suite rails db:reset
+
+.PHONY: prod-secret
+prod-secret: ## 本番: SECRET_KEY_BASE生成
+	docker compose -f compose.production.yaml --env-file .env.production run --rm app-suite bundle exec rails secret
