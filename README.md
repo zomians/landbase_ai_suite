@@ -89,7 +89,7 @@ make init
 make up
 
 # 起動確認
-docker compose ps
+docker compose -f compose.development.yaml ps
 ```
 
 #### 5. 各サービスにアクセス
@@ -141,9 +141,9 @@ landbase_ai_suite/
 ├── rails/
 │   └── platform/                  # プラットフォーム基幹アプリ（導入済み）
 ├── nextjs/                        # マーケティングサイト（将来）
-├── .env                           # 環境変数設定
+├── .env.development               # 開発環境変数設定
 ├── .env.local.example             # 機密情報テンプレート
-├── compose.yaml                   # Docker Compose定義
+├── compose.development.yaml       # Docker Compose定義（開発）
 ├── Makefile                       # 開発自動化コマンド
 ├── README.md                      # このファイル
 ├── CLAUDE.md                      # Claude向けガイド

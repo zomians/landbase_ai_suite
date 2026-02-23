@@ -88,7 +88,7 @@ make prod-deploy
 
 ## 新規アプリ追加手順
 
-1. アプリの `compose.yaml` でサービス名をユニークにする（例: `app-norn`）
+1. アプリの `compose.production.yaml` でサービス名をユニークにする（例: `app-norn`）
 2. `expose` のみ使用し `ports` は使わない
 3. `web-proxy-net` 外部ネットワークに参加させる
 4. `/srv/reverse-proxy/Caddyfile` にドメインエントリを追加

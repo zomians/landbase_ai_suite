@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
     env_file:
-      - .env
+      - .env.development
       - .env.local
     ports:
       - "${POSTGRES_PORT}:5432"
@@ -19,7 +19,7 @@ services:
   mattermost:
     image: mattermost/mattermost-team-edition:${MATTERMOST_VERSION}
     env_file:
-      - .env
+      - .env.development
       - .env.local
     ports:
       - "${MATTERMOST_PORT}:8065"
@@ -36,7 +36,7 @@ services:
   n8n:
     image: n8nio/n8n:${N8N_VERSION}
     env_file:
-      - .env
+      - .env.development
       - .env.local
     environment:
       - DB_POSTGRESDB_DATABASE=landbase_development
@@ -66,7 +66,7 @@ services:
     ports:
       - "${PLATFORM_PORT}:3000"
     env_file:
-      - .env
+      - .env.development
       - .env.local
     environment:
       - RAILS_ENV=development
