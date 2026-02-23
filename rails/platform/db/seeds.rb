@@ -14,4 +14,9 @@ if Rails.env.development?
     user.password_confirmation = "password"
   end
   puts "管理者ユーザーを作成しました: admin@example.com / password"
+
+  ApiToken.where(name: "development").delete_all
+  _token_record, raw_token = ApiToken.generate!(name: "development")
+  puts "APIトークンを作成しました: #{raw_token}"
+  puts "使用方法: curl -H 'Authorization: Bearer #{raw_token}' http://localhost:3000/api/v1/..."
 end

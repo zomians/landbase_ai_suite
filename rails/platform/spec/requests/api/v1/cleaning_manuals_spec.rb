@@ -3,10 +3,12 @@ require "rails_helper"
 RSpec.describe "Api::V1::CleaningManuals", type: :request do
   let(:client) { create(:client, code: "test_client") }
   let(:client_code) { client.code }
+  let(:api_token_record) { create(:api_token) }
+  let(:authorization_header) { { "Authorization" => "Bearer #{api_token_record.raw_token}" } }
 
   describe "GET /api/v1/cleaning_manuals" do
     it "client_code がない場合400を返すこと" do
-      get "/api/v1/cleaning_manuals"
+      get "/api/v1/cleaning_manuals", headers: authorization_header
       expect(response).to have_http_status(:bad_request)
       expect(JSON.parse(response.body)["error"]).to include("client_code")
     end
@@ -16,7 +18,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
       create(:cleaning_manual, client: client, property_name: "施設A")
       create(:cleaning_manual, client: other_client, property_name: "施設B")
 
-      get "/api/v1/cleaning_manuals", params: { client_code: client_code }
+      get "/api/v1/cleaning_manuals", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -25,7 +27,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
     end
 
     it "存在しないクライアントの場合404を返すこと" do
-      get "/api/v1/cleaning_manuals", params: { client_code: "nonexistent" }
+      get "/api/v1/cleaning_manuals", params: { client_code: "nonexistent" }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
     end
@@ -35,7 +37,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
     it "マニュアル詳細を返すこと" do
       manual = create(:cleaning_manual, client: client)
 
-      get "/api/v1/cleaning_manuals/#{manual.id}", params: { client_code: client_code }
+      get "/api/v1/cleaning_manuals/#{manual.id}", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -48,13 +50,13 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
       other_client = create(:client, code: "other_client")
       manual = create(:cleaning_manual, client: other_client)
 
-      get "/api/v1/cleaning_manuals/#{manual.id}", params: { client_code: client_code }
+      get "/api/v1/cleaning_manuals/#{manual.id}", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
     end
 
     it "存在しないIDの場合404を返すこと" do
-      get "/api/v1/cleaning_manuals/99999", params: { client_code: client_code }
+      get "/api/v1/cleaning_manuals/99999", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
     end
@@ -67,7 +69,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
         client_code: client_code,
         property_name: "テスト施設",
         room_type: "スタンダード",
-        images: [test_image]
+        images: [ test_image ]
       }
     end
 
@@ -76,7 +78,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
     end
 
     it "202を返しジョブをエンキューすること" do
-      post "/api/v1/cleaning_manuals/generate", params: valid_params
+      post "/api/v1/cleaning_manuals/generate", params: valid_params, headers: authorization_header
 
       expect(response).to have_http_status(:accepted)
       data = JSON.parse(response.body)
@@ -95,7 +97,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
         client_code: client_code,
         property_name: "テスト施設",
         room_type: "スタンダード"
-      }
+      }, headers: authorization_header
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)["error"]).to include("画像")
@@ -105,8 +107,8 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
       post "/api/v1/cleaning_manuals/generate", params: {
         client_code: client_code,
         room_type: "スタンダード",
-        images: [test_image]
-      }
+        images: [ test_image ]
+      }, headers: authorization_header
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)["error"]).to include("property_name")
@@ -116,8 +118,8 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
       post "/api/v1/cleaning_manuals/generate", params: {
         client_code: client_code,
         property_name: "テスト施設",
-        images: [test_image]
-      }
+        images: [ test_image ]
+      }, headers: authorization_header
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)["error"]).to include("room_type")
@@ -128,7 +130,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
     it "processing状態のマニュアルのステータスを返すこと" do
       manual = create(:cleaning_manual, :processing, client: client)
 
-      get "/api/v1/cleaning_manuals/#{manual.id}/status", params: { client_code: client_code }
+      get "/api/v1/cleaning_manuals/#{manual.id}/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -139,7 +141,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
     it "完了したマニュアルの詳細を返すこと" do
       manual = create(:cleaning_manual, client: client, status: "draft")
 
-      get "/api/v1/cleaning_manuals/#{manual.id}/status", params: { client_code: client_code }
+      get "/api/v1/cleaning_manuals/#{manual.id}/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -150,7 +152,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
     it "失敗したマニュアルのエラーメッセージを返すこと" do
       manual = create(:cleaning_manual, :failed, client: client)
 
-      get "/api/v1/cleaning_manuals/#{manual.id}/status", params: { client_code: client_code }
+      get "/api/v1/cleaning_manuals/#{manual.id}/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
@@ -162,7 +164,7 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
       other_client = create(:client, code: "other_client")
       manual = create(:cleaning_manual, client: other_client)
 
-      get "/api/v1/cleaning_manuals/#{manual.id}/status", params: { client_code: client_code }
+      get "/api/v1/cleaning_manuals/#{manual.id}/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
     end
