@@ -1,7 +1,7 @@
 # LandBase AI Suite Development Lifecycle Automation
 # Mattermost + n8n + Rails 8 + Next.js 15 + Flutter 3 + PostgreSQL
 
-include .env
+include .env.development
 export
 
 # Colors for output
@@ -19,29 +19,29 @@ help: ## ヘルプ表示
 .PHONY: up
 up: ## 全サービス起動（PostgreSQL, Platform, Mattermost, n8n）
 	@echo "${GREEN}Starting all services...${NC}"
-	docker compose up -d postgres platform mattermost n8n
+	docker compose -f compose.development.yaml --env-file .env.development up -d postgres platform mattermost n8n
 	@echo "${GREEN}Platform is running at http://localhost:${PLATFORM_PORT}${NC}"
 	@echo "${GREEN}Mattermost is running at http://localhost:${MATTERMOST_PORT}${NC}"
 	@echo "${GREEN}n8n is running at http://localhost:${N8N_PORT}${NC}"
 
 .PHONY: down
 down: ## サービス停止
-	docker compose down
+	docker compose -f compose.development.yaml --env-file .env.development down
 
 .PHONY: logs
 logs: ## 全サービスのログ表示
-	docker compose logs --follow
+	docker compose -f compose.development.yaml --env-file .env.development logs --follow
 
 .PHONY: postgres-shell
 postgres-shell: ## PostgreSQLシェル接続
-	docker compose exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+	docker compose -f compose.development.yaml --env-file .env.development exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 
 .PHONY: init
 init: ## Platform: Railsアプリ新規作成
 	@[ -d rails/platform ] && echo "${YELLOW}Rails application 'rails/platform' already exists.${NC}" && exit 1 || true
 	@mkdir -p rails/platform
-	@set -a && . ./.env && set +a && \
-	docker compose run --rm --workdir /platform platform \
+	@set -a && . ./.env.development && set +a && \
+	docker compose -f compose.development.yaml --env-file .env.development run --rm --workdir /platform platform \
 		rails new . --name $$PLATFORM_APP_NAME --database=postgresql --css=tailwind --javascript=importmap --skip-test --force
 	@rm -rf rails/platform/.git
 	@perl -i -pe 's/bin\/rails server$$/bin\/rails server -b 0.0.0.0/' rails/platform/Procfile.dev
@@ -49,7 +49,7 @@ init: ## Platform: Railsアプリ新規作成
 
 .PHONY: clean
 clean: ## クリーンアップ（コンテナ・ボリューム・プロジェクトイメージ削除）
-	docker compose --env-file .env down -v --rmi local
+	docker compose -f compose.development.yaml --env-file .env.development down -v --rmi local
 	@echo "${GREEN}Cleaned up Docker resources.${NC}"
 
 # ================================

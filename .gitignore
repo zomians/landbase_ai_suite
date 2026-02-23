@@ -8,7 +8,7 @@
 *.tmp
 
 # Environment variables
-# .env は Git 管理（共通設定）
+# .env.development は Git 管理（開発設定）
 # .env.production は Git 管理（テンプレート値、VPS上で本番値に書き換え）
 .env.local
 

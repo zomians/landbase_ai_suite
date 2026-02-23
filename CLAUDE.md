@@ -166,13 +166,13 @@ make clean && make up
 ### マイグレーションエラー
 
 ```bash
-docker compose exec platform bash -lc "bin/rails db:rollback"
+docker compose -f compose.development.yaml exec platform bash -lc "bin/rails db:rollback"
 ```
 
 ### ポート競合
 
 ```bash
-# .env でポート番号を変更
+# .env.development でポート番号を変更
 PLATFORM_PORT=3004
 ```
 

@@ -238,9 +238,9 @@ landbase_ai_suite/
 │   └── <client_app>/          # 既存: クライアント固有フロント
 │       └── ...
 │
-├── compose.yaml               # platformサービス追加
+├── compose.development.yaml   # platformサービス追加
 ├── Makefile                   # platformコマンド追加
-└── .env                       # PLATFORM_PORT=3000
+└── .env.development           # PLATFORM_PORT=3000
 ```
 
 ## 結果
