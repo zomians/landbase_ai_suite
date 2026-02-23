@@ -1,0 +1,58 @@
+# LandBase AI Suite - Production Compose
+#
+# 起動: make prod-deploy
+# ログ: make prod-logs
+
+name: landbase_suite
+
+services:
+  db-suite:
+    image: postgres:${POSTGRES_VERSION}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  app-suite:
+    build:
+      context: ./rails
+      dockerfile: Dockerfile.platform
+      target: production
+      args:
+        RUBY_VERSION: ${RUBY_VERSION}
+        RAILS_VERSION: ${RAILS_VERSION}
+    env_file:
+      - .env.production
+    environment:
+      - RAILS_ENV=production
+      - POSTGRES_HOST=db-suite
+      - POSTGRES_PORT=5432
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-suite:5432/${POSTGRES_DB}
+    expose:
+      - "3000"
+    depends_on:
+      db-suite:
+        condition: service_healthy
+    networks:
+      - internal
+      - web-proxy-net
+    restart: unless-stopped
+
+networks:
+  internal:
+    internal: true
+  web-proxy-net:
+    external: true
+
+volumes:
+  postgres_data:

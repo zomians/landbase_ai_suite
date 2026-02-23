@@ -9,8 +9,8 @@
 
 # Environment variables
 # .env は Git 管理（共通設定）
+# .env.production は Git 管理（テンプレート値、VPS上で本番値に書き換え）
 .env.local
-.env.production
 
 # Editor
 .vscode/
