@@ -19,6 +19,8 @@ module Api
           @current_api_token = api_token
           api_token.touch_last_used!
         elsif (user = warden_user)
+          return unless valid_session_origin?
+
           @current_user = user
         else
           render json: { error: "Unauthorized" }, status: :unauthorized
@@ -32,6 +34,18 @@ module Api
 
       def warden_user
         request.env["warden"]&.user
+      end
+
+      def valid_session_origin?
+        origin = request.headers["Origin"]
+        return true if origin.blank?
+
+        allowed = [request.base_url]
+        allowed << ENV["APP_ORIGIN"] if ENV["APP_ORIGIN"].present?
+        return true if allowed.include?(origin)
+
+        render json: { error: "Unauthorized" }, status: :unauthorized
+        false
       end
 
       def set_current_client
