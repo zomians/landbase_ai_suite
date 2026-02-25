@@ -301,7 +301,7 @@ class BankStatementProcessorService
       model: ENV.fetch("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
       max_tokens: 65536,
       system: SYSTEM_PROMPT,
-      messages: [{
+      messages: [ {
         role: "user",
         content: [
           {
@@ -317,7 +317,7 @@ class BankStatementProcessorService
             text: prompt_text
           }
         ]
-      }]
+      } ]
     )
   end
 
