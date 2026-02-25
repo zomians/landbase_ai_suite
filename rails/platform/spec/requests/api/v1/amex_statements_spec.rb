@@ -129,6 +129,20 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
       get "/api/v1/amex_statements/#{batch.id}/status", params: { client_code: client_code }
       expect(response).to have_http_status(:ok)
     end
+
+    it "同一オリジンからのリクエストを許可すること" do
+      post "/api/v1/amex_statements/process_statement",
+        params: { client_code: client_code, pdf: test_pdf },
+        headers: { "Origin" => "http://www.example.com" }
+      expect(response).to have_http_status(:accepted)
+    end
+
+    it "異なるオリジンからのセッション認証リクエストを拒否すること" do
+      post "/api/v1/amex_statements/process_statement",
+        params: { client_code: client_code, pdf: test_pdf },
+        headers: { "Origin" => "https://evil.example.com" }
+      expect(response).to have_http_status(:unauthorized)
+    end
   end
 
   context "認証なし" do
