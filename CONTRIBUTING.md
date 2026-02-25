@@ -522,9 +522,8 @@ issue#54の清掃基準管理APIを実装しました。
 
 ## テスト方法
 ```bash
-make platform-up
-make platform-console
-# CleaningStandard.create!(...)
+make up
+# docker compose -f compose.development.yaml --env-file .env.development exec platform bash -lc "bin/rails console"
 ```
 
 ## チェックリスト
@@ -733,13 +732,13 @@ export default class extends Controller {
 すべてのマイグレーションは`down`メソッドを実装：
 
 ```ruby
-class AddPhoneNumberToSpreeUsers < ActiveRecord::Migration[8.0]
+class AddPhoneNumberToUsers < ActiveRecord::Migration[8.0]
   def up
-    add_column :spree_users, :phone_number, :string
+    add_column :users, :phone_number, :string
   end
 
   def down
-    remove_column :spree_users, :phone_number
+    remove_column :users, :phone_number
   end
 end
 ```
@@ -747,8 +746,8 @@ end
 #### 3. カラムコメント必須
 
 ```ruby
-add_column :products, :category, :string, comment: "商品カテゴリ"
-add_column :products, :price, :decimal, comment: "価格（税抜）"
+add_column :clients, :plan, :string, comment: "契約プラン"
+add_column :journal_entries, :verified_at, :datetime, comment: "検証完了日時"
 ```
 
 ---
@@ -762,14 +761,14 @@ add_column :products, :price, :decimal, comment: "価格（税抜）"
 #### モデルテスト
 
 ```ruby
-# spec/models/product_spec.rb
+# spec/models/client_spec.rb
 require 'rails_helper'
 
-RSpec.describe Product, type: :model do
+RSpec.describe Client, type: :model do
   describe '#active?' do
     it 'ステータスがactiveの場合trueを返す' do
-      product = build(:product, status: 'active')
-      expect(product.active?).to be true
+      client = build(:client, status: 'active')
+      expect(client.active?).to be true
     end
   end
 end
@@ -778,13 +777,14 @@ end
 #### API テスト（Request Spec）
 
 ```ruby
-# spec/requests/api/v1/orders_spec.rb
+# spec/requests/api/v1/journal_entries_spec.rb
 require 'rails_helper'
 
-RSpec.describe 'Api::V1::Orders', type: :request do
-  describe 'GET /api/v1/orders' do
-    it '注文一覧を返す' do
-      get '/api/v1/orders'
+RSpec.describe 'Api::V1::JournalEntries', type: :request do
+  describe 'GET /api/v1/journal_entries' do
+    it '仕訳一覧を返す' do
+      get '/api/v1/journal_entries', params: { client_code: 'ikigai_stay' },
+        headers: { 'Authorization' => "Bearer #{token}" }
       expect(response).to have_http_status(:ok)
     end
   end
@@ -798,7 +798,7 @@ end
 bundle exec rspec
 
 # 特定ファイルのみ
-bundle exec rspec spec/models/product_spec.rb
+bundle exec rspec spec/models/client_spec.rb
 
 # カバレッジ確認
 bundle exec rspec --format documentation
@@ -827,13 +827,13 @@ bundle exec rspec --format documentation
 **✅ DO**: パラメータバインディング使用
 
 ```ruby
-Product.where("name LIKE ?", "%#{params[:query]}%")
+Client.where("name LIKE ?", "%#{params[:query]}%")
 ```
 
 **❌ DON'T**: 文字列補間
 
 ```ruby
-Product.where("name LIKE '%#{params[:query]}%'")  # 危険！
+Client.where("name LIKE '%#{params[:query]}%'")  # 危険！
 ```
 
 #### 2. XSS 対策
@@ -841,13 +841,13 @@ Product.where("name LIKE '%#{params[:query]}%'")  # 危険！
 **✅ DO**: ERB の自動エスケープ活用
 
 ```erb
-<%= @product.name %>  # 自動エスケープ
+<%= @client.name %>  # 自動エスケープ
 ```
 
 **❌ DON'T**: raw 使用（必要な場合のみ）
 
 ```erb
-<%=raw @product.html_description %>  # 要注意
+<%=raw @client.html_description %>  # 要注意
 ```
 
 #### 3. CSRF 対策
@@ -864,11 +864,11 @@ protect_from_forgery with: :exception
 
 ```ruby
 # ✅ GOOD: eager loading
-@products = Product.includes(:images, :variants).all
+@manuals = CleaningManual.includes(:client, images_attachments: :blob).all
 
 # ❌ BAD: N+1発生
-@products = Product.all
-@products.each { |p| p.images.first }  # N+1！
+@manuals = CleaningManual.all
+@manuals.each { |m| m.images.first }  # N+1！
 ```
 
 #### 2. インデックス追加
@@ -876,8 +876,8 @@ protect_from_forgery with: :exception
 頻繁に検索するカラムにはインデックス：
 
 ```ruby
-add_index :products, :category_id
-add_index :orders, [:user_id, :created_at]
+add_index :journal_entries, :date
+add_index :journal_entries, [:client_id, :source_type]
 ```
 
 ---

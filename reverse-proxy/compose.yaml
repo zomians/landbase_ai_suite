@@ -1,8 +1,8 @@
 # Caddy Reverse Proxy - 独立スタック
 # 共有ネットワーク web-proxy-net 経由で各アプリにルーティング
 #
-# 起動: make prod-proxy-up
-# 停止: make prod-proxy-down
+# 起動: make up（reverse-proxy/ ディレクトリ内で実行）
+# 停止: make down
 
 services:
   caddy:
