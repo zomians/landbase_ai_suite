@@ -1,6 +1,6 @@
 <% content_for(:title) { "仕訳一覧" } %>
 
-<div class="w-full max-w-6xl mx-auto">
+<div class="w-full mx-auto px-4">
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold">仕訳一覧</h1>
     <div class="flex gap-2">
@@ -41,37 +41,75 @@
   <% elsif @entries.empty? %>
     <p class="text-gray-500">仕訳が見つかりません。</p>
   <% else %>
-    <div class="bg-white shadow rounded-lg overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
+    <div class="bg-white shadow rounded-lg overflow-x-auto relative">
+      <table class="w-max min-w-full divide-y divide-gray-200 text-xs">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">取引日</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">借方勘定科目</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">借方取引先</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">金額</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">摘要</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ステータス</th>
-            <th class="px-4 py-3"></th>
+            <%# 左端固定列 %>
+            <th class="sticky left-0 z-20 bg-gray-50 px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap w-[3.5rem] min-w-[3.5rem]">No</th>
+            <th class="sticky left-[3.5rem] z-20 bg-gray-50 px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap border-r border-gray-300">取引日</th>
+            <%# 借方 %>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">借方勘定科目</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">借方補助科目</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">借方部門</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">借方取引先</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">借方税区分</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">借方インボイス</th>
+            <th class="px-3 py-3 text-right font-medium text-gray-500 uppercase whitespace-nowrap">借方金額(円)</th>
+            <%# 貸方 %>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">貸方勘定科目</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">貸方補助科目</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">貸方部門</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">貸方取引先</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">貸方税区分</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">貸方インボイス</th>
+            <th class="px-3 py-3 text-right font-medium text-gray-500 uppercase whitespace-nowrap">貸方金額(円)</th>
+            <%# その他 %>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">摘要</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">タグ</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">メモ</th>
+            <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">カード利用者</th>
+            <%# 右端固定列 %>
+            <th class="sticky right-[4rem] z-20 bg-gray-50 px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap border-l border-gray-300">ステータス</th>
+            <th class="sticky right-0 z-20 bg-gray-50 px-3 py-3 whitespace-nowrap border-l border-gray-300"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
           <% @entries.each do |entry| %>
-            <tr class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm text-gray-900"><%= entry.transaction_no %></td>
-              <td class="px-4 py-3 text-sm text-gray-900"><%= entry.date %></td>
-              <td class="px-4 py-3 text-sm text-gray-900"><%= entry.debit_account %></td>
-              <td class="px-4 py-3 text-sm text-gray-900 max-w-[200px] truncate"><%= entry.debit_partner %></td>
-              <td class="px-4 py-3 text-sm text-gray-900 text-right"><%= number_with_delimiter(entry.debit_amount) %>円</td>
-              <td class="px-4 py-3 text-sm text-gray-500 max-w-[250px] truncate"><%= entry.description %></td>
-              <td class="px-4 py-3 text-sm">
+            <tr class="hover:bg-gray-50 group">
+              <%# 左端固定列 %>
+              <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-3 py-2 text-gray-900 whitespace-nowrap w-[3.5rem] min-w-[3.5rem]"><%= entry.transaction_no %></td>
+              <td class="sticky left-[3.5rem] z-10 bg-white group-hover:bg-gray-50 px-3 py-2 text-gray-900 whitespace-nowrap border-r border-gray-200"><%= entry.date %></td>
+              <%# 借方 %>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.debit_account %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.debit_sub_account.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.debit_department.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap max-w-[200px] truncate"><%= entry.debit_partner.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.debit_tax_category.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.debit_invoice.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 text-right whitespace-nowrap"><%= number_with_delimiter(entry.debit_amount) %></td>
+              <%# 貸方 %>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.credit_account %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.credit_sub_account.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.credit_department.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap max-w-[200px] truncate"><%= entry.credit_partner.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.credit_tax_category.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.credit_invoice.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 text-right whitespace-nowrap"><%= number_with_delimiter(entry.credit_amount) %></td>
+              <%# その他 %>
+              <td class="px-3 py-2 text-gray-500 max-w-[250px] truncate"><%= entry.description.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-500 whitespace-nowrap"><%= entry.tag.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-500 max-w-[200px] truncate"><%= entry.memo.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-500 whitespace-nowrap"><%= entry.cardholder.presence || "—" %></td>
+              <%# 右端固定列 %>
+              <td class="sticky right-[4rem] z-10 bg-white group-hover:bg-gray-50 px-3 py-2 whitespace-nowrap border-l border-gray-200">
                 <% if entry.status == "review_required" %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">要確認</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">要確認</span>
                 <% else %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">OK</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">OK</span>
                 <% end %>
               </td>
-              <td class="px-4 py-3 text-sm text-right space-x-2">
+              <td class="sticky right-0 z-10 bg-white group-hover:bg-gray-50 px-3 py-2 text-right whitespace-nowrap space-x-1 border-l border-gray-200">
                 <%= link_to "詳細", journal_entry_path(entry, client_code: @client_code), class: "text-blue-600 hover:text-blue-800" %>
                 <% if entry.status == "review_required" %>
                   <%= link_to "編集", edit_journal_entry_path(entry, client_code: @client_code), class: "text-orange-600 hover:text-orange-800" %>
