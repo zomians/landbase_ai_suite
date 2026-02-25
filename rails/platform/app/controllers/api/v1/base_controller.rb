@@ -8,19 +8,30 @@ module Api
 
       def authenticate_api_token!
         token = extract_bearer_token
-        api_token = ApiToken.find_by_raw_token(token)
+        if token.present?
+          api_token = ApiToken.find_by_raw_token(token)
 
-        if api_token.nil? || !api_token.active?
+          if api_token.nil? || !api_token.active?
+            render json: { error: "Unauthorized" }, status: :unauthorized
+            return
+          end
+
+          @current_api_token = api_token
+          api_token.touch_last_used!
+        elsif (user = warden_user)
+          @current_user = user
+        else
           render json: { error: "Unauthorized" }, status: :unauthorized
-          return
         end
-
-        api_token.touch_last_used!
       end
 
       def extract_bearer_token
         header = request.headers["Authorization"]
         header&.match(/\ABearer\s+(.+)\z/)&.captures&.first
+      end
+
+      def warden_user
+        request.env["warden"]&.user
       end
 
       def set_current_client
