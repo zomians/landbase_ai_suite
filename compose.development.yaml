@@ -1,7 +1,7 @@
 name: landbase_ai_suite
 
 services:
-  postgres:
+  db-suite:
     image: postgres:${POSTGRES_VERSION}
     env_file:
       - .env.development
@@ -22,7 +22,7 @@ services:
       - .env.development
       - .env.local
     ports:
-      - "${MATTERMOST_PORT}:8065"
+      - "8065:8065"
     volumes:
       - mattermost_config:/mattermost/config
       - mattermost_data:/mattermost/data
@@ -30,7 +30,7 @@ services:
       - mattermost_plugins:/mattermost/plugins
       - mattermost_client_plugins:/mattermost/client/plugins
     depends_on:
-      postgres:
+      db-suite:
         condition: service_healthy
 
   n8n:
@@ -38,17 +38,12 @@ services:
     env_file:
       - .env.development
       - .env.local
-    environment:
-      - DB_POSTGRESDB_DATABASE=landbase_development
-      - DB_POSTGRESDB_USER=landbase
-      - DB_POSTGRESDB_PASSWORD=landbase_dev_password
-      - DB_POSTGRESDB_SCHEMA=n8n_platform
     ports:
-      - "${N8N_PORT}:5678"
+      - "5678:5678"
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
-      postgres:
+      db-suite:
         condition: service_healthy
 
   platform:
@@ -59,24 +54,17 @@ services:
       args:
         RUBY_VERSION: ${RUBY_VERSION}
         RAILS_VERSION: ${RAILS_VERSION}
-    command: bash -c "rm -f tmp/pids/server.pid && bin/dev"
+    command: bash -c "rm -f tmp/pids/server.pid && bin/setup && bin/dev"
     volumes:
       - ./rails/platform:/platform
       - platform_bundle_cache:/usr/local/bundle
     ports:
-      - "${PLATFORM_PORT}:3000"
+      - "3000:3000"
     env_file:
       - .env.development
       - .env.local
-    environment:
-      - RAILS_ENV=development
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/platform_development
     depends_on:
-      postgres:
+      db-suite:
         condition: service_healthy
     stdin_open: true
     tty: true

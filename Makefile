@@ -19,10 +19,10 @@ help: ## ヘルプ表示
 .PHONY: up
 up: ## 全サービス起動（PostgreSQL, Platform, Mattermost, n8n）
 	@echo "${GREEN}Starting all services...${NC}"
-	docker compose -f compose.development.yaml --env-file .env.development up -d postgres platform mattermost n8n
-	@echo "${GREEN}Platform is running at http://localhost:${PLATFORM_PORT}${NC}"
-	@echo "${GREEN}Mattermost is running at http://localhost:${MATTERMOST_PORT}${NC}"
-	@echo "${GREEN}n8n is running at http://localhost:${N8N_PORT}${NC}"
+	docker compose -f compose.development.yaml --env-file .env.development up -d db-suite platform mattermost n8n
+	@echo "${GREEN}Platform is running at http://localhost:3000${NC}"
+	@echo "${GREEN}Mattermost is running at http://localhost:8065${NC}"
+	@echo "${GREEN}n8n is running at http://localhost:5678${NC}"
 
 .PHONY: down
 down: ## サービス停止
@@ -34,7 +34,7 @@ logs: ## 全サービスのログ表示
 
 .PHONY: postgres-shell
 postgres-shell: ## PostgreSQLシェル接続
-	docker compose -f compose.development.yaml --env-file .env.development exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+	docker compose -f compose.development.yaml --env-file .env.development exec db-suite psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 
 .PHONY: clean
 clean: ## クリーンアップ（コンテナ・ボリューム・プロジェクトイメージ削除）
@@ -55,11 +55,11 @@ ngrok: ## ngrokでn8nを公開（LINE Webhook用）
 		echo "${YELLOW}インストール方法: brew install ngrok${NC}"; \
 		exit 1; \
 	fi
-	@echo "${YELLOW}n8n (Port ${N8N_PORT}) を公開します...${NC}"
+	@echo "${YELLOW}n8n (Port 5678) を公開します...${NC}"
 	@echo "${YELLOW}LINE Developers ConsoleでWebhook URLを設定してください:${NC}"
 	@echo "${GREEN}  https://<ngrok-url>/webhook/line-webhook${NC}"
 	@echo ""
-	ngrok http ${N8N_PORT}
+	ngrok http 5678
 
 .PHONY: ngrok-stop
 ngrok-stop: ## ngrokを停止
@@ -123,7 +123,7 @@ prod-deploy: ## 本番: Platformデプロイ（build → up → db:prepare）
 	docker compose -f compose.production.yaml --env-file .env.production build --no-cache
 	docker compose -f compose.production.yaml --env-file .env.production down
 	docker compose -f compose.production.yaml --env-file .env.production up -d
-	docker compose -f compose.production.yaml --env-file .env.production exec app-suite rails db:prepare
+	docker compose -f compose.production.yaml --env-file .env.production exec platform rails db:prepare
 	@echo "${GREEN}Platform deployed successfully.${NC}"
 
 .PHONY: prod-logs
@@ -134,8 +134,8 @@ prod-logs: ## 本番: ログ表示
 prod-db-reset: ## 本番: DBリセット（データ削除）
 	@echo "${RED}WARNING: This will reset the production database!${NC}"
 	@read -p "Are you sure? (y/N): " confirm && [ "$$confirm" = "y" ] || exit 1
-	docker compose -f compose.production.yaml --env-file .env.production exec app-suite rails db:reset
+	docker compose -f compose.production.yaml --env-file .env.production exec platform rails db:reset
 
 .PHONY: prod-secret
 prod-secret: ## 本番: SECRET_KEY_BASE生成
-	docker compose -f compose.production.yaml --env-file .env.production run --rm app-suite bundle exec rails secret
+	docker compose -f compose.production.yaml --env-file .env.production run --rm platform bundle exec rails secret
