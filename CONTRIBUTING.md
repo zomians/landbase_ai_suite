@@ -793,15 +793,20 @@ end
 
 ### テスト実行
 
+> **注意**: `.env.development` の `DATABASE_URL` が開発DB（`platform_development`）を指しているため、コンテナ内で直接 `bundle exec rspec` を実行するとテストDBではなく開発DBに対してテストが走ります。必ず `make test` を使用してください。
+
 ```bash
+# 初回のみ: テストDB準備
+make test-prepare
+
 # 全テスト実行
-bundle exec rspec
+make test
 
 # 特定ファイルのみ
-bundle exec rspec spec/models/client_spec.rb
+make test ARGS="spec/models/client_spec.rb"
 
 # カバレッジ確認
-bundle exec rspec --format documentation
+make test ARGS="--format documentation"
 ```
 
 ---
