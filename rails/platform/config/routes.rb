@@ -40,6 +40,15 @@ Rails.application.routes.draw do
         end
       end
 
+      resources :invoices, only: [] do
+        collection do
+          post :process_statement
+        end
+        member do
+          get :status
+        end
+      end
+
       resources :journal_entries, only: [ :index, :show, :update ] do
         collection do
           get :export
@@ -52,6 +61,7 @@ Rails.application.routes.draw do
   resources :cleaning_manuals, only: [ :index, :show, :new ]
   resources :amex_statements, only: [ :new ]
   resources :bank_statements, only: [ :new ]
+  resources :invoices, only: [ :new ]
   resources :journal_entries, only: [ :index, :show, :edit, :update ]
 
   root "journal_entries#index"
