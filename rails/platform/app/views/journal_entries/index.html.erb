@@ -46,7 +46,7 @@
         <thead class="bg-gray-50">
           <tr>
             <%# 左端固定列 %>
-            <th class="sticky left-0 z-20 bg-gray-50 px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">No</th>
+            <th class="sticky left-0 z-20 bg-gray-50 px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap w-[3.5rem] min-w-[3.5rem]">No</th>
             <th class="sticky left-[3.5rem] z-20 bg-gray-50 px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap border-r border-gray-300">取引日</th>
             <%# 借方 %>
             <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase whitespace-nowrap">借方勘定科目</th>
@@ -76,10 +76,10 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           <% @entries.each do |entry| %>
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-gray-50 group">
               <%# 左端固定列 %>
-              <td class="sticky left-0 z-10 bg-white px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.transaction_no %></td>
-              <td class="sticky left-[3.5rem] z-10 bg-white px-3 py-2 text-gray-900 whitespace-nowrap border-r border-gray-200"><%= entry.date %></td>
+              <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-3 py-2 text-gray-900 whitespace-nowrap w-[3.5rem] min-w-[3.5rem]"><%= entry.transaction_no %></td>
+              <td class="sticky left-[3.5rem] z-10 bg-white group-hover:bg-gray-50 px-3 py-2 text-gray-900 whitespace-nowrap border-r border-gray-200"><%= entry.date %></td>
               <%# 借方 %>
               <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.debit_account %></td>
               <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.debit_sub_account.presence || "—" %></td>
@@ -102,14 +102,14 @@
               <td class="px-3 py-2 text-gray-500 max-w-[200px] truncate"><%= entry.memo.presence || "—" %></td>
               <td class="px-3 py-2 text-gray-500 whitespace-nowrap"><%= entry.cardholder.presence || "—" %></td>
               <%# 右端固定列 %>
-              <td class="sticky right-[4rem] z-10 bg-white px-3 py-2 whitespace-nowrap border-l border-gray-200">
+              <td class="sticky right-[4rem] z-10 bg-white group-hover:bg-gray-50 px-3 py-2 whitespace-nowrap border-l border-gray-200">
                 <% if entry.status == "review_required" %>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">要確認</span>
                 <% else %>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">OK</span>
                 <% end %>
               </td>
-              <td class="sticky right-0 z-10 bg-white px-3 py-2 text-right whitespace-nowrap space-x-1 border-l border-gray-200">
+              <td class="sticky right-0 z-10 bg-white group-hover:bg-gray-50 px-3 py-2 text-right whitespace-nowrap space-x-1 border-l border-gray-200">
                 <%= link_to "詳細", journal_entry_path(entry, client_code: @client_code), class: "text-blue-600 hover:text-blue-800" %>
                 <% if entry.status == "review_required" %>
                   <%= link_to "編集", edit_journal_entry_path(entry, client_code: @client_code), class: "text-orange-600 hover:text-orange-800" %>
