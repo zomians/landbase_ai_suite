@@ -5,7 +5,7 @@
 
 [![Rails](https://img.shields.io/badge/Rails-8.0-red)](https://rubyonrails.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791)](https://www.postgresql.org/)
-[![n8n](https://img.shields.io/badge/n8n-2.1.1-6e1e78)](https://n8n.io/)
+[![n8n](https://img.shields.io/badge/n8n-2.4.0-6e1e78)](https://n8n.io/)
 [![Mattermost](https://img.shields.io/badge/Mattermost-9.11-0058cc)](https://mattermost.com/)
 [![License](https://img.shields.io/badge/License-Proprietary-yellow)](#ライセンス)
 
@@ -18,7 +18,6 @@
 - [クイックスタート](#クイックスタート)
 - [プロジェクト構成](#プロジェクト構成)
 - [技術スタック](#技術スタック)
-- [サービス一覧](#サービス一覧)
 - [ドキュメント](#ドキュメント)
 - [開発に参加](#開発に参加)
 - [ライセンス](#ライセンス)
@@ -39,12 +38,19 @@ LandBase AI Suite は、沖縄県北部の小規模観光業（ホテル、飲�
 
 ## 主な特徴
 
-- 🏢 **マルチテナントアーキテクチャ**: 1 つのプラットフォームで 100+クライアントを管理
-- 🤖 **n8n ワークフロー自動化**: ノーコード/ローコードで業務自動化（OperationAI）
-- 📊 **MarketingAI**: データ分析、価格最適化、レコメンド
-- 💬 **Mattermost 統合**: クライアント別チームコミュニケーション
-- 🐳 **Docker Compose**: 4 サービス統合環境
-- 🔓 **完全 OSS**: すべてのコアコンポーネントがオープンソース
+LandBase AI Suite は、観光業の経営課題を解決する 9 つの AI モジュールを提供します。
+
+| モジュール | 概要 |
+|---|---|
+| **AnalyticsAI** | 予約・売上・稼働率のリアルタイム可視化、管理会計表の作成、AI による将来予測 |
+| **AccountingAI** | 証憑書類の AI-OCR 解析、勘定科目の自動推定と仕訳、会計ソフト連携 |
+| **OperationAI** | 清掃・メンテナンススケジュール最適化、シフト自動調整、業務効率分析 |
+| **OptimaPriceAI** | 需要予測に基づくリアルタイム価格最適化、競合価格の自動モニタリング |
+| **ConciergeAI** | 17 言語対応 AI チャットコンシェルジュ、予約対応、観光スポット推薦 |
+| **PersonalizeAI** | 顧客プロファイリング、パーソナライズされた滞在提案、ロイヤルティ管理 |
+| **ReputationAI** | 口コミ自動収集・感情分析、改善ポイント特定、返信文案の自動生成 |
+| **MarketingAI** | 顧客セグメント分析、OTA・自社サイト戦略最適化、プロモーション効果測定 |
+| **InventoryAI** | 消耗品・アメニティの使用量予測、最適発注タイミング算出、在庫コスト最適化 |
 
 ---
 
@@ -72,52 +78,44 @@ cd landbase_ai_suite
 cp .env.local.example .env.local
 # .env.local を編集（以下の情報を設定）
 # - LINE Bot 認証情報（LINE Developers Consoleで取得）
-# - 決済関連設定は各フロントサービス側で管理
 ```
 
-#### 3. 初回セットアップ
-
-```bash
-# Platform Railsアプリ生成（初回のみ）
-make init
-```
-
-#### 4. サービス起動
+#### 3. サービス起動
 
 ```bash
 # 全サービス起動
 make up
 
 # 起動確認
-docker compose -f compose.development.yaml ps
+make logs
 ```
 
-#### 5. 各サービスにアクセス
+#### 4. 各サービスにアクセス
 
 | サービス             | URL                   | 備考                           |
 | -------------------- | --------------------- | ------------------------------ |
 | **Platform**         | http://localhost:3000 | プラットフォーム基幹アプリ     |
-| **フロントサービス** | - | クライアント別フロントは別リポジトリで管理 |
 | **n8n**              | http://localhost:5678 | 初回アクセス時にアカウント作成 |
 | **Mattermost**       | http://localhost:8065 | 初回アクセス時にセットアップ   |
 
 ### よく使うコマンド
 
 ```bash
-# 初期セットアップ
-make init                  # Platform Railsアプリ生成（初回のみ）
-
 # サービス管理
 make up                    # 全サービス起動（PostgreSQL, Platform, Mattermost, n8n）
 make down                  # 全サービス停止
 make logs                  # 全サービスログ表示
 make clean                 # 完全クリーンアップ（注意：データ削除）
-
-# 個別サービスログ
-make n8n-logs              # n8nログ表示
-make mattermost-logs       # Mattermostログ表示
-make postgres-logs         # PostgreSQLログ表示
 make postgres-shell        # PostgreSQLシェル接続
+
+# LINE Bot 連携
+make ngrok                 # ngrokでn8nを公開（LINE Webhook用）
+make ngrok-stop            # ngrok停止
+make ngrok-status          # ngrok状態確認
+
+# 本番デプロイ
+make prod-deploy           # Platformデプロイ（build → up → db:prepare）
+make prod-logs             # 本番ログ表示
 ```
 
 ---
@@ -126,24 +124,22 @@ make postgres-shell        # PostgreSQLシェル接続
 
 ```
 landbase_ai_suite/
-├── .claude/                       # Claude Code設定（将来）
-├── config/
-│   └── client_list.yaml           # クライアントレジストリ
+├── .claude/                       # Claude Code設定
 ├── docs/
 │   ├── adr/                       # Architecture Decision Records
+│   ├── business/                  # ビジネス関連ドキュメント
 │   ├── guides/                    # セットアップ・技術ガイド
-│   │   └── n8n-accounting-automation-setup.md
-│   └── business/                  # ビジネス関連ドキュメント
-│       ├── company-overview.md
-│       └── sns-marketing-trends-2025.md
+│   └── templates/                 # 見積書・請求書テンプレート
 ├── n8n/
 │   └── workflows/                 # n8nワークフローテンプレート
 ├── rails/
-│   └── platform/                  # プラットフォーム基幹アプリ（導入済み）
-├── nextjs/                        # マーケティングサイト（将来）
+│   └── platform/                  # プラットフォーム基幹アプリ
+├── reverse-proxy/                 # Caddyリバースプロキシ（本番用）
 ├── .env.development               # 開発環境変数設定
+├── .env.production                # 本番環境変数設定
 ├── .env.local.example             # 機密情報テンプレート
 ├── compose.development.yaml       # Docker Compose定義（開発）
+├── compose.production.yaml        # Docker Compose定義（本番）
 ├── Makefile                       # 開発自動化コマンド
 ├── README.md                      # このファイル
 ├── CLAUDE.md                      # Claude向けガイド
@@ -167,160 +163,48 @@ landbase_ai_suite/
 
 | 技術           | バージョン | 用途                                      |
 | -------------- | ---------- | ----------------------------------------- |
-| **n8n**        | 2.1.1    | ワークフロー自動化エンジン（OperationAI） |
+| **n8n**        | 2.4.0    | ワークフロー自動化エンジン（OperationAI） |
 | **Mattermost** | 9.11       | チームコミュニケーション                  |
 
 ### アプリケーション層
 
-| 技術                         | バージョン | 用途                            |
-| ---------------------------- | ---------- | ------------------------------- |
-| **Ruby on Rails**            | 8.0.2.1    | Platform 基幹 |
-| **Devise**                   | 2.5        | ユーザー認証                    |
-| **PayPal Commerce Platform** | 1.0        | 決済機能                        |
-| **Tailwind CSS**             | 3.0        | ユーティリティファースト CSS    |
-| **Stimulus**                 | -          | インタラクティブ JS             |
-| **Solid Queue**              | -          | バックグラウンドジョブ          |
-| **Solid Cache**              | -          | キャッシュレイヤー              |
-| **Solid Cable**              | -          | WebSocket                       |
+| 技術                | 用途                         |
+| ------------------- | ---------------------------- |
+| **Ruby on Rails**   | Platform 基幹（8.0.2.1）    |
+| **Devise**          | ユーザー認証                 |
+| **Anthropic SDK**   | AI 連携（Claude API）       |
+| **Tailwind CSS**    | ユーティリティファースト CSS |
+| **Stimulus**        | インタラクティブ JS          |
+| **Solid Queue**     | バックグラウンドジョブ       |
+| **Solid Cache**     | キャッシュレイヤー           |
+| **Solid Cable**     | WebSocket                    |
+| **Kaminari**        | ページネーション             |
 
 **詳細**: [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ---
 
-## サービス一覧
-
-### バックオフィス（共通基盤）
-
-#### Platform 基幹アプリ
-
-**ポート**: 3000
-**責務**:
-
-- クライアント管理（CRUD、サービス設定）
-- OperationAI（清掃管理、在庫管理等）
-- MarketingAI（データ分析、価格最適化等）
-- プラットフォーム API 提供（n8n 連携、フロントサービス連携）
-
-#### n8n（ワークフロー自動化）
-
-**ポート**: 5678
-**責務**:
-
-- Projects 機能でクライアント毎のワークフロー管理
-- LINE Bot 統合、OCR 処理、AI 判定等
-
-#### Mattermost（チームコミュニケーション）
-
-**ポート**: 8065
-**責務**:
-
-- Teams 機能でクライアント毎のチャット環境
-- 清掃完了報告、アラート通知等
-
-### フロントサービス（クライアント固有）
-
-#### フロントサービス（クライアント固有）
-
-フロントサービスはクライアント別に独立し、別リポジトリで管理します。
-例: Ikigai Stay（hotel 向け予約サイト）
-
-#### Hotel App（将来）
-
-**ポート**: 3004（予定）
-**技術**: Rails 8（予定）
-**責務**:
-
-- 公式予約サイト
-- 清掃管理（Platform 基幹 API と連携）
-
----
-
 ## ドキュメント
 
-### ドキュメント役割分担
+| ドキュメント        | 役割                                               |
+| ------------------- | -------------------------------------------------- |
+| **CONTRIBUTING.md** | 開発規約（Issue、Git、コミット、コーディング規約） |
+| **ARCHITECTURE.md** | 技術アーキテクチャ詳細、DB 設計、API 設計          |
+| **CLAUDE.md**       | AI 向けクイックリファレンス                        |
 
-| ドキュメント        | 役割                                                   |
-| ------------------- | ------------------------------------------------------ |
-| **README.md**       | プロジェクト概要、技術スタック、クイックスタート       |
-| **CONTRIBUTING.md** | 開発規約（Issue、Git、コミット、コーディング規約）     |
-| **CLAUDE.md**       | AI 向けクイックリファレンス                            |
-| **ARCHITECTURE.md** | 技術アーキテクチャ詳細、DB 設計、API 設計              |
+### Architecture Decision Records
 
-### 開発者向け
-
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - 開発ガイド（汎用的な開発規約）
-  - Issue 作成ガイドライン
-  - Git ワークフロー（GitHub Flow）
-  - コミット規約（Conventional Commits）
-  - コーディング規約
-  - テスト方針
-  - コードレビュー基準
-
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - 技術アーキテクチャ詳細
-  - システム設計詳細
-  - データベース設計
-  - 設計パターン（Decorator、Service Object 等）
-  - API 設計
-  - セキュリティ・パフォーマンス設計
-
-### AI 開発支援
-
-- **[CLAUDE.md](./CLAUDE.md)** - Claude 向けクイックリファレンス
-  - よく使うコマンド
-  - 開発ワークフロー
-  - 重要な設計原則（プロジェクト固有）
-  - トラブルシューティング
-
-### docs/ ディレクトリ構成
-
-```
-docs/
-├── adr/                    # Architecture Decision Records
-├── guides/                 # セットアップ・技術ガイド
-│   └── n8n-accounting-automation-setup.md
-└── business/               # ビジネス関連ドキュメント
-    ├── company-overview.md
-    └── sns-marketing-trends-2025.md
-```
-
-### 設計判断記録（ADR）
-
-- **[docs/adr/](./docs/adr/)** - Architecture Decision Records
-  - [0001: n8n + Mattermost + Rails 統合](./docs/adr/0001-n8n-mattermost-rails-integration.md)
-  - [0002: フロント/バックオフィス分離](./docs/adr/0002-frontend-backend-separation.md)
-  - [0005: マルチテナント戦略](./docs/adr/0005-multitenancy-strategy.md)
-  - [0006: Platform 基幹アプリ分離](./docs/adr/0006-platform-app-separation.md)
+- [0001: n8n + Mattermost + Rails 統合](./docs/adr/0001-n8n-mattermost-rails-integration.md)
+- [0002: フロント/バックオフィス分離](./docs/adr/0002-frontend-backend-separation.md)
+- [0005: マルチテナント戦略](./docs/adr/0005-multitenancy-strategy.md)
+- [0006: Platform 基幹アプリ分離](./docs/adr/0006-platform-app-separation.md)
+- [0007: Caddy リバースプロキシ](./docs/adr/0007-caddy-reverse-proxy-multi-domain.md)
 
 ---
 
 ## 開発に参加
 
-プロジェクトへの貢献を歓迎します！
-
-### はじめに
-
-1. **[CONTRIBUTING.md](./CONTRIBUTING.md)** を読む
-2. 環境セットアップ
-3. Issue 確認
-4. ブランチ作成（`feature/XX-description`）
-5. 実装・テスト
-6. PR 作成
-
-### コミット規約
-
-```
-<type>(<scope>): <subject> (issue#<番号>)
-```
-
-**例**:
-
-```bash
-feat(platform): 清掃基準管理APIを実装 (issue#54)
-fix(rails): カート合計金額の計算ロジックを修正 (issue#58)
-docs: CONTRIBUTING.mdを追加 (issue#57)
-```
-
-**詳細**: [CONTRIBUTING.md](./CONTRIBUTING.md)
+開発ワークフロー・コミット規約・コーディング規約は **[CONTRIBUTING.md](./CONTRIBUTING.md)** を参照してください。
 
 ---
 
@@ -330,27 +214,4 @@ All rights reserved. © 株式会社 AI.LandBase
 
 ---
 
-## 連絡先
-
-- **会社**: 株式会社 AI.LandBase
-- **GitHub**: https://github.com/zomians/landbase_ai_suite
-- **Issues**: https://github.com/zomians/landbase_ai_suite/issues
-
----
-
-## 謝辞
-
-このプロジェクトは、以下のオープンソースソフトウェアを活用しています：
-
-- [Ruby on Rails](https://rubyonrails.org/)
-- [n8n](https://n8n.io/)
-- [Mattermost](https://mattermost.com/)
-- [PostgreSQL](https://www.postgresql.org/)
-- [Docker](https://www.docker.com/)
-
-各プロジェクトのメンテナーとコントリビューターに感謝します。
-
----
-
-**Last Updated**: 2026-01-18
-**Version**: 1.0
+**Last Updated**: 2026-02-25

@@ -36,17 +36,6 @@ logs: ## 全サービスのログ表示
 postgres-shell: ## PostgreSQLシェル接続
 	docker compose -f compose.development.yaml --env-file .env.development exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 
-.PHONY: init
-init: ## Platform: Railsアプリ新規作成
-	@[ -d rails/platform ] && echo "${YELLOW}Rails application 'rails/platform' already exists.${NC}" && exit 1 || true
-	@mkdir -p rails/platform
-	@set -a && . ./.env.development && set +a && \
-	docker compose -f compose.development.yaml --env-file .env.development run --rm --workdir /platform platform \
-		rails new . --name $$PLATFORM_APP_NAME --database=postgresql --css=tailwind --javascript=importmap --skip-test --force
-	@rm -rf rails/platform/.git
-	@perl -i -pe 's/bin\/rails server$$/bin\/rails server -b 0.0.0.0/' rails/platform/Procfile.dev
-	@echo "${GREEN}Platform: http://localhost:${PLATFORM_PORT}${NC}"
-
 .PHONY: clean
 clean: ## クリーンアップ（コンテナ・ボリューム・プロジェクトイメージ削除）
 	docker compose -f compose.development.yaml --env-file .env.development down -v --rmi local
