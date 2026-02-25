@@ -1,30 +1,25 @@
 class JournalEntriesController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
 
+  before_action :require_client_code
+  before_action :set_client
+
   def index
-    @client_code = params[:client_code] || ""
     @source_type = params[:source_type] || ""
-    @entries = if @client_code.present?
-                 scope = JournalEntry.for_client(@client_code)
-                 scope = scope.by_source(@source_type) if @source_type.present?
-                 scope.order(date: :desc, transaction_no: :asc).page(params[:page]).per(25)
-               else
-                 JournalEntry.none
-               end
+    scope = JournalEntry.for_client(@client_code)
+    scope = scope.by_source(@source_type) if @source_type.present?
+    @entries = scope.order(date: :desc, transaction_no: :asc).page(params[:page]).per(25)
   end
 
   def show
-    @client_code = params[:client_code]
     @entry = JournalEntry.for_client(@client_code).find(params[:id])
   end
 
   def edit
-    @client_code = params[:client_code]
     @entry = JournalEntry.for_client(@client_code).find(params[:id])
   end
 
   def update
-    @client_code = params[:client_code]
     @entry = JournalEntry.for_client(@client_code).find(params[:id])
 
     if @entry.update(entry_params)
@@ -35,6 +30,15 @@ class JournalEntriesController < ApplicationController
   end
 
   private
+
+  def require_client_code
+    @client_code = params[:client_code]
+    redirect_to clients_path, alert: "クライアントを選択してください" if @client_code.blank?
+  end
+
+  def set_client
+    @client = Client.find_by!(code: @client_code)
+  end
 
   def entry_params
     params.require(:journal_entry).permit(
@@ -47,6 +51,6 @@ class JournalEntriesController < ApplicationController
   end
 
   def record_not_found
-    redirect_to journal_entries_path(client_code: @client_code), alert: "仕訳が見つかりません"
+    redirect_to clients_path, alert: "仕訳が見つかりません"
   end
 end

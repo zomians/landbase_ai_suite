@@ -1,6 +1,16 @@
 <% content_for(:title) { "清掃マニュアル一覧" } %>
 
 <div class="w-full max-w-4xl mx-auto">
+  <% if @client %>
+    <div class="mb-4 text-sm text-gray-500">
+      <%= link_to "クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800" %>
+      <span class="mx-1">/</span>
+      <%= link_to @client.name, client_path(@client), class: "text-blue-600 hover:text-blue-800" %>
+      <span class="mx-1">/</span>
+      <span>清掃マニュアル</span>
+    </div>
+  <% end %>
+
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold">清掃マニュアル一覧</h1>
     <%= link_to "新規作成", new_cleaning_manual_path, class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>

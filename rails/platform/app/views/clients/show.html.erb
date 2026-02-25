@@ -1,0 +1,48 @@
+<% content_for(:title) { @client.name } %>
+
+<div class="w-full max-w-4xl mx-auto px-4">
+  <div class="mb-6">
+    <%= link_to "← クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800 text-sm" %>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-6 mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900"><%= @client.name %></h1>
+        <p class="text-sm font-mono text-gray-500 mt-1"><%= @client.code %></p>
+      </div>
+      <div class="flex items-center gap-3">
+        <% if @client.industry.present? %>
+          <span class="text-sm text-gray-600"><%= @client.industry %></span>
+        <% end %>
+        <% if @client.status == "active" %>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+        <% elsif @client.status == "trial" %>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Trial</span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <%= link_to journal_entries_path(client_code: @client.code), class: "block bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow" do %>
+      <h2 class="text-lg font-semibold text-gray-900 mb-2">仕訳台帳</h2>
+      <p class="text-sm text-gray-500">仕訳データの一覧表示・編集・CSVエクスポート</p>
+    <% end %>
+
+    <%= link_to new_amex_statement_path(client_code: @client.code), class: "block bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow" do %>
+      <h2 class="text-lg font-semibold text-gray-900 mb-2">Amex明細処理</h2>
+      <p class="text-sm text-gray-500">Amex利用明細PDFをAIで仕訳データに変換</p>
+    <% end %>
+
+    <%= link_to new_bank_statement_path(client_code: @client.code), class: "block bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow" do %>
+      <h2 class="text-lg font-semibold text-gray-900 mb-2">銀行明細処理</h2>
+      <p class="text-sm text-gray-500">銀行入出金明細PDFをAIで仕訳データに変換</p>
+    <% end %>
+
+    <%= link_to cleaning_manuals_path(client_code: @client.code), class: "block bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow" do %>
+      <h2 class="text-lg font-semibold text-gray-900 mb-2">清掃マニュアル</h2>
+      <p class="text-sm text-gray-500">AI生成の清掃基準マニュアル管理</p>
+    <% end %>
+  </div>
+</div>

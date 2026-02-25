@@ -1,8 +1,16 @@
 <% content_for(:title) { "仕訳編集 ##{@entry.transaction_no}" } %>
 
 <div class="w-full max-w-4xl mx-auto">
-  <div class="mb-6">
-    <%= link_to "← 詳細に戻る", journal_entry_path(@entry, client_code: @client_code), class: "text-blue-600 hover:text-blue-800 text-sm" %>
+  <div class="mb-4 text-sm text-gray-500">
+    <%= link_to "クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800" %>
+    <span class="mx-1">/</span>
+    <%= link_to @client.name, client_path(@client), class: "text-blue-600 hover:text-blue-800" %>
+    <span class="mx-1">/</span>
+    <%= link_to "仕訳一覧", journal_entries_path(client_code: @client_code), class: "text-blue-600 hover:text-blue-800" %>
+    <span class="mx-1">/</span>
+    <%= link_to "##{@entry.transaction_no}", journal_entry_path(@entry, client_code: @client_code), class: "text-blue-600 hover:text-blue-800" %>
+    <span class="mx-1">/</span>
+    <span>編集</span>
   </div>
 
   <h1 class="text-2xl font-bold mb-6">仕訳編集 #<%= @entry.transaction_no %></h1>
