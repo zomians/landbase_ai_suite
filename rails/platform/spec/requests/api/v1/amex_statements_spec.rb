@@ -131,6 +131,40 @@ RSpec.describe "Api::V1::AmexStatements", type: :request do
     end
   end
 
+  context "認証なし" do
+    let(:test_pdf) { fixture_file_upload("test_statement.pdf", "application/pdf") }
+
+    it "トークンもセッションもない場合401を返すこと" do
+      post "/api/v1/amex_statements/process_statement", params: { client_code: client_code, pdf: test_pdf }
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
+  context "Bearerトークンとセッションの優先順位" do
+    let(:user) { create(:user) }
+    let(:test_pdf) { fixture_file_upload("test_statement.pdf", "application/pdf") }
+
+    before do
+      sign_in user
+      allow(AmexStatementProcessJob).to receive(:perform_later)
+    end
+
+    it "Bearerトークンがある場合はトークン認証が優先されること" do
+      post "/api/v1/amex_statements/process_statement",
+           params: { client_code: client_code, pdf: test_pdf },
+           headers: authorization_header
+      expect(response).to have_http_status(:accepted)
+      expect(api_token_record.reload.last_used_at).to be_present
+    end
+
+    it "無効なBearerトークンの場合はセッションにフォールバックしないこと" do
+      post "/api/v1/amex_statements/process_statement",
+           params: { client_code: client_code, pdf: test_pdf },
+           headers: { "Authorization" => "Bearer invalid_token" }
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
   describe "GET /api/v1/amex_statements/:id/status" do
     it "processing状態のバッチのステータスを返すこと" do
       batch = create(:statement_batch, :processing, client: client)

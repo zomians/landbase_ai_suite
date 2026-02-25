@@ -1,12 +1,12 @@
 module Api
   module V1
     class BaseController < ActionController::API
-      before_action :authenticate_api_token!
+      before_action :authenticate_request!
       before_action :set_current_client
 
       private
 
-      def authenticate_api_token!
+      def authenticate_request!
         token = extract_bearer_token
         if token.present?
           api_token = ApiToken.find_by_raw_token(token)
