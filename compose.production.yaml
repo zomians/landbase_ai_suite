@@ -1,17 +1,11 @@
-# LandBase AI Suite - Production Compose
-#
-# 起動: make prod-deploy
-# ログ: make prod-logs
-
-name: landbase_suite
+name: landbase_ai_suite
 
 services:
   db-suite:
     image: postgres:${POSTGRES_VERSION}
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    env_file:
+      - .env.production
+      - .env.local
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -23,7 +17,7 @@ services:
       retries: 5
     restart: unless-stopped
 
-  app-suite:
+  platform:
     build:
       context: ./rails
       dockerfile: Dockerfile.platform
@@ -33,11 +27,7 @@ services:
         RAILS_VERSION: ${RAILS_VERSION}
     env_file:
       - .env.production
-    environment:
-      - RAILS_ENV=production
-      - POSTGRES_HOST=db-suite
-      - POSTGRES_PORT=5432
-      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db-suite:5432/${POSTGRES_DB}
+      - .env.local
     expose:
       - "3000"
     depends_on:
