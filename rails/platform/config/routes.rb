@@ -58,7 +58,7 @@ Rails.application.routes.draw do
   end
 
   # Web UI
-  resources :clients, only: [ :index, :show ]
+  resources :clients
   resources :cleaning_manuals, only: [ :index, :show, :new ]
   resources :amex_statements, only: [ :new ]
   resources :bank_statements, only: [ :new ]

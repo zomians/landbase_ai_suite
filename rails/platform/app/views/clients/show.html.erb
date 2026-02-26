@@ -20,6 +20,13 @@
         <% elsif @client.status == "trial" %>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Trial</span>
         <% end %>
+        <%= link_to "編集", edit_client_path(@client),
+              class: "bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-300 transition-colors text-sm" %>
+        <% if @client.status != "inactive" %>
+          <%= button_to "無効化", client_path(@client), method: :delete,
+                form: { data: { turbo_confirm: "「#{@client.name}」を無効化しますか？この操作によりクライアントは一覧から非表示になります。" } },
+                class: "bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 transition-colors text-sm" %>
+        <% end %>
       </div>
     </div>
   </div>
