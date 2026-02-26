@@ -42,6 +42,23 @@ clean: ## クリーンアップ（コンテナ・ボリューム・プロジェ�
 	@echo "${GREEN}Cleaned up Docker resources.${NC}"
 
 # ================================
+# テスト
+# ================================
+
+# コンテナ内の環境変数からテスト用DATABASE_URLを動的に構築
+DOCKER_EXEC := docker compose -f compose.development.yaml --env-file .env.development exec -T platform
+TEST_DB_URL_SHELL := DATABASE_URL=postgresql://$$POSTGRES_USER:$$POSTGRES_PASSWORD@$$POSTGRES_HOST:$$POSTGRES_PORT/platform_test
+
+.PHONY: test
+test: ## RSpecテスト実行（テストDB使用）
+	$(DOCKER_EXEC) bash -lc '$(TEST_DB_URL_SHELL) bundle exec rspec $(ARGS)'
+
+.PHONY: test-prepare
+test-prepare: ## テストDB準備（スキーマロード）
+	$(DOCKER_EXEC) bash -lc '$(TEST_DB_URL_SHELL) RAILS_ENV=test bin/rails db:create 2>/dev/null; $(TEST_DB_URL_SHELL) RAILS_ENV=test bin/rails db:schema:load'
+	@echo "${GREEN}Test database prepared.${NC}"
+
+# ================================
 # LINE Bot 統合
 # ================================
 
