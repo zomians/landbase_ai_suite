@@ -40,6 +40,11 @@
       <p class="text-sm text-gray-500">銀行入出金明細PDFをAIで仕訳データに変換</p>
     <% end %>
 
+    <%= link_to new_invoice_path(client_code: @client.code), class: "block bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow" do %>
+      <h2 class="text-lg font-semibold text-gray-900 mb-2">請求書処理</h2>
+      <p class="text-sm text-gray-500">請求書PDFをAIで仕訳データに変換</p>
+    <% end %>
+
     <%= link_to cleaning_manuals_path(client_code: @client.code), class: "block bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow" do %>
       <h2 class="text-lg font-semibold text-gray-900 mb-2">清掃マニュアル</h2>
       <p class="text-sm text-gray-500">AI生成の清掃基準マニュアル管理</p>

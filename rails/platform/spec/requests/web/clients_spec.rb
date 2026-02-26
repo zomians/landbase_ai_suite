@@ -75,6 +75,7 @@ RSpec.describe "Web::Clients", type: :request do
         expect(response.body).to include("仕訳台帳")
         expect(response.body).to include("Amex明細処理")
         expect(response.body).to include("銀行明細処理")
+        expect(response.body).to include("請求書処理")
         expect(response.body).to include("清掃マニュアル")
       end
 
