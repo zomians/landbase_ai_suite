@@ -1,0 +1,15 @@
+<% content_for(:title) { "#{@client.name} を編集" } %>
+
+<div class="w-full max-w-4xl mx-auto px-4">
+  <div class="mb-4 text-sm text-gray-500">
+    <%= link_to "クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800" %>
+    <span class="mx-1">/</span>
+    <%= link_to @client.name, client_path(@client), class: "text-blue-600 hover:text-blue-800" %>
+    <span class="mx-1">/</span>
+    <span>編集</span>
+  </div>
+
+  <h1 class="text-2xl font-bold mb-6"><%= @client.name %> を編集</h1>
+
+  <%= render "form" %>
+</div>
