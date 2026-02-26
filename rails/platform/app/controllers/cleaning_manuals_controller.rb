@@ -3,6 +3,7 @@ class CleaningManualsController < ApplicationController
 
   def index
     @client_code = params[:client_code] || ""
+    @client = Client.find_by(code: @client_code)
     @manuals = if @client_code.present?
                  CleaningManual.for_client(@client_code).recent
                else
@@ -12,10 +13,12 @@ class CleaningManualsController < ApplicationController
 
   def show
     @client_code = params[:client_code]
+    @client = Client.find_by(code: @client_code)
     @manual = CleaningManual.for_client(@client_code).find(params[:id])
   end
 
   def new
+    @client = Client.find_by(code: params[:client_code])
   end
 
   private

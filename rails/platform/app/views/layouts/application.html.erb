@@ -26,7 +26,7 @@
     <% if user_signed_in? %>
       <nav class="bg-white border-b border-gray-200 fixed w-full z-10 top-0">
         <div class="container mx-auto px-5 py-3 flex items-center justify-between">
-          <span class="font-semibold text-gray-800">LandBase Platform</span>
+          <%= link_to "LandBase Platform", root_path, class: "font-semibold text-gray-800 hover:text-gray-600 transition-colors" %>
           <div class="flex items-center gap-4">
             <span class="text-sm text-gray-600"><%= current_user.email %></span>
             <%= button_to "ログアウト", destroy_user_session_path, method: :delete,

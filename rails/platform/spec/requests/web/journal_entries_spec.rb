@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe "Web::JournalEntries", type: :request do
   let(:user) { create(:user) }
-  let(:client) { create(:client, code: "test_client") }
+  let(:client) { create(:client, code: "test_client", name: "テスト社") }
 
   describe "GET /journal_entries" do
     context "未認証の場合" do
@@ -15,9 +15,31 @@ RSpec.describe "Web::JournalEntries", type: :request do
     context "認証済みの場合" do
       before { sign_in user }
 
-      it "200を返すこと" do
+      it "client_code未指定の場合クライアント一覧にリダイレクトすること" do
         get journal_entries_path
+        expect(response).to redirect_to(clients_path)
+      end
+
+      it "client_codeが空文字の場合クライアント一覧にリダイレクトすること" do
+        get journal_entries_path(client_code: "")
+        expect(response).to redirect_to(clients_path)
+      end
+
+      it "存在しないclient_codeの場合クライアント一覧にリダイレクトすること" do
+        get journal_entries_path(client_code: "nonexistent")
+        expect(response).to redirect_to(clients_path)
+      end
+
+      it "有効なclient_codeで200を返すこと" do
+        get journal_entries_path(client_code: client.code)
         expect(response).to have_http_status(:ok)
+      end
+
+      it "パンくずが表示されること" do
+        get journal_entries_path(client_code: client.code)
+        expect(response.body).to include("クライアント一覧")
+        expect(response.body).to include("テスト社")
+        expect(response.body).to include("仕訳一覧")
       end
 
       it "21データカラムがCSV_HEADERSの順序で表示されること" do
@@ -64,6 +86,13 @@ RSpec.describe "Web::JournalEntries", type: :request do
         get journal_entry_path(entry, client_code: client.code)
         expect(response).to have_http_status(:ok)
       end
+
+      it "パンくずが表示されること" do
+        get journal_entry_path(entry, client_code: client.code)
+        expect(response.body).to include("クライアント一覧")
+        expect(response.body).to include("テスト社")
+        expect(response.body).to include("仕訳一覧")
+      end
     end
   end
 
@@ -83,6 +112,12 @@ RSpec.describe "Web::JournalEntries", type: :request do
       it "200を返すこと" do
         get edit_journal_entry_path(entry, client_code: client.code)
         expect(response).to have_http_status(:ok)
+      end
+
+      it "パンくずが表示されること" do
+        get edit_journal_entry_path(entry, client_code: client.code)
+        expect(response.body).to include("クライアント一覧")
+        expect(response.body).to include("テスト社")
       end
     end
   end

@@ -1,9 +1,21 @@
 <% content_for(:title) { "#{@manual.property_name} - 清掃マニュアル" } %>
 
 <div class="w-full max-w-4xl mx-auto">
-  <div class="mb-6">
-    <%= link_to "← 一覧に戻る", cleaning_manuals_path(client_code: @manual.client.code), class: "text-blue-600 hover:text-blue-800 text-sm" %>
-  </div>
+  <% if @client %>
+    <div class="mb-4 text-sm text-gray-500">
+      <%= link_to "クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800" %>
+      <span class="mx-1">/</span>
+      <%= link_to @client.name, client_path(@client), class: "text-blue-600 hover:text-blue-800" %>
+      <span class="mx-1">/</span>
+      <%= link_to "清掃マニュアル", cleaning_manuals_path(client_code: @client_code), class: "text-blue-600 hover:text-blue-800" %>
+      <span class="mx-1">/</span>
+      <span><%= @manual.property_name %></span>
+    </div>
+  <% else %>
+    <div class="mb-6">
+      <%= link_to "← 一覧に戻る", cleaning_manuals_path(client_code: @manual.client.code), class: "text-blue-600 hover:text-blue-800 text-sm" %>
+    </div>
+  <% end %>
 
   <div class="flex items-center justify-between mb-6">
     <div>

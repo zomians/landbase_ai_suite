@@ -58,11 +58,12 @@ Rails.application.routes.draw do
   end
 
   # Web UI
+  resources :clients, only: [ :index, :show ]
   resources :cleaning_manuals, only: [ :index, :show, :new ]
   resources :amex_statements, only: [ :new ]
   resources :bank_statements, only: [ :new ]
   resources :invoices, only: [ :new ]
   resources :journal_entries, only: [ :index, :show, :edit, :update ]
 
-  root "journal_entries#index"
+  root "clients#index"
 end

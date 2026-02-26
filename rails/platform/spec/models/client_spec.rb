@@ -67,6 +67,13 @@ RSpec.describe Client, type: :model do
     end
   end
 
+  describe "#to_param" do
+    it "codeを返す" do
+      client = build(:client, code: "my_code")
+      expect(client.to_param).to eq("my_code")
+    end
+  end
+
   describe "スコープ" do
     describe ".active" do
       it "activeステータスのクライアントのみ取得する" do
@@ -75,6 +82,46 @@ RSpec.describe Client, type: :model do
 
         result = described_class.active
         expect(result).to contain_exactly(active_client)
+      end
+    end
+
+    describe ".visible" do
+      it "activeとtrialのクライアントを取得する" do
+        active_client = create(:client, status: "active")
+        trial_client = create(:client, status: "trial")
+        create(:client, status: "inactive")
+
+        result = described_class.visible
+        expect(result).to contain_exactly(active_client, trial_client)
+      end
+    end
+
+    describe ".search" do
+      let!(:ikigai) { create(:client, code: "ikigai_stay", name: "イキガイステイ") }
+      let!(:oku) { create(:client, code: "oku_resort", name: "奥リゾート") }
+
+      it "コードで部分一致検索できる" do
+        expect(described_class.search("ikigai")).to contain_exactly(ikigai)
+      end
+
+      it "名前で部分一致検索できる" do
+        expect(described_class.search("リゾート")).to contain_exactly(oku)
+      end
+
+      it "大文字小文字を区別しない" do
+        expect(described_class.search("IKIGAI")).to contain_exactly(ikigai)
+      end
+
+      it "空文字列の場合は全件返す" do
+        expect(described_class.search("")).to contain_exactly(ikigai, oku)
+      end
+
+      it "nilの場合は全件返す" do
+        expect(described_class.search(nil)).to contain_exactly(ikigai, oku)
+      end
+
+      it "SQLインジェクションを防ぐ（%や_をエスケープ）" do
+        expect(described_class.search("100%")).to be_empty
       end
     end
   end

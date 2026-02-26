@@ -1,21 +1,25 @@
-<% content_for(:title) { "仕訳一覧" } %>
+<% content_for(:title) { "仕訳一覧 - #{@client.name}" } %>
 
 <div class="w-full mx-auto px-4">
+  <div class="mb-4 text-sm text-gray-500">
+    <%= link_to "クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800" %>
+    <span class="mx-1">/</span>
+    <%= link_to @client.name, client_path(@client), class: "text-blue-600 hover:text-blue-800" %>
+    <span class="mx-1">/</span>
+    <span>仕訳一覧</span>
+  </div>
+
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold">仕訳一覧</h1>
     <div class="flex gap-2">
-      <%= link_to "Amex明細処理", new_amex_statement_path, class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
-      <%= link_to "銀行明細処理", new_bank_statement_path, class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
-      <%= link_to "請求書処理", new_invoice_path, class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
+      <%= link_to "Amex明細処理", new_amex_statement_path(client_code: @client_code), class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
+      <%= link_to "銀行明細処理", new_bank_statement_path(client_code: @client_code), class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
+      <%= link_to "請求書処理", new_invoice_path(client_code: @client_code), class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
     </div>
   </div>
 
   <form method="get" class="mb-6 flex flex-wrap gap-4 items-end">
-    <div>
-      <label for="client_code" class="block text-sm font-medium text-gray-700 mb-1">クライアントコード</label>
-      <input type="text" name="client_code" id="client_code" value="<%= @client_code %>"
-             class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
-    </div>
+    <input type="hidden" name="client_code" value="<%= @client_code %>">
     <div>
       <label for="source_type" class="block text-sm font-medium text-gray-700 mb-1">ソースタイプ</label>
       <select name="source_type" id="source_type"
@@ -30,16 +34,12 @@
     <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
       検索
     </button>
-    <% if @client_code.present? %>
-      <%= link_to "CSVエクスポート",
-            export_api_v1_journal_entries_path(client_code: @client_code, source_type: @source_type.presence),
-            class: "bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors" %>
-    <% end %>
+    <%= link_to "CSVエクスポート",
+          export_api_v1_journal_entries_path(client_code: @client_code, source_type: @source_type.presence),
+          class: "bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors" %>
   </form>
 
-  <% if @client_code.blank? %>
-    <p class="text-gray-500">クライアントコードを入力して検索してください。</p>
-  <% elsif @entries.empty? %>
+  <% if @entries.empty? %>
     <p class="text-gray-500">仕訳が見つかりません。</p>
   <% else %>
     <div class="bg-white shadow rounded-lg overflow-x-auto relative">

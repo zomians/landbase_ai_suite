@@ -13,4 +13,17 @@ class Client < ApplicationRecord
 
   # === スコープ ===
   scope :active, -> { where(status: "active") }
+  scope :visible, -> { where(status: %w[active trial]) }
+  scope :search, ->(query) {
+    if query.present?
+      sanitized = "%#{sanitize_sql_like(query)}%"
+      where("code ILIKE :q OR name ILIKE :q", q: sanitized)
+    else
+      all
+    end
+  }
+
+  def to_param
+    code
+  end
 end

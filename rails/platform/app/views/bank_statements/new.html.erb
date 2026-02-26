@@ -1,12 +1,23 @@
 <% content_for(:title) { "銀行明細PDF処理" } %>
 
 <div class="w-full max-w-4xl mx-auto" data-controller="bank-pdf-upload">
+  <% if @client %>
+    <div class="mb-4 text-sm text-gray-500">
+      <%= link_to "クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800" %>
+      <span class="mx-1">/</span>
+      <%= link_to @client.name, client_path(@client), class: "text-blue-600 hover:text-blue-800" %>
+      <span class="mx-1">/</span>
+      <span>銀行明細処理</span>
+    </div>
+  <% end %>
+
   <h1 class="text-2xl font-bold mb-6">銀行明細PDF → 仕訳台帳変換</h1>
 
   <form data-bank-pdf-upload-target="form" data-action="submit->bank-pdf-upload#submit" class="space-y-6">
     <div>
       <label for="client_code" class="block text-sm font-medium text-gray-700 mb-1">クライアントコード <span class="text-red-500">*</span></label>
       <input type="text" name="client_code" id="client_code" required
+             value="<%= params[:client_code] %>"
              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border"
              data-bank-pdf-upload-target="clientCode">
     </div>
