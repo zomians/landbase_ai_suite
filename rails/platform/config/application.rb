@@ -40,5 +40,9 @@ module Platform
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # === ViewComponent ===
+    config.view_component.generate.sidecar = true
+    config.view_component.preview_paths << Rails.root.join("spec/components/previews")
   end
 end

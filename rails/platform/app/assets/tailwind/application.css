@@ -1,2 +1,10 @@
 @import "tailwindcss";
 @source "../../views/";
+
+@theme {
+  --color-brand-50: oklch(0.97 0.01 264);
+  --color-brand-100: oklch(0.94 0.03 264);
+  --color-brand-500: oklch(0.59 0.20 264);
+  --color-brand-600: oklch(0.50 0.22 264);
+  --color-brand-700: oklch(0.43 0.20 264);
+}
