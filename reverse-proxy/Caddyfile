@@ -4,5 +4,5 @@
 # アプリ追加時は web-proxy-net に参加した上で、ここにエントリを追加する。
 
 www.land-bank.ai {
-	reverse_proxy app-suite:3000
+	reverse_proxy platform:3000
 }
