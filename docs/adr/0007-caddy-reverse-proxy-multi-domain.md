@@ -33,15 +33,15 @@ VPS (単一ホスト)
 │   └── Makefile
 │
 └── landbase_ai_suite/      ← www.land-bank.ai
-    ├── compose.production.yaml  (app-suite: expose 3000)
+    ├── compose.production.yaml  (platform: expose 3000)
     └── ...
 
 [web-proxy-net] ← 共有外部 Docker ネットワーク
   ├── caddy       (80/443 バインド)
-  └── app-suite   (expose 3000)
+  └── platform   (expose 3000)
 
 [internal] ← 内部ネットワーク (internal: true)
-  ├── app-suite
+  ├── platform
   └── db-suite
 ```
 
