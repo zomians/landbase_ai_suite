@@ -81,9 +81,11 @@ test:
 production:
   primary: &primary_production
     <<: *default
+    host: <%= ENV.fetch("POSTGRES_HOST", "localhost") %>
+    port: <%= ENV.fetch("POSTGRES_PORT", 5432) %>
     database: platform_production
-    username: platform
-    password: <%= ENV["PLATFORM_DATABASE_PASSWORD"] %>
+    username: <%= ENV.fetch("POSTGRES_USER", "platform") %>
+    password: <%= ENV["POSTGRES_PASSWORD"] %>
   cache:
     <<: *primary_production
     database: platform_production_cache
