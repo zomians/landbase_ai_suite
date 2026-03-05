@@ -63,7 +63,11 @@ Rails.application.routes.draw do
   resources :amex_statements, only: [ :new ]
   resources :bank_statements, only: [ :new ]
   resources :invoices, only: [ :new ]
-  resources :journal_entries, only: [ :index, :show, :edit, :update ]
+  resources :journal_entries, only: [ :index, :show, :edit, :update ] do
+    collection do
+      get :export
+    end
+  end
 
   root "clients#index"
 end

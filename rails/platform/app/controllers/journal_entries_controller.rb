@@ -29,6 +29,37 @@ class JournalEntriesController < ApplicationController
     end
   end
 
+  def export
+    entries = JournalEntry.for_client(@client_code)
+    entries = entries.by_source(params[:source_type]) if params[:source_type].present?
+    if params[:from].present? && params[:to].present?
+      begin
+        entries = entries.in_period(Date.parse(params[:from]), Date.parse(params[:to]))
+      rescue Date::Error
+        redirect_to journal_entries_path(client_code: @client_code), alert: "日付の形式が不正です" and return
+      end
+    end
+
+    entries = entries.order(date: :asc, transaction_no: :asc)
+
+    case params[:format_type]
+    when "yayoi_single"
+      csv_data = YayoiExportService.new.export_single_entry(entries)
+      send_data csv_data,
+                filename: "journal_entries_yayoi_single_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
+                type: "text/csv; charset=shift_jis"
+    when "yayoi_transfer"
+      csv_data = YayoiExportService.new.export_transfer_slip(entries)
+      send_data csv_data,
+                filename: "journal_entries_yayoi_transfer_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
+                type: "text/csv; charset=shift_jis"
+    else
+      csv = "\uFEFF" + entries.to_csv
+      send_data csv, filename: "journal_entries_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
+                     type: "text/csv; charset=utf-8"
+    end
+  end
+
   private
 
   def require_client_code

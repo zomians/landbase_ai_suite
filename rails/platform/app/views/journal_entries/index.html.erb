@@ -34,9 +34,23 @@
     <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
       検索
     </button>
-    <%= link_to "CSVエクスポート",
-          export_api_v1_journal_entries_path(client_code: @client_code, source_type: @source_type.presence),
-          class: "bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors" %>
+    <div class="relative inline-block" data-controller="dropdown">
+      <button type="button" data-action="click->dropdown#toggle" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors inline-flex items-center gap-1">
+        エクスポート
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div data-dropdown-target="menu" class="hidden absolute right-0 mt-1 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-30">
+        <%= link_to "CSV（従来形式）",
+              export_journal_entries_path(client_code: @client_code, source_type: @source_type.presence, format_type: "csv"),
+              class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
+        <%= link_to "弥生会計（単一仕訳）",
+              export_journal_entries_path(client_code: @client_code, source_type: @source_type.presence, format_type: "yayoi_single"),
+              class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
+        <%= link_to "弥生会計（振替伝票）",
+              export_journal_entries_path(client_code: @client_code, source_type: @source_type.presence, format_type: "yayoi_transfer"),
+              class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
+      </div>
+    </div>
   </form>
 
   <% if @entries.empty? %>
