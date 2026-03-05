@@ -1,6 +1,8 @@
 module Api
   module V1
     class JournalEntriesController < BaseController
+      include JournalEntryExportable
+
       def index
         entries = @current_client.journal_entries
 
@@ -65,22 +67,7 @@ module Api
 
         entries = entries.order(date: :asc, transaction_no: :asc)
 
-        case params[:format]
-        when "yayoi_single"
-          csv_data = YayoiExportService.new.export_single_entry(entries)
-          send_data csv_data,
-                    filename: "journal_entries_yayoi_single_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
-                    type: "text/csv; charset=shift_jis"
-        when "yayoi_transfer"
-          csv_data = YayoiExportService.new.export_transfer_slip(entries)
-          send_data csv_data,
-                    filename: "journal_entries_yayoi_transfer_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
-                    type: "text/csv; charset=shift_jis"
-        else
-          csv = "\uFEFF" + entries.to_csv
-          send_data csv, filename: "journal_entries_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
-                         type: "text/csv; charset=utf-8"
-        end
+        send_journal_csv(entries, format_type: params[:format_type])
       end
 
       private

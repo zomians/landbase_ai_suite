@@ -1,4 +1,6 @@
 class JournalEntriesController < ApplicationController
+  include JournalEntryExportable
+
   rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
 
   before_action :require_client_code
@@ -32,6 +34,7 @@ class JournalEntriesController < ApplicationController
   def export
     entries = JournalEntry.for_client(@client_code)
     entries = entries.by_source(params[:source_type]) if params[:source_type].present?
+    entries = entries.where(statement_batch_id: params[:statement_batch_id]) if params[:statement_batch_id].present?
     if params[:from].present? && params[:to].present?
       begin
         entries = entries.in_period(Date.parse(params[:from]), Date.parse(params[:to]))
@@ -42,22 +45,7 @@ class JournalEntriesController < ApplicationController
 
     entries = entries.order(date: :asc, transaction_no: :asc)
 
-    case params[:format_type]
-    when "yayoi_single"
-      csv_data = YayoiExportService.new.export_single_entry(entries)
-      send_data csv_data,
-                filename: "journal_entries_yayoi_single_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
-                type: "text/csv; charset=shift_jis"
-    when "yayoi_transfer"
-      csv_data = YayoiExportService.new.export_transfer_slip(entries)
-      send_data csv_data,
-                filename: "journal_entries_yayoi_transfer_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
-                type: "text/csv; charset=shift_jis"
-    else
-      csv = "\uFEFF" + entries.to_csv
-      send_data csv, filename: "journal_entries_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
-                     type: "text/csv; charset=utf-8"
-    end
+    send_journal_csv(entries, format_type: params[:format_type])
   end
 
   private

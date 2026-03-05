@@ -185,13 +185,13 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       expect(csv.size).to eq(1)
     end
 
-    it "format=yayoi_singleで弥生単一仕訳CSVをエクスポートできること" do
+    it "format_type=yayoi_singleで弥生単一仕訳CSVをエクスポートできること" do
       create(:journal_entry, client: client, date: Date.new(2026, 1, 15),
              debit_account: "旅費交通費", credit_account: "未払金",
              debit_amount: 5000, credit_amount: 5000)
 
       get "/api/v1/journal_entries/export", params: {
-        client_code: client_code, format: "yayoi_single"
+        client_code: client_code, format_type: "yayoi_single"
       }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
@@ -206,7 +206,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       expect(rows[0][19]).to eq("0")
     end
 
-    it "format=yayoi_transferで弥生振替伝票CSVをエクスポートできること" do
+    it "format_type=yayoi_transferで弥生振替伝票CSVをエクスポートできること" do
       create(:journal_entry, client: client, date: Date.new(2026, 1, 15),
              debit_account: "旅費交通費", credit_account: "未払金",
              debit_amount: 5000, credit_amount: 5000)
@@ -215,7 +215,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
              debit_amount: 3000, credit_amount: 3000)
 
       get "/api/v1/journal_entries/export", params: {
-        client_code: client_code, format: "yayoi_transfer"
+        client_code: client_code, format_type: "yayoi_transfer"
       }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)

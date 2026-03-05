@@ -26,111 +26,63 @@ RSpec.describe YayoiExportService do
 
   let(:entries) { client.journal_entries.order(date: :asc) }
 
-  describe "#export_single_entry" do
-    it "25列のCSVを生成すること" do
-      csv_data = service.export_single_entry(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
+  def decode_csv(csv_data)
+    CSV.parse(csv_data.encode("UTF-8", "Shift_JIS"))
+  end
 
-      rows.each do |row|
-        expect(row.length).to eq(25)
-      end
+  describe "#export_single_entry" do
+    let(:rows) { decode_csv(service.export_single_entry(entries)) }
+
+    it "25列のCSVを生成すること" do
+      rows.each { |row| expect(row.length).to eq(25) }
     end
 
     it "識別フラグが2000であること" do
-      csv_data = service.export_single_entry(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
-      rows.each do |row|
-        expect(row[0]).to eq("2000")
-      end
+      rows.each { |row| expect(row[0]).to eq("2000") }
     end
 
     it "タイプが0であること" do
-      csv_data = service.export_single_entry(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
-      rows.each do |row|
-        expect(row[19]).to eq("0")
-      end
+      rows.each { |row| expect(row[19]).to eq("0") }
     end
 
     it "取引日がYYYY/MM/DD形式であること" do
-      csv_data = service.export_single_entry(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
       expect(rows[0][1]).to eq("2026/01/15")
       expect(rows[1][1]).to eq("2026/01/20")
     end
 
     it "金額フィールドが正しいこと" do
-      csv_data = service.export_single_entry(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
       expect(rows[0][8]).to eq("10000")
       expect(rows[0][15]).to eq("10000")
     end
 
     it "ヘッダ行がないこと" do
-      csv_data = service.export_single_entry(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
       expect(rows.length).to eq(2)
     end
 
     it "予備列が空文字であること" do
-      csv_data = service.export_single_entry(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
       rows.each do |row|
-        (20..24).each do |i|
-          expect(row[i]).to eq("")
-        end
+        (20..24).each { |i| expect(row[i]).to eq("") }
       end
     end
   end
 
   describe "#export_transfer_slip" do
-    it "先頭行の識別フラグが2110であること" do
-      csv_data = service.export_transfer_slip(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
+    let(:rows) { decode_csv(service.export_transfer_slip(entries)) }
 
+    it "先頭行の識別フラグが2110であること" do
       expect(rows[0][0]).to eq("2110")
     end
 
     it "2行目以降の識別フラグが2101であること" do
-      csv_data = service.export_transfer_slip(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
       expect(rows[1][0]).to eq("2101")
     end
 
     it "タイプが3であること" do
-      csv_data = service.export_transfer_slip(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
-      rows.each do |row|
-        expect(row[19]).to eq("3")
-      end
+      rows.each { |row| expect(row[19]).to eq("3") }
     end
 
     it "25列のCSVを生成すること" do
-      csv_data = service.export_transfer_slip(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
-      rows.each do |row|
-        expect(row.length).to eq(25)
-      end
+      rows.each { |row| expect(row.length).to eq(25) }
     end
   end
 
@@ -150,21 +102,14 @@ RSpec.describe YayoiExportService do
 
   describe "空フィールドの扱い" do
     it "空文字フィールドが空文字のまま出力されること" do
-      csv_data = service.export_single_entry(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
-      # entry2の借方取引先は空
+      rows = decode_csv(service.export_single_entry(entries))
       expect(rows[1][5]).to eq("")
     end
 
     it "金額が0の場合0が出力されること" do
       entry = create(:journal_entry, client: client, debit_amount: 0, credit_amount: 0,
                      date: Date.new(2026, 2, 1))
-      csv_data = service.export_single_entry(JournalEntry.where(id: entry.id))
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
-      rows = CSV.parse(decoded)
-
+      rows = decode_csv(service.export_single_entry(JournalEntry.where(id: entry.id)))
       expect(rows[0][8]).to eq("0")
       expect(rows[0][15]).to eq("0")
     end
