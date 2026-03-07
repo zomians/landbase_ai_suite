@@ -52,34 +52,40 @@ class JournalEntry < ApplicationRecord
     CSV.generate(headers: true) do |csv|
       csv << CSV_HEADERS
 
-      includes(:journal_entry_lines).find_each do |entry|
-        debit = entry.debit_lines.first
-        credit = entry.credit_lines.first
-        next unless debit && credit
+      all.includes(:journal_entry_lines).each do |entry|
+        debits = entry.debit_lines
+        credits = entry.credit_lines
+        next if debits.empty? || credits.empty?
 
-        csv << [
-          entry.transaction_no,
-          entry.date,
-          debit.account,
-          debit.sub_account,
-          debit.department,
-          debit.partner,
-          debit.tax_category,
-          debit.invoice,
-          debit.amount,
-          credit.account,
-          credit.sub_account,
-          credit.department,
-          credit.partner,
-          credit.tax_category,
-          credit.invoice,
-          credit.amount,
-          entry.description,
-          entry.tag,
-          entry.memo,
-          entry.cardholder,
-          entry.status
-        ]
+        max_lines = [ debits.size, credits.size ].max
+        max_lines.times do |i|
+          debit = debits[i]
+          credit = credits[i]
+
+          csv << [
+            entry.transaction_no,
+            entry.date,
+            debit&.account,
+            debit&.sub_account,
+            debit&.department,
+            debit&.partner,
+            debit&.tax_category,
+            debit&.invoice,
+            debit&.amount,
+            credit&.account,
+            credit&.sub_account,
+            credit&.department,
+            credit&.partner,
+            credit&.tax_category,
+            credit&.invoice,
+            credit&.amount,
+            i == 0 ? entry.description : "",
+            i == 0 ? entry.tag : "",
+            i == 0 ? entry.memo : "",
+            i == 0 ? entry.cardholder : "",
+            i == 0 ? entry.status : ""
+          ]
+        end
       end
     end
   end
