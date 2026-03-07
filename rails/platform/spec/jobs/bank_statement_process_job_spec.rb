@@ -72,20 +72,25 @@ RSpec.describe BankStatementProcessJob, type: :job do
     expect(batch.error_message).to be_nil
   end
 
-  it "成功時にJournalEntryを作成すること" do
+  it "成功時にJournalEntryとJournalEntryLineを作成すること" do
     expect {
       described_class.perform_now(batch.id)
     }.to change(JournalEntry, :count).by(1)
+      .and change(JournalEntryLine, :count).by(2)
 
     entry = JournalEntry.last
     expect(entry.client).to eq(client)
     expect(entry.statement_batch).to eq(batch)
-    expect(entry.debit_account).to eq("水道光熱費")
-    expect(entry.debit_amount).to eq(45000)
-    expect(entry.credit_account).to eq("普通預金")
-    expect(entry.credit_amount).to eq(45000)
     expect(entry.source_type).to eq("bank")
     expect(entry.tag).to eq("bank")
+
+    debit = entry.debit_lines.first
+    expect(debit.account).to eq("水道光熱費")
+    expect(debit.amount).to eq(45000)
+
+    credit = entry.credit_lines.first
+    expect(credit.account).to eq("普通預金")
+    expect(credit.amount).to eq(45000)
   end
 
   context "サービスが失敗した場合" do

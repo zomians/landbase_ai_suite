@@ -25,6 +25,18 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       expect(data["entries"].first["debit_account"]).to eq("旅費交通費")
     end
 
+    it "linesフィールドに仕訳行が含まれること" do
+      create(:journal_entry, client: client, debit_account: "旅費交通費", credit_account: "未払金",
+             debit_amount: 1000, credit_amount: 1000)
+
+      get "/api/v1/journal_entries", params: { client_code: client_code }, headers: authorization_header
+
+      data = JSON.parse(response.body)
+      entry = data["entries"].first
+      expect(entry["lines"].length).to eq(2)
+      expect(entry["lines"].map { |l| l["side"] }).to contain_exactly("debit", "credit")
+    end
+
     it "source_typeでフィルタできること" do
       create(:journal_entry, :amex, client: client, debit_amount: 1000, credit_amount: 1000)
       create(:journal_entry, :bank, client: client, debit_amount: 2000, credit_amount: 2000)
@@ -105,6 +117,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       data = JSON.parse(response.body)
       expect(data["id"]).to eq(entry.id)
       expect(data["debit_amount"]).to eq(5000)
+      expect(data["lines"].length).to eq(2)
     end
 
     it "他テナントの仕訳にアクセスできないこと" do
@@ -118,20 +131,19 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
   end
 
   describe "PATCH /api/v1/journal_entries/:id" do
-    it "仕訳を更新できること" do
-      entry = create(:journal_entry, client: client, debit_account: "消耗品費",
-                     debit_amount: 1000, credit_amount: 1000, status: "review_required")
+    it "仕訳のヘッダー情報を更新できること" do
+      entry = create(:journal_entry, client: client, debit_amount: 1000, credit_amount: 1000, status: "review_required")
 
       patch "/api/v1/journal_entries/#{entry.id}", params: {
         client_code: client_code,
-        debit_account: "旅費交通費",
-        status: "ok"
+        status: "ok",
+        memo: "確認済み"
       }, headers: authorization_header
 
       expect(response).to have_http_status(:ok)
       data = JSON.parse(response.body)
-      expect(data["debit_account"]).to eq("旅費交通費")
       expect(data["status"]).to eq("ok")
+      expect(data["memo"]).to eq("確認済み")
     end
 
     it "他テナントの仕訳を更新できないこと" do
@@ -140,7 +152,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
 
       patch "/api/v1/journal_entries/#{entry.id}", params: {
         client_code: client_code,
-        debit_account: "旅費交通費"
+        status: "ok"
       }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)

@@ -20,39 +20,6 @@ RSpec.describe JournalEntry, type: :model do
         expect(subject).not_to be_valid
         expect(subject.errors[:date]).to be_present
       end
-
-      it "debit_accountが空の場合無効" do
-        subject.debit_account = nil
-        expect(subject).not_to be_valid
-        expect(subject.errors[:debit_account]).to be_present
-      end
-
-      it "credit_accountが空の場合無効" do
-        subject.credit_account = nil
-        expect(subject).not_to be_valid
-        expect(subject.errors[:credit_account]).to be_present
-      end
-    end
-
-    describe "金額" do
-      it "debit_amountが0の場合有効（調整仕訳対応）" do
-        subject.debit_amount = 0
-        subject.credit_amount = 0
-        expect(subject).to be_valid
-      end
-
-      it "debit_amountが負の場合無効" do
-        subject.debit_amount = -1
-        expect(subject).not_to be_valid
-        expect(subject.errors[:debit_amount]).to be_present
-      end
-
-      it "credit_amountが負の場合無効" do
-        subject.debit_amount = 1000
-        subject.credit_amount = -1
-        expect(subject).not_to be_valid
-        expect(subject.errors[:credit_amount]).to be_present
-      end
     end
 
     describe "source_type" do
@@ -85,19 +52,100 @@ RSpec.describe JournalEntry, type: :model do
       end
     end
 
-    describe "借方貸方一致バリデーション" do
-      it "debit_amountとcredit_amountが一致する場合有効" do
-        subject.debit_amount = 1000
-        subject.credit_amount = 1000
-        expect(subject).to be_valid
+    describe "貸借一致バリデーション" do
+      it "借方合計と貸方合計が一致する場合有効" do
+        entry = build(:journal_entry, debit_amount: 1000, credit_amount: 1000)
+        expect(entry).to be_valid
       end
 
-      it "debit_amountとcredit_amountが不一致の場合無効" do
-        subject.debit_amount = 1000
-        subject.credit_amount = 2000
-        expect(subject).not_to be_valid
-        expect(subject.errors[:credit_amount]).to be_present
+      it "借方合計と貸方合計が不一致の場合無効" do
+        entry = build(:journal_entry, debit_amount: 1000, credit_amount: 2000)
+        expect(entry).not_to be_valid
+        expect(entry.errors[:base]).to be_present
       end
+
+      it "金額0の場合有効（調整仕訳対応）" do
+        entry = build(:journal_entry, debit_amount: 0, credit_amount: 0)
+        expect(entry).to be_valid
+      end
+    end
+  end
+
+  describe "関連" do
+    it "journal_entry_linesを持つ" do
+      entry = create(:journal_entry, debit_amount: 5000, credit_amount: 5000)
+      expect(entry.journal_entry_lines.count).to eq(2)
+    end
+
+    it "削除時にjournal_entry_linesも削除される" do
+      entry = create(:journal_entry, debit_amount: 5000, credit_amount: 5000)
+      expect { entry.destroy }.to change(JournalEntryLine, :count).by(-2)
+    end
+  end
+
+  describe "便利メソッド" do
+    let(:entry) { create(:journal_entry, debit_amount: 5000, credit_amount: 5000, debit_account: "旅費交通費", credit_account: "未払金") }
+
+    it "#debit_linesが借方行を返す" do
+      expect(entry.debit_lines.size).to eq(1)
+      expect(entry.debit_lines.first.side).to eq("debit")
+      expect(entry.debit_lines.first.account).to eq("旅費交通費")
+    end
+
+    it "#credit_linesが貸方行を返す" do
+      expect(entry.credit_lines.size).to eq(1)
+      expect(entry.credit_lines.first.side).to eq("credit")
+      expect(entry.credit_lines.first.account).to eq("未払金")
+    end
+
+    it "#debit_amountが借方合計を返す" do
+      expect(entry.debit_amount).to eq(5000)
+    end
+
+    it "#credit_amountが貸方合計を返す" do
+      expect(entry.credit_amount).to eq(5000)
+    end
+
+    it "#simple_entry?が単一仕訳でtrueを返す" do
+      expect(entry.simple_entry?).to be true
+    end
+  end
+
+  describe "複合仕訳" do
+    it "3行以上の仕訳を作成できる" do
+      client = create(:client)
+      entry = JournalEntry.create!(
+        client: client,
+        source_type: "bank",
+        date: Date.current,
+        description: "給与支払い",
+        journal_entry_lines_attributes: [
+          { side: "debit", account: "給与手当", amount: 300_000 },
+          { side: "credit", account: "普通預金", amount: 250_000 },
+          { side: "credit", account: "所得税預り金", amount: 30_000 },
+          { side: "credit", account: "社会保険料預り金", amount: 20_000 }
+        ]
+      )
+
+      expect(entry.journal_entry_lines.count).to eq(4)
+      expect(entry.debit_amount).to eq(300_000)
+      expect(entry.credit_amount).to eq(300_000)
+      expect(entry.simple_entry?).to be false
+    end
+
+    it "貸借不一致の複合仕訳は無効" do
+      client = create(:client)
+      entry = JournalEntry.new(
+        client: client,
+        source_type: "bank",
+        date: Date.current,
+        journal_entry_lines_attributes: [
+          { side: "debit", account: "給与手当", amount: 300_000 },
+          { side: "credit", account: "普通預金", amount: 200_000 }
+        ]
+      )
+      expect(entry).not_to be_valid
+      expect(entry.errors[:base]).to be_present
     end
   end
 
@@ -146,7 +194,7 @@ RSpec.describe JournalEntry, type: :model do
   end
 
   describe ".to_csv" do
-    it "CSV形式でエクスポートされる" do
+    it "単一仕訳がCSV形式でエクスポートされる" do
       create(:journal_entry, transaction_no: 1, date: Date.new(2026, 1, 15),
              debit_account: "旅費交通費", credit_account: "未払金",
              debit_amount: 5000, credit_amount: 5000, status: "ok")
@@ -162,6 +210,36 @@ RSpec.describe JournalEntry, type: :model do
       expect(csv.first["貸方勘定科目"]).to eq("未払金")
       expect(csv.first["借方金額(円)"]).to eq("5000")
       expect(csv.first["ステータス"]).to eq("ok")
+    end
+
+    it "複合仕訳の全行がCSVに出力される" do
+      client = create(:client)
+      JournalEntry.create!(
+        client: client,
+        source_type: "bank",
+        transaction_no: 1,
+        date: Date.new(2026, 1, 20),
+        description: "給与支払い",
+        status: "ok",
+        journal_entry_lines_attributes: [
+          { side: "debit", account: "給与手当", amount: 300_000 },
+          { side: "credit", account: "普通預金", amount: 250_000 },
+          { side: "credit", account: "所得税預り金", amount: 30_000 },
+          { side: "credit", account: "社会保険料預り金", amount: 20_000 }
+        ]
+      )
+
+      csv_string = described_class.to_csv
+      csv = CSV.parse(csv_string, headers: true)
+
+      expect(csv.size).to eq(3)
+      expect(csv[0]["借方勘定科目"]).to eq("給与手当")
+      expect(csv[0]["貸方勘定科目"]).to eq("普通預金")
+      expect(csv[0]["摘要"]).to eq("給与支払い")
+      expect(csv[1]["借方勘定科目"]).to be_nil
+      expect(csv[1]["貸方勘定科目"]).to eq("所得税預り金")
+      expect(csv[1]["摘要"]).to eq("")
+      expect(csv[2]["貸方勘定科目"]).to eq("社会保険料預り金")
     end
   end
 
