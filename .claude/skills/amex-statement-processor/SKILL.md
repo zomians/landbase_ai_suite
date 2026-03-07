@@ -1,3 +1,8 @@
+---
+name: amex-statement-processor
+description: Amex明細PDFを仕訳データに変換します
+---
+
 # Amex 明細 PDF → 仕訳台帳変換スキル
 
 ## メタデータ
