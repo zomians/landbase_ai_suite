@@ -1,4 +1,6 @@
 <% content_for(:title) { "仕訳詳細 ##{@entry.transaction_no}" } %>
+<% debit = @entry.debit_lines.first %>
+<% credit = @entry.credit_lines.first %>
 
 <div class="w-full max-w-4xl mx-auto">
   <div class="mb-4 text-sm text-gray-500">
@@ -73,31 +75,31 @@
       <dl class="space-y-3">
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">勘定科目</dt>
-          <dd class="text-sm font-medium"><%= @entry.debit_account %></dd>
+          <dd class="text-sm font-medium"><%= debit&.account %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">補助科目</dt>
-          <dd class="text-sm font-medium"><%= @entry.debit_sub_account.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= debit&.sub_account.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">部門</dt>
-          <dd class="text-sm font-medium"><%= @entry.debit_department.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= debit&.department.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">取引先</dt>
-          <dd class="text-sm font-medium"><%= @entry.debit_partner.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= debit&.partner.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">税区分</dt>
-          <dd class="text-sm font-medium"><%= @entry.debit_tax_category.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= debit&.tax_category.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">インボイス</dt>
-          <dd class="text-sm font-medium"><%= @entry.debit_invoice.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= debit&.invoice.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">金額</dt>
-          <dd class="text-lg font-bold text-blue-700"><%= number_with_delimiter(@entry.debit_amount) %>円</dd>
+          <dd class="text-lg font-bold text-blue-700"><%= number_with_delimiter(debit&.amount) %>円</dd>
         </div>
       </dl>
     </div>
@@ -108,31 +110,31 @@
       <dl class="space-y-3">
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">勘定科目</dt>
-          <dd class="text-sm font-medium"><%= @entry.credit_account %></dd>
+          <dd class="text-sm font-medium"><%= credit&.account %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">補助科目</dt>
-          <dd class="text-sm font-medium"><%= @entry.credit_sub_account.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= credit&.sub_account.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">部門</dt>
-          <dd class="text-sm font-medium"><%= @entry.credit_department.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= credit&.department.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">取引先</dt>
-          <dd class="text-sm font-medium"><%= @entry.credit_partner.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= credit&.partner.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">税区分</dt>
-          <dd class="text-sm font-medium"><%= @entry.credit_tax_category.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= credit&.tax_category.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">インボイス</dt>
-          <dd class="text-sm font-medium"><%= @entry.credit_invoice.presence || "-" %></dd>
+          <dd class="text-sm font-medium"><%= credit&.invoice.presence || "-" %></dd>
         </div>
         <div class="flex justify-between">
           <dt class="text-sm text-gray-500">金額</dt>
-          <dd class="text-lg font-bold text-red-700"><%= number_with_delimiter(@entry.credit_amount) %>円</dd>
+          <dd class="text-lg font-bold text-red-700"><%= number_with_delimiter(credit&.amount) %>円</dd>
         </div>
       </dl>
     </div>

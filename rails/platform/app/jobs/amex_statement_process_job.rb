@@ -40,31 +40,39 @@ class AmexStatementProcessJob < ApplicationJob
   def create_journal_entries(batch, data)
     transactions = data[:transactions] || []
     transactions.each do |txn|
-      batch.journal_entries.create!(
+      entry = batch.journal_entries.create!(
         client: batch.client,
         source_type: batch.source_type,
         source_period: data[:statement_period],
         transaction_no: txn[:transaction_no],
         date: txn[:date],
-        debit_account: txn[:debit_account],
-        debit_sub_account: txn[:debit_sub_account] || "",
-        debit_department: txn[:debit_department] || "",
-        debit_partner: txn[:debit_partner] || "",
-        debit_tax_category: txn[:debit_tax_category] || "",
-        debit_invoice: txn[:debit_invoice] || "",
-        debit_amount: txn[:debit_amount],
-        credit_account: txn[:credit_account],
-        credit_sub_account: txn[:credit_sub_account] || "",
-        credit_department: txn[:credit_department] || "",
-        credit_partner: txn[:credit_partner] || "",
-        credit_tax_category: txn[:credit_tax_category] || "",
-        credit_invoice: txn[:credit_invoice] || "",
-        credit_amount: txn[:credit_amount],
         description: txn[:description] || "",
         tag: txn[:tag] || "amex",
         memo: txn[:memo] || "",
         cardholder: txn[:cardholder] || "",
-        status: txn[:status] || "ok"
+        status: txn[:status] || "ok",
+        journal_entry_lines_attributes: [
+          {
+            side: "debit",
+            account: txn[:debit_account],
+            sub_account: txn[:debit_sub_account] || "",
+            department: txn[:debit_department] || "",
+            partner: txn[:debit_partner] || "",
+            tax_category: txn[:debit_tax_category] || "",
+            invoice: txn[:debit_invoice] || "",
+            amount: txn[:debit_amount]
+          },
+          {
+            side: "credit",
+            account: txn[:credit_account],
+            sub_account: txn[:credit_sub_account] || "",
+            department: txn[:credit_department] || "",
+            partner: txn[:credit_partner] || "",
+            tax_category: txn[:credit_tax_category] || "",
+            invoice: txn[:credit_invoice] || "",
+            amount: txn[:credit_amount]
+          }
+        ]
       )
     end
   end
