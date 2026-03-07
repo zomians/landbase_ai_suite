@@ -1,3 +1,8 @@
+---
+name: invoice-processor
+description: 請求書PDFを仕訳データに変換します
+---
+
 # 請求書 PDF → 仕訳台帳変換スキル
 
 ## メタデータ

@@ -1,3 +1,8 @@
+---
+name: invoice-generator
+description: クライアントへの請求書HTMLを生成します
+---
+
 # 請求書HTML生成スキル
 
 クライアントへの請求書HTMLを生成します。ブラウザの印刷機能でPDF化する運用です。

@@ -1,3 +1,8 @@
+---
+name: bank-statement-processor
+description: 銀行明細PDFを仕訳データに変換します
+---
+
 # 銀行明細 PDF → 仕訳台帳変換スキル
 
 ## メタデータ

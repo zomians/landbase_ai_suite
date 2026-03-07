@@ -1,3 +1,8 @@
+---
+name: cleaning-manual-generator
+description: 客室写真から清掃マニュアルを生成します
+---
+
 # 清掃マニュアル自動生成スキル
 
 宿泊施設の室内完成画像から、清掃マニュアルを構造化JSONで自動生成します。
