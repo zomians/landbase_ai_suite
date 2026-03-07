@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>請求書 - AI.LandBase</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f5f5;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 40px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        line-height: 1.6;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 40px;
+        border-bottom: 2px solid #333;
+        padding-bottom: 20px;
+      }
+
+      .logo-section {
+        flex: 1;
+      }
+
+      .logo-section img {
+        max-width: 150px;
+        height: auto;
+      }
+
+      .title-section {
+        flex: 1;
+        text-align: right;
+      }
+
+      .title-section h1 {
+        font-size: 32px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .invoice-number {
+        font-size: 14px;
+        color: #666;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        margin-bottom: 40px;
+      }
+
+      .section {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .section-title {
+        font-weight: bold;
+        font-size: 13px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .company-info {
+        font-size: 13px;
+        line-height: 1.8;
+        color: #333;
+      }
+
+      .company-info p {
+        margin-bottom: 4px;
+      }
+
+      .client-info {
+        font-size: 13px;
+        line-height: 1.8;
+        color: #333;
+      }
+
+      .client-info p {
+        margin-bottom: 4px;
+      }
+
+      .client-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 8px;
+      }
+
+      .dates {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 40px;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-left: 3px solid #333;
+      }
+
+      .date-item {
+        font-size: 13px;
+      }
+
+      .date-label {
+        color: #666;
+        margin-bottom: 4px;
+      }
+
+      .date-value {
+        font-weight: bold;
+        color: #333;
+      }
+
+      .items-table {
+        width: 100%;
+        margin-bottom: 40px;
+        border-collapse: collapse;
+      }
+
+      .items-table thead {
+        background-color: #f0f0f0;
+        border-top: 2px solid #333;
+        border-bottom: 2px solid #333;
+      }
+
+      .items-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: bold;
+        font-size: 13px;
+        color: #333;
+      }
+
+      .items-table td {
+        padding: 16px;
+        border-bottom: 1px solid #ddd;
+        font-size: 13px;
+        color: #333;
+      }
+
+      .items-table .item-name {
+        font-weight: 500;
+      }
+
+      .items-table .price-column {
+        text-align: right;
+        width: 120px;
+      }
+
+      .quantity-column {
+        text-align: center;
+        width: 80px;
+      }
+
+      .subtotal-row td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .tax-row td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      .total-row {
+        background-color: #f9f9f9;
+        font-weight: bold;
+        border-top: 2px solid #333;
+      }
+
+      .total-row td {
+        padding: 16px;
+      }
+
+      .summary-section {
+        display: grid;
+        grid-template-columns: 1fr 250px;
+        gap: 40px;
+        margin-bottom: 40px;
+      }
+
+      .bank-info {
+        font-size: 13px;
+        line-height: 1.8;
+        color: #333;
+        padding: 16px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+      }
+
+      .bank-info-title {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+      }
+
+      .bank-info p {
+        margin-bottom: 4px;
+      }
+
+      .terms {
+        font-size: 12px;
+        color: #666;
+        line-height: 1.8;
+        margin-top: 16px;
+      }
+
+      .terms-title {
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+      }
+
+      .terms p {
+        margin-bottom: 6px;
+      }
+
+      .total-box {
+        text-align: right;
+      }
+
+      .total-label {
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 8px;
+      }
+
+      .total-amount {
+        font-size: 28px;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 20px;
+      }
+
+      .footer {
+        border-top: 1px solid #ddd;
+        padding-top: 20px;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+      }
+
+      .contact-info {
+        font-size: 12px;
+        color: #666;
+        margin-top: 20px;
+        padding: 16px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+      }
+
+      .contact-info p {
+        margin-bottom: 4px;
+      }
+
+      .print-button {
+        display: block;
+        margin: 20px auto;
+        padding: 12px 32px;
+        background-color: #333;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .print-button:hover {
+        background-color: #555;
+      }
+
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+
+        .container {
+          box-shadow: none;
+          padding: 0;
+        }
+
+        .print-button {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-section">
+          <img
+            src="https://drive.google.com/thumbnail?id=11zxS-CXtXcRDu8lznBwdCdqGaZVPSqho&sz=w1000"
+            alt="AI.LandBase Logo"
+            style="display: block"
+          />
+        </div>
+        <div class="title-section">
+          <h1>請求書</h1>
+          <p class="invoice-number">No. INV-YYYYMM-NNNN</p>
+        </div>
+      </div>
+
+      <!-- From/To Section -->
+      <div class="content">
+        <div class="section">
+          <div class="section-title">請求元</div>
+          <div class="company-info">
+            <p><strong>株式会社 AI.LandBase</strong></p>
+            <p>〒905-0401</p>
+            <p>沖縄県国頭郡今帰仁村湧川 852-2</p>
+            <p>TEL: 080-3468-1177</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">請求先</div>
+          <div class="client-info">
+            <p class="client-name">テストクライアント 御中</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="dates">
+        <div class="date-item">
+          <div class="date-label">請求日</div>
+          <div class="date-value">2026年3月31日</div>
+        </div>
+        <div class="date-item">
+          <div class="date-label">お支払期限</div>
+          <div class="date-value">2026年4月30日</div>
+        </div>
+      </div>
+
+      <!-- Items Table -->
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width: 30%">項目1</th>
+            <th style="width: 25%">項目2</th>
+            <th class="quantity-column">数量</th>
+            <th class="price-column">単価</th>
+            <th class="price-column">金額</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="item-name">施設清掃代行サービス</td>
+            <td>12:00 OUT〜15:00 IN（3時間）</td>
+            <td class="quantity-column">1回</td>
+            <td class="price-column">&yen;12,000</td>
+            <td class="price-column">&yen;12,000</td>
+          </tr>
+          <tr>
+            <td class="item-name">月次オペレーション分析レポート</td>
+            <td>清掃データとゲスト情報の統合分析</td>
+            <td class="quantity-column">1式</td>
+            <td class="price-column">&yen;50,000</td>
+            <td class="price-column">&yen;50,000</td>
+          </tr>
+          <tr class="subtotal-row">
+            <td></td>
+            <td style="text-align: right; padding-right: 16px">小計</td>
+            <td class="quantity-column"></td>
+            <td class="price-column"></td>
+            <td class="price-column">&yen;62,000</td>
+          </tr>
+          <tr class="tax-row">
+            <td></td>
+            <td style="text-align: right; padding-right: 16px">消費税（10%）</td>
+            <td class="quantity-column"></td>
+            <td class="price-column"></td>
+            <td class="price-column">&yen;6,200</td>
+          </tr>
+          <tr class="total-row">
+            <td></td>
+            <td style="text-align: right; padding-right: 16px">
+              <strong>合計（税込）</strong>
+            </td>
+            <td class="quantity-column"></td>
+            <td class="price-column"></td>
+            <td class="price-column"><strong>&yen;68,200</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Summary Section -->
+      <div class="summary-section">
+        <div>
+          <!-- Bank Info -->
+          <div class="bank-info">
+            <div class="bank-info-title">お振込先</div>
+            <p>りそな銀行 秋葉原支店</p>
+            <p>普通 2134877</p>
+            <p>カ）アイランドベース</p>
+          </div>
+
+          <!-- Terms -->
+          <div class="terms">
+            <div class="terms-title">備考</div>
+            <p>・恐れ入りますが、振込手数料はご負担くださいますようお願いいたします</p>
+            <p>・お支払期限までにお振込みをお願いいたします</p>
+          </div>
+        </div>
+
+        <div class="total-box">
+          <div class="total-label">ご請求金額（税込）</div>
+          <div class="total-amount">&yen;68,200</div>
+        </div>
+      </div>
+
+      <!-- Contact Info -->
+      <div class="contact-info">
+        <p><strong>お問い合わせ・ご質問</strong></p>
+        <p>末永 壽蔵 | info@ai-landbase.jp</p>
+        <p>TEL: 080-3468-1177</p>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>このドキュメントは、AI.LandBase による請求書です。</p>
+      </div>
+    </div>
+
+    <button class="print-button" onclick="window.print()">
+      📄 PDFで保存 / 印刷
+    </button>
+
+    <script>
+      // Google Drive画像の読み込みエラーハンドリング
+      document.addEventListener("DOMContentLoaded", function () {
+        const img = document.querySelector(".logo-section img");
+        if (img) {
+          img.onerror = function () {
+            this.style.display = "none";
+            const placeholder = document.createElement("div");
+            placeholder.textContent = "AI.LandBase";
+            placeholder.style.cssText =
+              "font-size: 18px; font-weight: bold; color: #333;";
+            this.parentNode.replaceChild(placeholder, this);
+          };
+        }
+      });
+    </script>
+  </body>
+</html>
