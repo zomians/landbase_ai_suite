@@ -147,6 +147,10 @@ prod-deploy: ## 本番: Platformデプロイ（build → up → db:prepare）
 prod-logs: ## 本番: ログ表示
 	docker compose -f compose.production.yaml --env-file .env.production logs -f
 
+.PHONY: prod-worker-logs
+prod-worker-logs: ## 本番: ワーカーログ表示
+	docker compose -f compose.production.yaml --env-file .env.production logs -f worker
+
 .PHONY: prod-db-reset
 prod-db-reset: ## 本番: DBリセット（データ削除）
 	@echo "${RED}WARNING: This will reset the production database!${NC}"

@@ -44,6 +44,19 @@ services:
       - web-proxy-net
     restart: unless-stopped
 
+  worker:
+    image: landbase_ai_suite-platform
+    command: ["./bin/rails", "solid_queue:start"]
+    env_file:
+      - .env.production
+      - .env.local
+    depends_on:
+      platform:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: unless-stopped
+
 networks:
   internal:
     internal: true
