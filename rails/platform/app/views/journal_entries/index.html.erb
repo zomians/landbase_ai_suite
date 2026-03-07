@@ -46,9 +46,6 @@
         <%= link_to "弥生会計（単一仕訳）",
               export_journal_entries_path(client_code: @client_code, source_type: @source_type.presence, format_type: "yayoi_single"),
               class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
-        <%= link_to "弥生会計（振替伝票）",
-              export_journal_entries_path(client_code: @client_code, source_type: @source_type.presence, format_type: "yayoi_transfer"),
-              class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
       </div>
     </div>
   </form>

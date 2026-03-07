@@ -10,11 +10,6 @@ module JournalEntryExportable
       send_data csv_data,
                 filename: "journal_entries_yayoi_single_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
                 type: "text/csv; charset=shift_jis"
-    when "yayoi_transfer"
-      csv_data = YayoiExportService.new.export_transfer_slip(entries)
-      send_data csv_data,
-                filename: "journal_entries_yayoi_transfer_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
-                type: "text/csv; charset=shift_jis"
     else
       csv = "\uFEFF" + entries.to_csv
       send_data csv, filename: "journal_entries_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",

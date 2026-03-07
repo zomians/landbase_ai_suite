@@ -206,27 +206,5 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       expect(rows[0][19]).to eq("0")
     end
 
-    it "format_type=yayoi_transferで弥生振替伝票CSVをエクスポートできること" do
-      create(:journal_entry, client: client, date: Date.new(2026, 1, 15),
-             debit_account: "旅費交通費", credit_account: "未払金",
-             debit_amount: 5000, credit_amount: 5000)
-      create(:journal_entry, client: client, date: Date.new(2026, 1, 20),
-             debit_account: "消耗品費", credit_account: "現金",
-             debit_amount: 3000, credit_amount: 3000)
-
-      get "/api/v1/journal_entries/export", params: {
-        client_code: client_code, format_type: "yayoi_transfer"
-      }, headers: authorization_header
-
-      expect(response).to have_http_status(:ok)
-      expect(response.content_type).to include("shift_jis")
-
-      decoded = response.body.force_encoding("Shift_JIS").encode("UTF-8")
-      rows = CSV.parse(decoded)
-      expect(rows.length).to eq(2)
-      expect(rows[0][0]).to eq("2110")
-      expect(rows[1][0]).to eq("2101")
-      expect(rows[0][19]).to eq("3")
-    end
   end
 end

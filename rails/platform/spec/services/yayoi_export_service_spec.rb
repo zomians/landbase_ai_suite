@@ -66,26 +66,6 @@ RSpec.describe YayoiExportService do
     end
   end
 
-  describe "#export_transfer_slip" do
-    let(:rows) { decode_csv(service.export_transfer_slip(entries)) }
-
-    it "先頭行の識別フラグが2110であること" do
-      expect(rows[0][0]).to eq("2110")
-    end
-
-    it "2行目以降の識別フラグが2101であること" do
-      expect(rows[1][0]).to eq("2101")
-    end
-
-    it "タイプが3であること" do
-      rows.each { |row| expect(row[19]).to eq("3") }
-    end
-
-    it "25列のCSVを生成すること" do
-      rows.each { |row| expect(row.length).to eq(25) }
-    end
-  end
-
   describe "Shift_JISエンコーディング" do
     it "Shift_JISでエンコードされていること" do
       csv_data = service.export_single_entry(entries)
