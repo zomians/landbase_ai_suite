@@ -6,21 +6,21 @@ class JournalEntriesController < ApplicationController
 
   def index
     @source_type = params[:source_type] || ""
-    scope = JournalEntry.for_client(@client_code)
+    scope = JournalEntry.for_client(@client_code).includes(:journal_entry_lines)
     scope = scope.by_source(@source_type) if @source_type.present?
     @entries = scope.order(date: :desc, transaction_no: :asc).page(params[:page]).per(25)
   end
 
   def show
-    @entry = JournalEntry.for_client(@client_code).find(params[:id])
+    @entry = JournalEntry.for_client(@client_code).includes(:journal_entry_lines).find(params[:id])
   end
 
   def edit
-    @entry = JournalEntry.for_client(@client_code).find(params[:id])
+    @entry = JournalEntry.for_client(@client_code).includes(:journal_entry_lines).find(params[:id])
   end
 
   def update
-    @entry = JournalEntry.for_client(@client_code).find(params[:id])
+    @entry = JournalEntry.for_client(@client_code).includes(:journal_entry_lines).find(params[:id])
 
     if @entry.update(entry_params)
       redirect_to journal_entry_path(@entry, client_code: @client_code), notice: "仕訳を更新しました"
@@ -42,11 +42,11 @@ class JournalEntriesController < ApplicationController
 
   def entry_params
     params.require(:journal_entry).permit(
-      :debit_account, :debit_sub_account, :debit_department, :debit_partner,
-      :debit_tax_category, :debit_invoice, :debit_amount,
-      :credit_account, :credit_sub_account, :credit_department, :credit_partner,
-      :credit_tax_category, :credit_invoice, :credit_amount,
-      :description, :tag, :memo, :cardholder, :status
+      :description, :tag, :memo, :cardholder, :status,
+      journal_entry_lines_attributes: [
+        :id, :side, :account, :sub_account, :department,
+        :partner, :tax_category, :invoice, :amount, :_destroy
+      ]
     )
   end
 

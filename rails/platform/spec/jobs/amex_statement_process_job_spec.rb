@@ -71,19 +71,25 @@ RSpec.describe AmexStatementProcessJob, type: :job do
     expect(batch.error_message).to be_nil
   end
 
-  it "成功時にJournalEntryを作成すること" do
+  it "成功時にJournalEntryとJournalEntryLineを作成すること" do
     expect {
       described_class.perform_now(batch.id)
     }.to change(JournalEntry, :count).by(1)
+      .and change(JournalEntryLine, :count).by(2)
 
     entry = JournalEntry.last
     expect(entry.client).to eq(client)
     expect(entry.statement_batch).to eq(batch)
-    expect(entry.debit_account).to eq("消耗品費")
-    expect(entry.debit_amount).to eq(3280)
-    expect(entry.credit_amount).to eq(3280)
     expect(entry.cardholder).to eq("山田太郎")
     expect(entry.source_type).to eq("amex")
+
+    debit = entry.debit_lines.first
+    expect(debit.account).to eq("消耗品費")
+    expect(debit.amount).to eq(3280)
+
+    credit = entry.credit_lines.first
+    expect(credit.account).to eq("未払金")
+    expect(credit.amount).to eq(3280)
   end
 
   context "サービスが失敗した場合" do

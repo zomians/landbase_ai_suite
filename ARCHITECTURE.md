@@ -109,7 +109,8 @@ PostgreSQL 16
     ├── clients              # クライアント管理
     ├── users                # Web UI 認証（Devise）
     ├── api_tokens           # API Bearer トークン
-    ├── journal_entries      # 仕訳データ（AccountingAI）
+    ├── journal_entries      # 仕訳ヘッダー（AccountingAI）
+    ├── journal_entry_lines  # 仕訳行（借方/貸方の明細行）
     ├── account_masters      # 勘定科目マッピングルール
     ├── statement_batches    # PDF 処理バッチ管理
     ├── cleaning_manuals     # 清掃マニュアル（OperationAI）
@@ -201,6 +202,26 @@ GET /api/v1/journal_entries?client_code=ikigai_stay&source_type=amex&status=revi
 |---|---|
 | `CleaningManualGeneratorService` | Claude Vision API で客室写真から清掃マニュアル生成 |
 | `AmexStatementProcessorService` | Claude API で Amex PDF を仕訳データに変換 |
+| `BankStatementProcessorService` | Claude API で銀行明細 PDF を仕訳データに変換 |
+| `InvoiceProcessorService` | Claude API で請求書 PDF を仕訳データに変換 |
+
+### 仕訳データモデル（ヘッダー + 明細行）
+
+```
+JournalEntry（仕訳ヘッダー）
+├── client_id, date, source_type, description, status ...
+└── has_many :journal_entry_lines
+
+JournalEntryLine（仕訳行）
+├── side: debit / credit
+├── account, sub_account, department, partner
+├── tax_category, invoice, amount
+└── belongs_to :journal_entry
+```
+
+- 単一仕訳 = 2行（借方1 + 貸方1）
+- 複合仕訳 = 3行以上（例: 給与支払い 借方1 / 貸方3）
+- 貸借一致バリデーション: 仕訳単位で借方合計 == 貸方合計
 
 ### 非同期ジョブ（Solid Queue）
 
@@ -233,4 +254,4 @@ GET /api/v1/cleaning_manuals/:id/status
 
 ---
 
-**Last Updated**: 2026-02-25
+**Last Updated**: 2026-03-07

@@ -102,20 +102,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_040806) do
     t.string "source_period", comment: "明細期間（例: 2026-01）"
     t.integer "transaction_no", comment: "取引番号"
     t.date "date", null: false, comment: "取引日"
-    t.string "debit_account", null: false, comment: "借方勘定科目"
-    t.string "debit_sub_account", default: "", comment: "借方補助科目"
-    t.string "debit_department", default: "", comment: "借方部門"
-    t.string "debit_partner", default: "", comment: "借方取引先"
-    t.string "debit_tax_category", default: "", comment: "借方税区分"
-    t.string "debit_invoice", default: "", comment: "借方インボイス"
-    t.integer "debit_amount", null: false, comment: "借方金額"
-    t.string "credit_account", null: false, comment: "貸方勘定科目"
-    t.string "credit_sub_account", default: "", comment: "貸方補助科目"
-    t.string "credit_department", default: "", comment: "貸方部門"
-    t.string "credit_partner", default: "", comment: "貸方取引先"
-    t.string "credit_tax_category", default: "", comment: "貸方税区分"
-    t.string "credit_invoice", default: "", comment: "貸方インボイス"
-    t.integer "credit_amount", null: false, comment: "貸方金額"
     t.text "description", default: "", comment: "摘要"
     t.string "tag", default: "", comment: "タグ"
     t.text "memo", default: "", comment: "メモ"
@@ -130,6 +116,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_040806) do
     t.index ["source_type", "source_period"], name: "idx_journal_entries_source"
     t.index ["statement_batch_id"], name: "index_journal_entries_on_statement_batch_id"
     t.index ["status"], name: "idx_journal_entries_review_required", where: "((status)::text = 'review_required'::text)"
+  end
+
+  create_table "journal_entry_lines", force: :cascade do |t|
+    t.bigint "journal_entry_id", null: false, comment: "仕訳"
+    t.string "side", null: false, comment: "借方/貸方: debit / credit"
+    t.string "account", null: false, comment: "勘定科目"
+    t.string "sub_account", default: "", comment: "補助科目"
+    t.string "department", default: "", comment: "部門"
+    t.string "partner", default: "", comment: "取引先"
+    t.string "tax_category", default: "", comment: "税区分"
+    t.string "invoice", default: "", comment: "インボイス番号"
+    t.integer "amount", null: false, comment: "金額"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["journal_entry_id", "side"], name: "idx_journal_entry_lines_entry_side"
+    t.index ["journal_entry_id"], name: "index_journal_entry_lines_on_journal_entry_id"
   end
 
   create_table "statement_batches", force: :cascade do |t|
@@ -165,5 +167,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_040806) do
   add_foreign_key "cleaning_manuals", "clients"
   add_foreign_key "journal_entries", "clients"
   add_foreign_key "journal_entries", "statement_batches"
+  add_foreign_key "journal_entry_lines", "journal_entries"
   add_foreign_key "statement_batches", "clients"
 end

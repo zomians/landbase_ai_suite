@@ -77,28 +77,35 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           <% @entries.each do |entry| %>
+            <% debit = entry.debit_lines.first %>
+            <% credit = entry.credit_lines.first %>
             <tr class="hover:bg-gray-50 group">
               <%# 左端固定列 %>
               <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-3 py-2 text-gray-900 whitespace-nowrap w-[3.5rem] min-w-[3.5rem]"><%= entry.transaction_no %></td>
               <td class="sticky left-[3.5rem] z-10 bg-white group-hover:bg-gray-50 px-3 py-2 text-gray-900 whitespace-nowrap border-r border-gray-200"><%= entry.date %></td>
               <%# 借方 %>
-              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.debit_account %></td>
-              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.debit_sub_account.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.debit_department.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-900 whitespace-nowrap max-w-[200px] truncate"><%= entry.debit_partner.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.debit_tax_category.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.debit_invoice.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-900 text-right whitespace-nowrap"><%= number_with_delimiter(entry.debit_amount) %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= debit&.account %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= debit&.sub_account.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= debit&.department.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap max-w-[200px] truncate"><%= debit&.partner.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= debit&.tax_category.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= debit&.invoice.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 text-right whitespace-nowrap"><%= number_with_delimiter(debit&.amount) %></td>
               <%# 貸方 %>
-              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= entry.credit_account %></td>
-              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.credit_sub_account.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.credit_department.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-900 whitespace-nowrap max-w-[200px] truncate"><%= entry.credit_partner.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.credit_tax_category.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= entry.credit_invoice.presence || "—" %></td>
-              <td class="px-3 py-2 text-gray-900 text-right whitespace-nowrap"><%= number_with_delimiter(entry.credit_amount) %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap"><%= credit&.account %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= credit&.sub_account.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= credit&.department.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 whitespace-nowrap max-w-[200px] truncate"><%= credit&.partner.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= credit&.tax_category.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= credit&.invoice.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-900 text-right whitespace-nowrap"><%= number_with_delimiter(credit&.amount) %></td>
               <%# その他 %>
-              <td class="px-3 py-2 text-gray-500 max-w-[250px] truncate"><%= entry.description.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-500 max-w-[250px] truncate">
+                <% unless entry.simple_entry? %>
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 mr-1">複合</span>
+                <% end %>
+                <%= entry.description.presence || "—" %>
+              </td>
               <td class="px-3 py-2 text-gray-500 whitespace-nowrap"><%= entry.tag.presence || "—" %></td>
               <td class="px-3 py-2 text-gray-500 max-w-[200px] truncate"><%= entry.memo.presence || "—" %></td>
               <td class="px-3 py-2 text-gray-500 whitespace-nowrap"><%= entry.cardholder.presence || "—" %></td>

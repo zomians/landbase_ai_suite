@@ -19,4 +19,51 @@ if Rails.env.development?
   _token_record, raw_token = ApiToken.generate!(name: "development")
   puts "APIトークンを作成しました: #{raw_token}"
   puts "使用方法: curl -H 'Authorization: Bearer #{raw_token}' http://localhost:3000/api/v1/..."
+
+  # デモクライアント
+  client = Client.find_or_create_by!(code: "demo") do |c|
+    c.name = "デモ会社"
+  end
+  puts "デモクライアントを作成しました: #{client.name} (#{client.code})"
+
+  # サンプル仕訳（単一仕訳）
+  unless JournalEntry.exists?(client: client, source_type: "amex", transaction_no: 1, source_period: "2026-03")
+    JournalEntry.create!(
+      client: client,
+      source_type: "amex",
+      source_period: "2026-03",
+      transaction_no: 1,
+      date: Date.new(2026, 3, 5),
+      description: "事務用品購入（Amazon）",
+      tag: "amex",
+      cardholder: "山田太郎",
+      status: "ok",
+      journal_entry_lines_attributes: [
+        { side: "debit", account: "消耗品費", partner: "Amazon", tax_category: "課税仕入10%", amount: 3280 },
+        { side: "credit", account: "未払金", sub_account: "Amex", amount: 3280 }
+      ]
+    )
+    puts "サンプル仕訳（単一）を作成しました"
+  end
+
+  # サンプル仕訳（複合仕訳）
+  unless JournalEntry.exists?(client: client, source_type: "bank", transaction_no: 2, source_period: "2026-03")
+    JournalEntry.create!(
+      client: client,
+      source_type: "bank",
+      source_period: "2026-03",
+      transaction_no: 2,
+      date: Date.new(2026, 3, 1),
+      description: "3月分給与支払い",
+      tag: "bank",
+      status: "review_required",
+      journal_entry_lines_attributes: [
+        { side: "debit", account: "給与手当", amount: 300_000 },
+        { side: "credit", account: "普通預金", sub_account: "琉球銀行", amount: 250_000 },
+        { side: "credit", account: "所得税預り金", amount: 30_000 },
+        { side: "credit", account: "社会保険料預り金", amount: 20_000 }
+      ]
+    )
+    puts "サンプル仕訳（複合）を作成しました"
+  end
 end

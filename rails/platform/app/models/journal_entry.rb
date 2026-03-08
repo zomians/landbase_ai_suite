@@ -4,23 +4,42 @@ class JournalEntry < ApplicationRecord
   # === 関連 ===
   belongs_to :client
   belongs_to :statement_batch, optional: true
+  has_many :journal_entry_lines, -> { order(:id) }, dependent: :destroy
+  accepts_nested_attributes_for :journal_entry_lines, allow_destroy: true
 
   # === バリデーション ===
   validates :date, presence: true
-  validates :debit_account, presence: true
-  validates :credit_account, presence: true
-  validates :debit_amount, numericality: { greater_than_or_equal_to: 0 }
-  validates :credit_amount, numericality: { greater_than_or_equal_to: 0 }
   validates :source_type, inclusion: { in: %w[amex bank invoice receipt] }
   validates :status, inclusion: { in: %w[ok review_required] }
   validates :transaction_no, uniqueness: { scope: %i[client_id source_type source_period] }, allow_nil: true
-  validate :amounts_must_match
+  validate :amounts_must_balance
 
   # === スコープ ===
   scope :for_client, ->(code) { where(client: Client.where(code: code)) }
   scope :by_source, ->(type) { where(source_type: type) }
   scope :review_required, -> { where(status: "review_required") }
   scope :in_period, ->(from, to) { where(date: from..to) }
+
+  # === 便利メソッド ===
+  def debit_lines
+    journal_entry_lines.select { |l| l.side == "debit" }
+  end
+
+  def credit_lines
+    journal_entry_lines.select { |l| l.side == "credit" }
+  end
+
+  def debit_amount
+    debit_lines.sum(&:amount)
+  end
+
+  def credit_amount
+    credit_lines.sum(&:amount)
+  end
+
+  def simple_entry?
+    journal_entry_lines.size == 2
+  end
 
   # === CSVエクスポート ===
   CSV_HEADERS = %w[
@@ -33,41 +52,54 @@ class JournalEntry < ApplicationRecord
     CSV.generate(headers: true) do |csv|
       csv << CSV_HEADERS
 
-      find_each do |entry|
-        csv << [
-          entry.transaction_no,
-          entry.date,
-          entry.debit_account,
-          entry.debit_sub_account,
-          entry.debit_department,
-          entry.debit_partner,
-          entry.debit_tax_category,
-          entry.debit_invoice,
-          entry.debit_amount,
-          entry.credit_account,
-          entry.credit_sub_account,
-          entry.credit_department,
-          entry.credit_partner,
-          entry.credit_tax_category,
-          entry.credit_invoice,
-          entry.credit_amount,
-          entry.description,
-          entry.tag,
-          entry.memo,
-          entry.cardholder,
-          entry.status
-        ]
+      all.includes(:journal_entry_lines).each do |entry|
+        debits = entry.debit_lines
+        credits = entry.credit_lines
+        next if debits.empty? || credits.empty?
+
+        max_lines = [ debits.size, credits.size ].max
+        max_lines.times do |i|
+          debit = debits[i]
+          credit = credits[i]
+
+          csv << [
+            entry.transaction_no,
+            entry.date,
+            debit&.account,
+            debit&.sub_account,
+            debit&.department,
+            debit&.partner,
+            debit&.tax_category,
+            debit&.invoice,
+            debit&.amount,
+            credit&.account,
+            credit&.sub_account,
+            credit&.department,
+            credit&.partner,
+            credit&.tax_category,
+            credit&.invoice,
+            credit&.amount,
+            i == 0 ? entry.description : "",
+            i == 0 ? entry.tag : "",
+            i == 0 ? entry.memo : "",
+            i == 0 ? entry.cardholder : "",
+            i == 0 ? entry.status : ""
+          ]
+        end
       end
     end
   end
 
   private
 
-  def amounts_must_match
-    return if debit_amount.blank? || credit_amount.blank?
+  def amounts_must_balance
+    return if journal_entry_lines.empty?
 
-    if debit_amount != credit_amount
-      errors.add(:credit_amount, "は借方金額と一致する必要があります")
+    debit_total = journal_entry_lines.select { |l| l.side == "debit" }.sum { |l| l.amount.to_i }
+    credit_total = journal_entry_lines.select { |l| l.side == "credit" }.sum { |l| l.amount.to_i }
+
+    if debit_total != credit_total
+      errors.add(:base, "借方合計と貸方合計が一致しません（借方: #{debit_total}, 貸方: #{credit_total}）")
     end
   end
 end
