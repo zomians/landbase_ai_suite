@@ -11,7 +11,7 @@ class YayoiExportService
       end
     end
 
-    csv_string.encode("Shift_JIS", "UTF-8", undef: :replace, invalid: :replace)
+    csv_string.encode("Windows-31J", "UTF-8", undef: :replace, invalid: :replace)
   end
 
   private

@@ -57,9 +57,9 @@ module Api
         if params[:statement_batch_id].present?
           entries = entries.where(statement_batch_id: params[:statement_batch_id])
         end
-        if params[:from].present? && params[:to].present?
+        if params[:date_from].present? && params[:date_to].present?
           begin
-            entries = entries.in_period(Date.parse(params[:from]), Date.parse(params[:to]))
+            entries = entries.in_period(Date.parse(params[:date_from]), Date.parse(params[:date_to]))
           rescue Date::Error
             return render_error("日付の形式が不正です（YYYY-MM-DD）")
           end

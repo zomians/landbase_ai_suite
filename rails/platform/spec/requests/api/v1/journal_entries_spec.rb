@@ -178,7 +178,7 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       create(:journal_entry, client: client, date: Date.new(2025, 12, 1), debit_amount: 2000, credit_amount: 2000)
 
       get "/api/v1/journal_entries/export", params: {
-        client_code: client_code, from: "2026-01-01", to: "2026-01-31"
+        client_code: client_code, date_from: "2026-01-01", date_to: "2026-01-31"
       }, headers: authorization_header
 
       csv = CSV.parse(response.body.sub("\uFEFF", ""), headers: true)
@@ -196,9 +196,9 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to include("text/csv")
-      expect(response.content_type).to include("shift_jis")
+      expect(response.content_type).to include("windows-31j")
 
-      decoded = response.body.force_encoding("Shift_JIS").encode("UTF-8")
+      decoded = response.body.force_encoding("Windows-31J").encode("UTF-8")
       rows = CSV.parse(decoded)
       expect(rows.length).to eq(1)
       expect(rows[0].length).to eq(25)

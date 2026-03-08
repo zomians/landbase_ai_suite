@@ -96,6 +96,65 @@ RSpec.describe "Web::JournalEntries", type: :request do
     end
   end
 
+  describe "GET /journal_entries/export" do
+    context "未認証の場合" do
+      it "ログイン画面にリダイレクトすること" do
+        get export_journal_entries_path(client_code: client.code)
+        expect(response).to redirect_to(new_user_session_path)
+      end
+    end
+
+    context "認証済みの場合" do
+      before { sign_in user }
+
+      it "従来形式CSVをエクスポートできること" do
+        create(:journal_entry, client: client, debit_account: "旅費交通費", credit_account: "未払金",
+               debit_amount: 5000, credit_amount: 5000)
+
+        get export_journal_entries_path(client_code: client.code, format_type: "csv")
+
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to include("text/csv")
+        expect(response.content_type).to include("utf-8")
+
+        csv = CSV.parse(response.body.sub("\uFEFF", ""), headers: true)
+        expect(csv.size).to eq(1)
+      end
+
+      it "弥生単一仕訳CSVをエクスポートできること" do
+        create(:journal_entry, client: client, debit_account: "旅費交通費", credit_account: "未払金",
+               debit_amount: 5000, credit_amount: 5000)
+
+        get export_journal_entries_path(client_code: client.code, format_type: "yayoi_single")
+
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to include("text/csv")
+        expect(response.content_type).to include("windows-31j")
+
+        decoded = response.body.force_encoding("Windows-31J").encode("UTF-8")
+        rows = CSV.parse(decoded)
+        expect(rows.length).to eq(1)
+        expect(rows[0].length).to eq(25)
+        expect(rows[0][0]).to eq("2000")
+      end
+
+      it "不正なformat_typeで400を返すこと" do
+        get export_journal_entries_path(client_code: client.code, format_type: "invalid")
+        expect(response).to have_http_status(:bad_request)
+      end
+
+      it "source_typeでフィルタしてエクスポートできること" do
+        create(:journal_entry, :amex, client: client, debit_amount: 1000, credit_amount: 1000)
+        create(:journal_entry, :bank, client: client, debit_amount: 2000, credit_amount: 2000)
+
+        get export_journal_entries_path(client_code: client.code, source_type: "amex")
+
+        csv = CSV.parse(response.body.sub("\uFEFF", ""), headers: true)
+        expect(csv.size).to eq(1)
+      end
+    end
+  end
+
   describe "GET /journal_entries/:id/edit" do
     let(:entry) { create(:journal_entry, client: client) }
 

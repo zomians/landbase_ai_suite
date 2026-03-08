@@ -27,7 +27,7 @@ RSpec.describe YayoiExportService do
   let(:entries) { client.journal_entries.order(date: :asc) }
 
   def decode_csv(csv_data)
-    CSV.parse(csv_data.encode("UTF-8", "Shift_JIS"))
+    CSV.parse(csv_data.encode("UTF-8", "Windows-31J"))
   end
 
   describe "#export_single_entry" do
@@ -66,15 +66,15 @@ RSpec.describe YayoiExportService do
     end
   end
 
-  describe "Shift_JISエンコーディング" do
-    it "Shift_JISでエンコードされていること" do
+  describe "Windows-31Jエンコーディング" do
+    it "Windows-31Jでエンコードされていること" do
       csv_data = service.export_single_entry(entries)
-      expect(csv_data.encoding).to eq(Encoding::Shift_JIS)
+      expect(csv_data.encoding).to eq(Encoding::Windows_31J)
     end
 
     it "日本語が正しくエンコードされること" do
       csv_data = service.export_single_entry(entries)
-      decoded = csv_data.encode("UTF-8", "Shift_JIS")
+      decoded = csv_data.encode("UTF-8", "Windows-31J")
       expect(decoded).to include("旅費交通費")
       expect(decoded).to include("出張旅費")
     end

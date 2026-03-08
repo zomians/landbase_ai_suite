@@ -35,9 +35,9 @@ class JournalEntriesController < ApplicationController
     entries = JournalEntry.for_client(@client_code)
     entries = entries.by_source(params[:source_type]) if params[:source_type].present?
     entries = entries.where(statement_batch_id: params[:statement_batch_id]) if params[:statement_batch_id].present?
-    if params[:from].present? && params[:to].present?
+    if params[:date_from].present? && params[:date_to].present?
       begin
-        entries = entries.in_period(Date.parse(params[:from]), Date.parse(params[:to]))
+        entries = entries.in_period(Date.parse(params[:date_from]), Date.parse(params[:date_to]))
       rescue Date::Error
         redirect_to journal_entries_path(client_code: @client_code), alert: "日付の形式が不正です" and return
       end
