@@ -1,9 +1,6 @@
 # LandBase AI Suite Development Lifecycle Automation
 # Mattermost + n8n + Rails 8 + Next.js 15 + Flutter 3 + PostgreSQL
 
-include .env.development
-export
-
 # Colors for output
 YELLOW := \033[1;33m
 GREEN := \033[1;32m
@@ -34,7 +31,7 @@ logs: ## 全サービスのログ表示
 
 .PHONY: postgres-shell
 postgres-shell: ## PostgreSQLシェル接続
-	docker compose -f compose.development.yaml --env-file .env.development exec db-suite psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+	docker compose -f compose.development.yaml --env-file .env.development exec db-suite bash -c 'psql -U $$POSTGRES_USER -d $$POSTGRES_DB'
 
 .PHONY: clean
 clean: ## クリーンアップ（コンテナ・ボリューム・プロジェクトイメージ削除）
