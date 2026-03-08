@@ -45,7 +45,7 @@ class InvoiceProcessJob < ApplicationJob
 
     transactions = data[:transactions] || []
     transactions.each do |txn|
-      entry = batch.journal_entries.create!(
+      batch.journal_entries.create!(
         client: batch.client,
         source_type: batch.source_type,
         source_period: source_period,

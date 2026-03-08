@@ -100,7 +100,12 @@
               <td class="px-3 py-2 text-gray-400 whitespace-nowrap"><%= credit&.invoice.presence || "—" %></td>
               <td class="px-3 py-2 text-gray-900 text-right whitespace-nowrap"><%= number_with_delimiter(credit&.amount) %></td>
               <%# その他 %>
-              <td class="px-3 py-2 text-gray-500 max-w-[250px] truncate"><%= entry.description.presence || "—" %></td>
+              <td class="px-3 py-2 text-gray-500 max-w-[250px] truncate">
+                <% unless entry.simple_entry? %>
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 mr-1">複合</span>
+                <% end %>
+                <%= entry.description.presence || "—" %>
+              </td>
               <td class="px-3 py-2 text-gray-500 whitespace-nowrap"><%= entry.tag.presence || "—" %></td>
               <td class="px-3 py-2 text-gray-500 max-w-[200px] truncate"><%= entry.memo.presence || "—" %></td>
               <td class="px-3 py-2 text-gray-500 whitespace-nowrap"><%= entry.cardholder.presence || "—" %></td>

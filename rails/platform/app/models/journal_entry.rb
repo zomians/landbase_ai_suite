@@ -4,7 +4,7 @@ class JournalEntry < ApplicationRecord
   # === 関連 ===
   belongs_to :client
   belongs_to :statement_batch, optional: true
-  has_many :journal_entry_lines, dependent: :destroy
+  has_many :journal_entry_lines, -> { order(:id) }, dependent: :destroy
   accepts_nested_attributes_for :journal_entry_lines, allow_destroy: true
 
   # === バリデーション ===
@@ -95,8 +95,8 @@ class JournalEntry < ApplicationRecord
   def amounts_must_balance
     return if journal_entry_lines.empty?
 
-    debit_total = journal_entry_lines.select { |l| l.side == "debit" }.sum(&:amount)
-    credit_total = journal_entry_lines.select { |l| l.side == "credit" }.sum(&:amount)
+    debit_total = journal_entry_lines.select { |l| l.side == "debit" }.sum { |l| l.amount.to_i }
+    credit_total = journal_entry_lines.select { |l| l.side == "credit" }.sum { |l| l.amount.to_i }
 
     if debit_total != credit_total
       errors.add(:base, "借方合計と貸方合計が一致しません（借方: #{debit_total}, 貸方: #{credit_total}）")
