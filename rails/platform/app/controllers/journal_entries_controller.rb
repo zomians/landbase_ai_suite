@@ -1,4 +1,6 @@
 class JournalEntriesController < ApplicationController
+  include JournalEntryExportable
+
   rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
 
   before_action :require_client_code
@@ -27,6 +29,23 @@ class JournalEntriesController < ApplicationController
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  def export
+    entries = JournalEntry.for_client(@client_code)
+    entries = entries.by_source(params[:source_type]) if params[:source_type].present?
+    entries = entries.where(statement_batch_id: params[:statement_batch_id]) if params[:statement_batch_id].present?
+    if params[:date_from].present? && params[:date_to].present?
+      begin
+        entries = entries.in_period(Date.parse(params[:date_from]), Date.parse(params[:date_to]))
+      rescue Date::Error
+        redirect_to journal_entries_path(client_code: @client_code), alert: "日付の形式が不正です" and return
+      end
+    end
+
+    entries = entries.order(date: :asc, transaction_no: :asc)
+
+    send_journal_csv(entries, format_type: params[:format_type])
   end
 
   private

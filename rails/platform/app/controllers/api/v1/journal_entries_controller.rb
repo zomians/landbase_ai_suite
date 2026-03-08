@@ -1,6 +1,8 @@
 module Api
   module V1
     class JournalEntriesController < BaseController
+      include JournalEntryExportable
+
       def index
         entries = @current_client.journal_entries.includes(:journal_entry_lines)
 
@@ -55,11 +57,17 @@ module Api
         if params[:statement_batch_id].present?
           entries = entries.where(statement_batch_id: params[:statement_batch_id])
         end
+        if params[:date_from].present? && params[:date_to].present?
+          begin
+            entries = entries.in_period(Date.parse(params[:date_from]), Date.parse(params[:date_to]))
+          rescue Date::Error
+            return render_error("日付の形式が不正です（YYYY-MM-DD）")
+          end
+        end
 
-        csv = "\uFEFF" + entries.order(date: :asc, transaction_no: :asc).to_csv
+        entries = entries.order(date: :asc, transaction_no: :asc)
 
-        send_data csv, filename: "journal_entries_#{Time.current.strftime('%Y%m%d%H%M%S')}.csv",
-                       type: "text/csv; charset=utf-8"
+        send_journal_csv(entries, format_type: params[:format_type])
       end
 
       private

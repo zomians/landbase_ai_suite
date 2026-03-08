@@ -184,5 +184,39 @@ RSpec.describe "Api::V1::JournalEntries", type: :request do
       csv = CSV.parse(response.body.sub("\uFEFF", ""), headers: true)
       expect(csv.size).to eq(1)
     end
+
+    it "from/toで期間フィルタできること" do
+      create(:journal_entry, client: client, date: Date.new(2026, 1, 15), debit_amount: 1000, credit_amount: 1000)
+      create(:journal_entry, client: client, date: Date.new(2025, 12, 1), debit_amount: 2000, credit_amount: 2000)
+
+      get "/api/v1/journal_entries/export", params: {
+        client_code: client_code, date_from: "2026-01-01", date_to: "2026-01-31"
+      }, headers: authorization_header
+
+      csv = CSV.parse(response.body.sub("\uFEFF", ""), headers: true)
+      expect(csv.size).to eq(1)
+    end
+
+    it "format_type=yayoi_singleで弥生単一仕訳CSVをエクスポートできること" do
+      create(:journal_entry, client: client, date: Date.new(2026, 1, 15),
+             debit_account: "旅費交通費", credit_account: "未払金",
+             debit_amount: 5000, credit_amount: 5000)
+
+      get "/api/v1/journal_entries/export", params: {
+        client_code: client_code, format_type: "yayoi_single"
+      }, headers: authorization_header
+
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to include("text/csv")
+      expect(response.content_type).to include("windows-31j")
+
+      decoded = response.body.force_encoding("Windows-31J").encode("UTF-8")
+      rows = CSV.parse(decoded)
+      expect(rows.length).to eq(1)
+      expect(rows[0].length).to eq(25)
+      expect(rows[0][0]).to eq("2000")
+      expect(rows[0][19]).to eq("0")
+    end
+
   end
 end
