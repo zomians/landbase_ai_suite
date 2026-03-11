@@ -4,7 +4,6 @@ class ReceiptProcessJob < ApplicationJob
   retry_on StandardError, wait: 5.seconds, attempts: 2
 
   discard_on ActiveRecord::RecordNotFound
-  discard_on NonReceiptImageError, UnsupportedImageFormatError
 
   after_discard do |job, exception|
     batch_id = job.arguments.first
@@ -31,6 +30,8 @@ class ReceiptProcessJob < ApplicationJob
           error_message: nil
         )
       end
+    elsif result.retryable?
+      raise result.error # retry_on の対象にする
     else
       batch.update!(status: "failed", error_message: result.error)
     end

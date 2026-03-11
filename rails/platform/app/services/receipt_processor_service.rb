@@ -1,6 +1,9 @@
 class ReceiptProcessorService
-  Result = Data.define(:success, :data, :error) do
+  NON_RETRYABLE_REASONS = %i[non_receipt unsupported_format].freeze
+
+  Result = Data.define(:success, :data, :error, :reason) do
     alias_method :success?, :success
+    def retryable? = !NON_RETRYABLE_REASONS.include?(reason)
   end
 
   SYSTEM_PROMPT = <<~PROMPT
@@ -146,11 +149,13 @@ class ReceiptProcessorService
 
   def call
     unless ENV["ANTHROPIC_API_KEY"].present?
-      return Result.new(success: false, data: {}, error: "ANTHROPIC_API_KEY が設定されていません")
+      return Result.new(success: false, data: {}, error: "ANTHROPIC_API_KEY が設定されていません", reason: :config_error)
     end
 
     image_binary = read_image_binary
     media_type = detect_media_type(image_binary)
+    return media_type unless media_type.is_a?(String) # UnsupportedFormat の Result を返す
+
     image_data = Base64.strict_encode64(image_binary)
     account_master_context = build_account_master_context
     user_prompt = build_user_prompt(account_master_context)
@@ -158,22 +163,22 @@ class ReceiptProcessorService
     response = call_api(image_data, media_type, user_prompt)
 
     if response.respond_to?(:stop_reason) && response.stop_reason == "max_tokens"
-      return Result.new(success: false, data: {}, error: "APIの応答がmax_tokensで切り詰められました")
+      return Result.new(success: false, data: {}, error: "APIの応答がmax_tokensで切り詰められました", reason: :api_error)
     end
 
     data = parse_response(response)
 
-    raise NonReceiptImageError, "領収書として認識できません" unless data[:is_receipt]
+    unless data[:is_receipt]
+      return Result.new(success: false, data: {}, error: "領収書として認識できません", reason: :non_receipt)
+    end
 
-    Result.new(success: true, data: data, error: nil)
-  rescue NonReceiptImageError, UnsupportedImageFormatError
-    raise
+    Result.new(success: true, data: data, error: nil, reason: nil)
   rescue Anthropic::Errors::APIError => e
-    Result.new(success: false, data: {}, error: "Anthropic API エラー: #{e.message}")
+    Result.new(success: false, data: {}, error: "Anthropic API エラー: #{e.message}", reason: :api_error)
   rescue JSON::ParserError => e
-    Result.new(success: false, data: {}, error: "JSON パースエラー: #{e.message}")
+    Result.new(success: false, data: {}, error: "JSON パースエラー: #{e.message}", reason: :parse_error)
   rescue StandardError => e
-    Result.new(success: false, data: {}, error: "予期しないエラー: #{e.message}")
+    Result.new(success: false, data: {}, error: "予期しないエラー: #{e.message}", reason: :unexpected_error)
   end
 
   private
@@ -198,7 +203,7 @@ class ReceiptProcessorService
     when ->(b) { b[0..3] == [0x52, 0x49, 0x46, 0x46] && binary[8, 4] == "WEBP" }
       "image/webp"
     else
-      raise UnsupportedImageFormatError, "対応していない画像フォーマットです"
+      Result.new(success: false, data: {}, error: "対応していない画像フォーマットです", reason: :unsupported_format)
     end
   end
 

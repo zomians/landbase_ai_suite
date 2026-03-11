@@ -80,6 +80,7 @@ RSpec.describe ReceiptProcessorService do
       result = service.call
 
       expect(result.success?).to be true
+      expect(result.reason).to be_nil
       expect(result.data[:is_receipt]).to be true
       expect(result.data[:receipt_date]).to eq("2026-03-01")
       expect(result.data[:vendor_name]).to eq("マックスバリュ やんばる店")
@@ -88,6 +89,12 @@ RSpec.describe ReceiptProcessorService do
       expect(result.data[:transactions].first[:debit_account]).to eq("仕入高")
       expect(result.data[:transactions].first[:credit_account]).to eq("現金")
       expect(result.data[:summary][:total_transactions]).to eq(1)
+    end
+
+    it "成功時はretryable?がtrueであること" do
+      service = described_class.new(image: image_file, client_code: client.code)
+      result = service.call
+      expect(result.retryable?).to be true
     end
 
     it "AccountMasterのマッチ情報をプロンプトに含めること" do
@@ -141,16 +148,19 @@ RSpec.describe ReceiptProcessorService do
         )
       end
 
-      it "NonReceiptImageErrorを発生させること" do
+      it "reason: :non_receiptの失敗Resultを返すこと" do
         service = described_class.new(image: image_file, client_code: client.code)
 
-        expect { service.call }.to raise_error(NonReceiptImageError, "領収書として認識できません")
+        result = service.call
+        expect(result.success?).to be false
+        expect(result.reason).to eq(:non_receipt)
+        expect(result.error).to eq("領収書として認識できません")
+        expect(result.retryable?).to be false
       end
     end
 
     context "非対応画像フォーマットの場合" do
       let(:image_file) do
-        # AVI file (RIFF header but not WEBP)
         tempfile = Tempfile.new(["test", ".avi"])
         tempfile.binmode
         tempfile.write("RIFF\x00\x00\x00\x00AVI ")
@@ -162,10 +172,23 @@ RSpec.describe ReceiptProcessorService do
         )
       end
 
-      it "UnsupportedImageFormatErrorを発生させること" do
+      it "reason: :unsupported_formatの失敗Resultを返すこと" do
         service = described_class.new(image: image_file, client_code: client.code)
 
-        expect { service.call }.to raise_error(UnsupportedImageFormatError, "対応していない画像フォーマットです")
+        result = service.call
+        expect(result.success?).to be false
+        expect(result.reason).to eq(:unsupported_format)
+        expect(result.error).to eq("対応していない画像フォーマットです")
+        expect(result.retryable?).to be false
+      end
+
+      it "APIを呼び出さないこと" do
+        service = described_class.new(image: image_file, client_code: client.code)
+        messages = mock_client.messages
+
+        expect(messages).not_to receive(:create)
+
+        service.call
       end
     end
 
@@ -203,12 +226,14 @@ RSpec.describe ReceiptProcessorService do
         )
       end
 
-      it "エラーを返すこと" do
+      it "reason: :api_errorの失敗Resultを返すこと" do
         service = described_class.new(image: image_file, client_code: client.code)
 
         result = service.call
         expect(result.success?).to be false
+        expect(result.reason).to eq(:api_error)
         expect(result.error).to include("Anthropic API エラー")
+        expect(result.retryable?).to be true
       end
     end
 
@@ -221,11 +246,12 @@ RSpec.describe ReceiptProcessorService do
         )
       end
 
-      it "エラーを返すこと" do
+      it "reason: :parse_errorの失敗Resultを返すこと" do
         service = described_class.new(image: image_file, client_code: client.code)
 
         result = service.call
         expect(result.success?).to be false
+        expect(result.reason).to eq(:parse_error)
         expect(result.error).to include("JSON パースエラー")
       end
     end
@@ -237,11 +263,12 @@ RSpec.describe ReceiptProcessorService do
         allow(ENV).to receive(:fetch).and_call_original
       end
 
-      it "エラーを返すこと" do
+      it "reason: :config_errorの失敗Resultを返すこと" do
         service = described_class.new(image: image_file, client_code: client.code)
 
         result = service.call
         expect(result.success?).to be false
+        expect(result.reason).to eq(:config_error)
         expect(result.error).to include("ANTHROPIC_API_KEY")
       end
     end
@@ -256,11 +283,12 @@ RSpec.describe ReceiptProcessorService do
         )
       end
 
-      it "エラーを返すこと" do
+      it "reason: :api_errorの失敗Resultを返すこと" do
         service = described_class.new(image: image_file, client_code: client.code)
 
         result = service.call
         expect(result.success?).to be false
+        expect(result.reason).to eq(:api_error)
         expect(result.error).to include("max_tokens")
       end
     end
