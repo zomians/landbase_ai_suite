@@ -96,6 +96,7 @@ class ReceiptProcessorService
       "tax_amount": 0,
       "has_invoice_number": true,
       "invoice_registration_number": "T1234567890123",
+      "generated_at": "ISO 8601 形式（JST）",
       "transactions": [
         {
           "transaction_no": 1,
@@ -194,7 +195,7 @@ class ReceiptProcessorService
       "image/jpeg"
     when ->(b) { b[0..3] == [0x89, 0x50, 0x4E, 0x47] }
       "image/png"
-    when ->(b) { b[0..3] == [0x52, 0x49, 0x46, 0x46] }
+    when ->(b) { b[0..3] == [0x52, 0x49, 0x46, 0x46] && binary[8, 4] == "WEBP" }
       "image/webp"
     else
       "image/jpeg"
