@@ -106,7 +106,7 @@ RSpec.describe ReceiptProcessJob, type: :job do
   context "サービスが失敗した場合" do
     let(:mock_result) do
       ReceiptProcessorService::Result.new(
-        success: false, data: {}, error: "領収書として認識できません"
+        success: false, data: {}, error: "Anthropic API エラー: API key invalid"
       )
     end
 
@@ -115,13 +115,55 @@ RSpec.describe ReceiptProcessJob, type: :job do
 
       batch.reload
       expect(batch.status).to eq("failed")
-      expect(batch.error_message).to eq("領収書として認識できません")
+      expect(batch.error_message).to eq("Anthropic API エラー: API key invalid")
     end
 
     it "JournalEntryを作成しないこと" do
       expect {
         described_class.perform_now(batch.id)
       }.not_to change(JournalEntry, :count)
+    end
+  end
+
+  context "NonReceiptImageErrorが発生した場合" do
+    before do
+      allow(ReceiptProcessorService).to receive(:new).and_return(
+        instance_double(ReceiptProcessorService).tap do |svc|
+          allow(svc).to receive(:call).and_raise(NonReceiptImageError, "領収書として認識できません")
+        end
+      )
+    end
+
+    it "リトライせずにステータスをfailedに更新すること" do
+      described_class.perform_now(batch.id)
+
+      batch.reload
+      expect(batch.status).to eq("failed")
+      expect(batch.error_message).to include("領収書として認識できません")
+    end
+
+    it "JournalEntryを作成しないこと" do
+      expect {
+        described_class.perform_now(batch.id)
+      }.not_to change(JournalEntry, :count)
+    end
+  end
+
+  context "UnsupportedImageFormatErrorが発生した場合" do
+    before do
+      allow(ReceiptProcessorService).to receive(:new).and_return(
+        instance_double(ReceiptProcessorService).tap do |svc|
+          allow(svc).to receive(:call).and_raise(UnsupportedImageFormatError, "対応していない画像フォーマットです")
+        end
+      )
+    end
+
+    it "リトライせずにステータスをfailedに更新すること" do
+      described_class.perform_now(batch.id)
+
+      batch.reload
+      expect(batch.status).to eq("failed")
+      expect(batch.error_message).to include("対応していない画像フォーマットです")
     end
   end
 

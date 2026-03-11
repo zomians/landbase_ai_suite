@@ -141,12 +141,31 @@ RSpec.describe ReceiptProcessorService do
         )
       end
 
-      it "エラーを返すこと" do
+      it "NonReceiptImageErrorを発生させること" do
         service = described_class.new(image: image_file, client_code: client.code)
 
-        result = service.call
-        expect(result.success?).to be false
-        expect(result.error).to eq("領収書として認識できません")
+        expect { service.call }.to raise_error(NonReceiptImageError, "領収書として認識できません")
+      end
+    end
+
+    context "非対応画像フォーマットの場合" do
+      let(:image_file) do
+        # AVI file (RIFF header but not WEBP)
+        tempfile = Tempfile.new(["test", ".avi"])
+        tempfile.binmode
+        tempfile.write("RIFF\x00\x00\x00\x00AVI ")
+        tempfile.rewind
+        ActionDispatch::Http::UploadedFile.new(
+          tempfile: tempfile,
+          filename: "test.avi",
+          type: "video/avi"
+        )
+      end
+
+      it "UnsupportedImageFormatErrorを発生させること" do
+        service = described_class.new(image: image_file, client_code: client.code)
+
+        expect { service.call }.to raise_error(UnsupportedImageFormatError, "対応していない画像フォーマットです")
       end
     end
 

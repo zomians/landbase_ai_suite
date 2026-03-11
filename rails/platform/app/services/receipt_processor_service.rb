@@ -163,11 +163,11 @@ class ReceiptProcessorService
 
     data = parse_response(response)
 
-    unless data[:is_receipt]
-      return Result.new(success: false, data: {}, error: "領収書として認識できません")
-    end
+    raise NonReceiptImageError, "領収書として認識できません" unless data[:is_receipt]
 
     Result.new(success: true, data: data, error: nil)
+  rescue NonReceiptImageError, UnsupportedImageFormatError
+    raise
   rescue Anthropic::Errors::APIError => e
     Result.new(success: false, data: {}, error: "Anthropic API エラー: #{e.message}")
   rescue JSON::ParserError => e
@@ -198,7 +198,7 @@ class ReceiptProcessorService
     when ->(b) { b[0..3] == [0x52, 0x49, 0x46, 0x46] && binary[8, 4] == "WEBP" }
       "image/webp"
     else
-      "image/jpeg"
+      raise UnsupportedImageFormatError, "対応していない画像フォーマットです"
     end
   end
 
