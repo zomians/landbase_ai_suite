@@ -192,6 +192,91 @@ RSpec.describe ReceiptProcessorService do
       end
     end
 
+    context "画像フォーマット判定" do
+      def build_upload(binary, filename, content_type)
+        tempfile = Tempfile.new(["test", File.extname(filename)])
+        tempfile.binmode
+        tempfile.write(binary)
+        tempfile.rewind
+        ActionDispatch::Http::UploadedFile.new(
+          tempfile: tempfile,
+          filename: filename,
+          type: content_type
+        )
+      end
+
+      it "JPEG画像を正しく判定すること" do
+        jpeg_binary = "\xFF\xD8\xFF\xE0" + "\x00" * 100
+        upload = build_upload(jpeg_binary, "test.jpg", "image/jpeg")
+        service = described_class.new(image: upload, client_code: client.code)
+
+        messages = mock_client.messages
+        expect(messages).to receive(:create).with(
+          hash_including(messages: [
+            hash_including(content: array_including(
+              hash_including(source: hash_including(media_type: "image/jpeg"))
+            ))
+          ])
+        ).and_return(mock_response)
+
+        service.call
+      end
+
+      it "PNG画像を正しく判定すること" do
+        png_binary = "\x89PNG\r\n\x1A\n" + "\x00" * 100
+        upload = build_upload(png_binary, "test.png", "image/png")
+        service = described_class.new(image: upload, client_code: client.code)
+
+        messages = mock_client.messages
+        expect(messages).to receive(:create).with(
+          hash_including(messages: [
+            hash_including(content: array_including(
+              hash_including(source: hash_including(media_type: "image/png"))
+            ))
+          ])
+        ).and_return(mock_response)
+
+        service.call
+      end
+
+      it "WebP画像を正しく判定すること" do
+        webp_binary = "RIFF\x00\x00\x00\x00WEBP" + "\x00" * 100
+        upload = build_upload(webp_binary, "test.webp", "image/webp")
+        service = described_class.new(image: upload, client_code: client.code)
+
+        messages = mock_client.messages
+        expect(messages).to receive(:create).with(
+          hash_including(messages: [
+            hash_including(content: array_including(
+              hash_including(source: hash_including(media_type: "image/webp"))
+            ))
+          ])
+        ).and_return(mock_response)
+
+        service.call
+      end
+
+      it "RIFF形式でもWebP以外（AVI等）は非対応と判定すること" do
+        avi_binary = "RIFF\x00\x00\x00\x00AVI " + "\x00" * 100
+        upload = build_upload(avi_binary, "test.avi", "video/avi")
+        service = described_class.new(image: upload, client_code: client.code)
+
+        result = service.call
+        expect(result.success?).to be false
+        expect(result.reason).to eq(:unsupported_format)
+      end
+
+      it "ランダムバイナリは非対応と判定すること" do
+        random_binary = SecureRandom.random_bytes(100)
+        upload = build_upload(random_binary, "test.bin", "application/octet-stream")
+        service = described_class.new(image: upload, client_code: client.code)
+
+        result = service.call
+        expect(result.success?).to be false
+        expect(result.reason).to eq(:unsupported_format)
+      end
+    end
+
     context "JSONがコードブロックで囲まれている場合" do
       let(:mock_response) do
         double("Response",

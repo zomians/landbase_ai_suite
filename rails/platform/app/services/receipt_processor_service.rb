@@ -6,6 +6,11 @@ class ReceiptProcessorService
     def retryable? = !NON_RETRYABLE_REASONS.include?(reason)
   end
 
+  JPEG_MAGIC  = "\xFF\xD8\xFF".b.freeze
+  PNG_MAGIC   = "\x89PNG\r\n\x1A\n".b.freeze
+  RIFF_HEADER = "RIFF".b.freeze
+  WEBP_FOURCC = "WEBP".b.freeze
+
   SYSTEM_PROMPT = <<~PROMPT
     あなたは日本の経理・簿記の専門家です。以下のルールに厳密に従い、領収書・レシートの画像から仕訳データを生成してください。
 
@@ -195,17 +200,18 @@ class ReceiptProcessorService
   end
 
   def detect_media_type(binary)
-    case binary[0, 8].bytes
-    when ->(b) { b[0..2] == [0xFF, 0xD8, 0xFF] }
-      "image/jpeg"
-    when ->(b) { b[0..3] == [0x89, 0x50, 0x4E, 0x47] }
-      "image/png"
-    when ->(b) { b[0..3] == [0x52, 0x49, 0x46, 0x46] && binary[8, 4] == "WEBP" }
-      "image/webp"
+    binary = binary.dup.force_encoding(Encoding::ASCII_8BIT)
+    if jpeg?(binary)    then "image/jpeg"
+    elsif png?(binary)  then "image/png"
+    elsif webp?(binary) then "image/webp"
     else
       Result.new(success: false, data: {}, error: "対応していない画像フォーマットです", reason: :unsupported_format)
     end
   end
+
+  def jpeg?(binary) = binary.start_with?(JPEG_MAGIC)
+  def png?(binary)  = binary.start_with?(PNG_MAGIC)
+  def webp?(binary) = binary.start_with?(RIFF_HEADER) && binary[8, 4] == WEBP_FOURCC
 
   def call_api(image_data, media_type, prompt_text)
     client.messages.create(
