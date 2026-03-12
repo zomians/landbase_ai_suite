@@ -40,11 +40,6 @@
         font-size: 10pt;
         margin-bottom: 10mm;
       }
-      .sign-date .date-fields {
-        display: inline-flex;
-        align-items: baseline;
-        gap: 4px;
-      }
       .sign-date .underline {
         display: inline-block;
         border-bottom: 1px solid #333;
@@ -148,33 +143,6 @@
         flex-shrink: 0;
         font-weight: 500;
       }
-
-      /* 注釈ボックス */
-      .note-box {
-        border: 1px dashed #888;
-        padding: 4mm 6mm;
-        font-size: 9.5pt;
-        line-height: 1.9;
-        margin: 3mm 0;
-        color: #333;
-      }
-      .note-box .note-title {
-        font-weight: bold;
-        margin-bottom: 2mm;
-      }
-
-      /* 報酬記入欄 */
-      .remuneration-table {
-        width: 100%;
-        margin: 2mm 0;
-        font-size: 10pt;
-      }
-      .remuneration-table td {
-        padding: 1mm 2mm;
-        line-height: 1.9;
-        vertical-align: top;
-      }
-      .remuneration-table .label-cell { width: 20px; font-weight: bold; }
 
       /* ページ区切り */
       .page-break { page-break-before: always; }
@@ -285,18 +253,6 @@
         min-width: 80px;
         height: 18px;
       }
-      .apply-date {
-        font-size: 10pt;
-        margin-bottom: 8mm;
-      }
-      .apply-date .underfield {
-        display: inline-block;
-        border-bottom: 1px solid #555;
-        width: 40px;
-        height: 18px;
-        vertical-align: bottom;
-      }
-
       /* 印刷 */
       .print-button {
         display: block;
@@ -387,8 +343,8 @@
       <!-- 第3条 -->
       <div class="article">
         <div class="article-title">第３条（報酬）</div>
-        <p class="article-body">甲は乙に対し、各業務の対価として本契約に添付の「別紙　報酬条件表」に定める報酬を支払う。</p>
         <ul class="numbered-list">
+          <li><span class="num">1</span><span>甲は乙に対し、各業務の対価として本契約に添付の「別紙　報酬条件表」に定める報酬を支払う。</span></li>
           <li><span class="num">2</span><span>消費税は甲が別途負担するものとし、支払時に加算する。</span></li>
           <li><span class="num">3</span><span>報酬条件（月額・レベニューシェア率等）の変更は、両当事者が書面にて合意のうえ別紙条件表を改訂することにより行う。改訂後の別紙は本契約と同等の効力を有する。</span></li>
         </ul>
@@ -630,19 +586,5 @@
 
     <button class="print-button" onclick="window.print()">📄 PDFで保存 / 印刷</button>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const img = document.querySelector(".logo-section img");
-        if (img) {
-          img.onerror = function () {
-            this.style.display = "none";
-            const p = document.createElement("div");
-            p.textContent = "AI.LandBase";
-            p.style.cssText = "font-size:18px;font-weight:bold;color:#333;";
-            this.parentNode.replaceChild(p, this);
-          };
-        }
-      });
-    </script>
   </body>
 </html>
