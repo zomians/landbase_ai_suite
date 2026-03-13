@@ -5,8 +5,7 @@ class LineWebhookController < ApplicationController
   before_action :verify_line_signature
 
   def receive
-    body = request.body.read
-    events = JSON.parse(body)["events"] || []
+    events = JSON.parse(raw_body)["events"] || []
 
     events.each { |event| handle_event(event) }
 
@@ -15,10 +14,15 @@ class LineWebhookController < ApplicationController
 
   private
 
-  def verify_line_signature
-    body = request.body.read
-    request.body.rewind
+  def raw_body
+    @raw_body ||= begin
+      body = request.body.read
+      request.body.rewind
+      body
+    end
+  end
 
+  def verify_line_signature
     signature = request.headers["X-Line-Signature"]
     unless signature.present?
       head :unauthorized
@@ -26,7 +30,7 @@ class LineWebhookController < ApplicationController
     end
 
     channel_secret = ENV.fetch("LINE_CHANNEL_SECRET")
-    digest = OpenSSL::HMAC.digest("SHA256", channel_secret, body)
+    digest = OpenSSL::HMAC.digest("SHA256", channel_secret, raw_body)
     expected = Base64.strict_encode64(digest)
 
     unless ActiveSupport::SecurityUtils.secure_compare(expected, signature)
@@ -46,6 +50,8 @@ class LineWebhookController < ApplicationController
 
   def handle_message(event)
     line_user_id = event.dig("source", "userId")
+    return unless line_user_id.present?
+
     client = Client.find_by(line_user_id: line_user_id)
 
     unless client
@@ -65,6 +71,8 @@ class LineWebhookController < ApplicationController
 
   def handle_follow(event)
     line_user_id = event.dig("source", "userId")
+    return unless line_user_id.present?
+
     client = Client.find_by(line_user_id: line_user_id)
 
     message = if client

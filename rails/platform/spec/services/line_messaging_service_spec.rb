@@ -17,7 +17,7 @@ RSpec.describe LineMessagingService do
       service.reply("reply_token_001", "テストメッセージ")
 
       expect(Net::HTTP).to have_received(:start).with(
-        "api.line.me", 443, use_ssl: true
+        "api.line.me", 443, hash_including(use_ssl: true)
       )
     end
 
@@ -32,7 +32,7 @@ RSpec.describe LineMessagingService do
       service.push("U1234567890", "通知メッセージ")
 
       expect(Net::HTTP).to have_received(:start).with(
-        "api.line.me", 443, use_ssl: true
+        "api.line.me", 443, hash_including(use_ssl: true)
       )
     end
   end
@@ -42,7 +42,7 @@ RSpec.describe LineMessagingService do
       image_binary = "\xFF\xD8\xFF\xE0".b
       content_response = instance_double(Net::HTTPOK, is_a?: true, body: image_binary)
       allow(Net::HTTP).to receive(:start)
-        .with("api-data.line.me", 443, use_ssl: true)
+        .with("api-data.line.me", 443, hash_including(use_ssl: true))
         .and_return(content_response)
 
       result = service.get_content("msg_001")
@@ -52,7 +52,7 @@ RSpec.describe LineMessagingService do
 
     it "取得失敗時にnilを返すこと" do
       allow(Net::HTTP).to receive(:start)
-        .with("api-data.line.me", 443, use_ssl: true)
+        .with("api-data.line.me", 443, hash_including(use_ssl: true))
         .and_return(http_error)
 
       result = service.get_content("msg_001")

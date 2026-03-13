@@ -28,7 +28,7 @@ class LineMessagingService
     request = Net::HTTP::Get.new(uri)
     request["Authorization"] = "Bearer #{channel_token}"
 
-    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: 5, read_timeout: 30) do |http|
       http.request(request)
     end
 
@@ -49,7 +49,7 @@ class LineMessagingService
     request["Authorization"] = "Bearer #{channel_token}"
     request.body = body.to_json
 
-    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: 5, read_timeout: 10) do |http|
       http.request(request)
     end
 
