@@ -17,5 +17,9 @@ FactoryBot.define do
     trait :trial do
       status { "trial" }
     end
+
+    trait :with_line do
+      sequence(:line_user_id) { |n| "U#{n.to_s.rjust(32, '0')}" }
+    end
   end
 end

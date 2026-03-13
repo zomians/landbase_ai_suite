@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_23_040806) do
+ActiveRecord::Schema[8.0].define(version: 2026_03_13_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -92,7 +92,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_040806) do
     t.string "status", default: "active", comment: "ステータス: active / trial / inactive"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "line_user_id", comment: "LINE user ID（Webhook識別用）"
     t.index ["code"], name: "idx_clients_code", unique: true
+    t.index ["line_user_id"], name: "index_clients_on_line_user_id", unique: true, where: "(line_user_id IS NOT NULL)"
     t.index ["services"], name: "idx_clients_services", using: :gin
   end
 
