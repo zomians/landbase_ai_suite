@@ -82,6 +82,15 @@ CleaningManual.for_client(@current_client.code)
 JournalEntry.all
 ```
 
+### データフローの方向性
+
+LandBase AI Suite は**スプレッドシート・CSVを生成する側**のシステムです。
+
+- **INPUT**: PDF・画像・LINE写真 → AI処理 → PostgreSQL
+- **OUTPUT**: PostgreSQL → CSV・弥生フォーマット → 会計士/弥生会計
+
+外部データのインポート機能（Rakeタスク、CSV取り込み等）は原則として作らない。一回限りのデータ移行はRails consoleで手動対応する。
+
 ### セキュリティチェック
 
 ```ruby
