@@ -1,0 +1,21 @@
+<%# shared/_alert.html.erb
+  Required:
+    message: String — メッセージ本文
+  Optional:
+    variant: :success(default) / :error / :info
+    class:   String — 追加CSSクラス
+%>
+<%
+  variant = local_assigns.fetch(:variant, :success).to_sym
+
+  variant_classes = {
+    success: "bg-green-50 border-green-200 text-green-800",
+    error:   "bg-red-50 border-red-200 text-red-800",
+    info:    "bg-blue-50 border-blue-200 text-blue-800",
+  }
+
+  css = ["border rounded-lg p-4 text-sm", variant_classes[variant], local_assigns[:class]].compact.join(" ")
+%>
+<div class="<%= css %>">
+  <%= message %>
+</div>
