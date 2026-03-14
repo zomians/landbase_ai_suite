@@ -27,7 +27,10 @@
       <nav class="bg-white border-b border-gray-200 fixed w-full z-10 top-0">
         <div class="container mx-auto px-5 py-3 flex items-center justify-between">
           <%= link_to "LandBase Platform", root_path, class: "font-semibold text-gray-800 hover:text-gray-600 transition-colors" %>
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-6">
+            <% nav_active = controller_name == "clients" && action_name == "index" %>
+            <%= link_to "クライアント一覧", clients_path,
+                  class: "text-sm transition-colors #{nav_active ? 'text-blue-600 font-semibold border-b-2 border-blue-600 pb-1' : 'text-gray-600 hover:text-gray-800'}" %>
             <span class="text-sm text-gray-600"><%= current_user.email %></span>
             <%= button_to "ログアウト", destroy_user_session_path, method: :delete,
                 class: "text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded transition" %>
@@ -53,8 +56,15 @@
     <% end %>
 
     <% if user_signed_in? %>
-      <main class="container mx-auto mt-20 px-5 flex">
-        <%= yield %>
+      <main class="container mx-auto mt-20 px-5 flex flex-col">
+        <% if content_for?(:breadcrumb) %>
+          <nav class="mb-4 text-sm text-gray-500" aria-label="パンくずリスト">
+            <%= yield :breadcrumb %>
+          </nav>
+        <% end %>
+        <div class="flex">
+          <%= yield %>
+        </div>
       </main>
     <% else %>
       <%= yield %>

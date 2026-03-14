@@ -1,13 +1,14 @@
 <% content_for(:title) { "仕訳一覧 - #{@client.name}" } %>
 
+<% content_for(:breadcrumb) do %>
+  <%= link_to "クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800" %>
+  <span class="mx-1">/</span>
+  <%= link_to @client.name, client_path(@client), class: "text-blue-600 hover:text-blue-800" %>
+  <span class="mx-1">/</span>
+  <span>仕訳一覧</span>
+<% end %>
+
 <div class="w-full mx-auto px-4">
-  <div class="mb-4 text-sm text-gray-500">
-    <%= link_to "クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800" %>
-    <span class="mx-1">/</span>
-    <%= link_to @client.name, client_path(@client), class: "text-blue-600 hover:text-blue-800" %>
-    <span class="mx-1">/</span>
-    <span>仕訳一覧</span>
-  </div>
 
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold">仕訳一覧</h1>
