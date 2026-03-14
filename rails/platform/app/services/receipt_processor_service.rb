@@ -3,7 +3,7 @@ class ReceiptProcessorService
 
   Result = Data.define(:success, :data, :error, :reason) do
     alias_method :success?, :success
-    def retryable? = !NON_RETRYABLE_REASONS.include?(reason)
+    def retryable? = !success && !NON_RETRYABLE_REASONS.include?(reason)
   end
 
   JPEG_MAGIC  = "\xFF\xD8\xFF".b.freeze

@@ -3,15 +3,12 @@ class ReceiptProcessJob < ApplicationJob
 
   queue_as :default
 
-  retry_on RetryableError, wait: 5.seconds, attempts: 2
+  retry_on RetryableError, wait: 5.seconds, attempts: 2 do |job, exception|
+    batch = StatementBatch.find_by(id: job.arguments.first)
+    batch&.update(status: "failed", error_message: "リトライ上限到達: #{exception.message}")
+  end
 
   discard_on ActiveRecord::RecordNotFound
-
-  after_discard do |job, exception|
-    batch_id = job.arguments.first
-    batch = StatementBatch.find_by(id: batch_id)
-    batch&.update(status: "failed", error_message: "ジョブ実行エラー: #{exception.message}")
-  end
 
   def perform(statement_batch_id)
     batch = StatementBatch.find(statement_batch_id)
@@ -43,8 +40,12 @@ class ReceiptProcessJob < ApplicationJob
 
   def create_journal_entries(batch, data)
     source_period = if data[:receipt_date].present?
-      date = Date.parse(data[:receipt_date])
-      "#{date.year}年#{date.month}月"
+      begin
+        date = Date.parse(data[:receipt_date])
+        "#{date.year}年#{date.month}月"
+      rescue Date::Error
+        nil
+      end
     end
 
     transactions = data[:transactions] || []

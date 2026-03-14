@@ -156,6 +156,41 @@ RSpec.describe ReceiptProcessJob, type: :job do
     end
   end
 
+  context "リトライ上限到達の場合" do
+    let(:mock_result) do
+      ReceiptProcessorService::Result.new(
+        success: false, data: {}, error: "Anthropic API エラー: timeout", reason: :api_error
+      )
+    end
+
+    it "ステータスをfailedに更新すること" do
+      job = described_class.new(batch.id)
+      job.exception_executions = { "[ReceiptProcessJob::RetryableError]" => 1 }
+
+      job.perform_now
+
+      batch.reload
+      expect(batch.status).to eq("failed")
+      expect(batch.error_message).to include("リトライ上限到達")
+    end
+  end
+
+  context "receipt_dateが不正な場合" do
+    let(:mock_result_data) do
+      super().merge(receipt_date: "invalid-date")
+    end
+
+    it "source_periodをnilにして処理を完了すること" do
+      described_class.perform_now(batch.id)
+
+      batch.reload
+      expect(batch.status).to eq("completed")
+
+      entry = JournalEntry.last
+      expect(entry.source_period).to be_nil
+    end
+  end
+
   it "レコードが存在しない場合は静かに終了すること" do
     expect {
       described_class.perform_now(-1)

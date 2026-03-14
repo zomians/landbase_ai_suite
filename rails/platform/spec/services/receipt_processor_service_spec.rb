@@ -92,10 +92,10 @@ RSpec.describe ReceiptProcessorService do
       expect(result.data[:summary][:total_transactions]).to eq(1)
     end
 
-    it "成功時はretryable?がtrueであること" do
+    it "成功時はretryable?がfalseであること" do
       service = described_class.new(image: image_file, client_code: client.code)
       result = service.call
-      expect(result.retryable?).to be true
+      expect(result.retryable?).to be false
     end
 
     it "AccountMasterのマッチ情報をプロンプトに含めること" do
