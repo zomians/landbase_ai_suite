@@ -35,9 +35,8 @@ RSpec.describe "Web::JournalEntries", type: :request do
         expect(response).to have_http_status(:ok)
       end
 
-      it "パンくずが表示されること" do
+      it "ヘッダーにクライアント名が表示されること" do
         get journal_entries_path(client_code: client.code)
-        expect(response.body).to include("クライアント一覧")
         expect(response.body).to include("テスト社")
         expect(response.body).to include("仕訳一覧")
       end
@@ -87,9 +86,8 @@ RSpec.describe "Web::JournalEntries", type: :request do
         expect(response).to have_http_status(:ok)
       end
 
-      it "パンくずが表示されること" do
+      it "ヘッダーにクライアント名とパンくずが表示されること" do
         get journal_entry_path(entry, client_code: client.code)
-        expect(response.body).to include("クライアント一覧")
         expect(response.body).to include("テスト社")
         expect(response.body).to include("仕訳一覧")
       end
@@ -173,9 +171,8 @@ RSpec.describe "Web::JournalEntries", type: :request do
         expect(response).to have_http_status(:ok)
       end
 
-      it "パンくずが表示されること" do
+      it "ヘッダーにクライアント名が表示されること" do
         get edit_journal_entry_path(entry, client_code: client.code)
-        expect(response.body).to include("クライアント一覧")
         expect(response.body).to include("テスト社")
       end
     end

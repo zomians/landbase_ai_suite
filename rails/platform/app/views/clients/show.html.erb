@@ -1,10 +1,6 @@
 <% content_for(:title) { @client.name } %>
 
 <div class="w-full max-w-4xl mx-auto px-4">
-  <div class="mb-6">
-    <%= link_to "← クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800 text-sm" %>
-  </div>
-
   <%= render "shared/card", class: "mb-8" do %>
     <div class="flex items-center justify-between">
       <div>
