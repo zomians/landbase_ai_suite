@@ -45,10 +45,8 @@
   <%= button_to label, local_assigns[:href] || url_for, method: local_assigns[:method],
         form: local_assigns[:form], class: css, data: local_assigns[:data] %>
 <% else %>
-  <button type="<%= local_assigns.fetch(:type, 'button') %>" class="<%= css %>"
-    <%= "disabled" if disabled %>
-    <% local_assigns[:data]&.each do |k, v| %>data-<%= k %>="<%= v %>"<% end %>
-  >
+  <%= tag.button type: local_assigns.fetch(:type, "button"), class: css,
+        disabled: disabled || nil, data: local_assigns[:data] do %>
     <%= raw(local_assigns[:icon]) if local_assigns[:icon] %><%= label %>
-  </button>
+  <% end %>
 <% end %>
