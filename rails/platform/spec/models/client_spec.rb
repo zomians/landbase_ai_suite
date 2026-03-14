@@ -74,6 +74,26 @@ RSpec.describe Client, type: :model do
     end
   end
 
+  describe "#status_label" do
+    it "activeは「有効」を返す" do
+      expect(build(:client, status: "active").status_label).to eq("有効")
+    end
+
+    it "trialは「トライアル」を返す" do
+      expect(build(:client, status: "trial").status_label).to eq("トライアル")
+    end
+
+    it "inactiveは「無効」を返す" do
+      expect(build(:client, status: "inactive").status_label).to eq("無効")
+    end
+  end
+
+  describe "STATUSES" do
+    it "全ステータスが定義されている" do
+      expect(Client::STATUSES.keys).to contain_exactly("active", "trial", "inactive")
+    end
+  end
+
   describe "スコープ" do
     describe ".active" do
       it "activeステータスのクライアントのみ取得する" do
