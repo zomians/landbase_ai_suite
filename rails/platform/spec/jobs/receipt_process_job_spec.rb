@@ -149,10 +149,10 @@ RSpec.describe ReceiptProcessJob, type: :job do
       )
     end
 
-    it "リトライ用に例外をraiseすること" do
+    it "リトライ用にRetryableErrorをraiseすること" do
       job = described_class.new(batch.id)
 
-      expect { job.perform(batch.id) }.to raise_error(RuntimeError, "Anthropic API エラー: timeout")
+      expect { job.perform(batch.id) }.to raise_error(ReceiptProcessJob::RetryableError, "Anthropic API エラー: timeout")
     end
   end
 

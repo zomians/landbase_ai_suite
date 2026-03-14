@@ -55,6 +55,7 @@ RSpec.describe ReceiptProcessorService do
 
   let(:mock_response) do
     double("Response",
+      stop_reason: "end_turn",
       content: [
         double("Content", type: "text", text: valid_response_json)
       ]
@@ -142,6 +143,7 @@ RSpec.describe ReceiptProcessorService do
 
       let(:mock_response) do
         double("Response",
+          stop_reason: "end_turn",
           content: [
             double("Content", type: "text", text: not_receipt_response_json)
           ]
@@ -280,6 +282,7 @@ RSpec.describe ReceiptProcessorService do
     context "JSONがコードブロックで囲まれている場合" do
       let(:mock_response) do
         double("Response",
+          stop_reason: "end_turn",
           content: [
             double("Content", type: "text", text: "```json\n#{valid_response_json}\n```")
           ]
@@ -325,6 +328,7 @@ RSpec.describe ReceiptProcessorService do
     context "不正なJSONが返された場合" do
       let(:mock_response) do
         double("Response",
+          stop_reason: "end_turn",
           content: [
             double("Content", type: "text", text: "invalid json {{{")
           ]

@@ -159,7 +159,9 @@ class ReceiptProcessorService
 
     image_binary = read_image_binary
     media_type = detect_media_type(image_binary)
-    return media_type unless media_type.is_a?(String) # UnsupportedFormat の Result を返す
+    unless media_type
+      return Result.new(success: false, data: {}, error: "対応していない画像フォーマットです", reason: :unsupported_format)
+    end
 
     image_data = Base64.strict_encode64(image_binary)
     account_master_context = build_account_master_context
@@ -204,8 +206,6 @@ class ReceiptProcessorService
     if jpeg?(binary)    then "image/jpeg"
     elsif png?(binary)  then "image/png"
     elsif webp?(binary) then "image/webp"
-    else
-      Result.new(success: false, data: {}, error: "対応していない画像フォーマットです", reason: :unsupported_format)
     end
   end
 
@@ -216,7 +216,7 @@ class ReceiptProcessorService
   def call_api(image_data, media_type, prompt_text)
     client.messages.create(
       model: ENV.fetch("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: SYSTEM_PROMPT,
       messages: [{
         role: "user",
@@ -287,6 +287,6 @@ class ReceiptProcessorService
   end
 
   def client
-    @client ||= Anthropic::Client.new(timeout: 60.0)
+    @client ||= Anthropic::Client.new(timeout: 120.0)
   end
 end

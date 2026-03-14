@@ -1,7 +1,9 @@
 class ReceiptProcessJob < ApplicationJob
+  class RetryableError < StandardError; end
+
   queue_as :default
 
-  retry_on StandardError, wait: 5.seconds, attempts: 2
+  retry_on RetryableError, wait: 5.seconds, attempts: 2
 
   discard_on ActiveRecord::RecordNotFound
 
@@ -31,7 +33,7 @@ class ReceiptProcessJob < ApplicationJob
         )
       end
     elsif result.retryable?
-      raise result.error # retry_on の対象にする
+      raise RetryableError, result.error
     else
       batch.update!(status: "failed", error_message: result.error)
     end
