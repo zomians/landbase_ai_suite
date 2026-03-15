@@ -5,8 +5,14 @@ class ReceiptLineProcessJob < ApplicationJob
 
   queue_as :default
 
-  retry_on RetryableError, wait: 5.seconds, attempts: 2 do |_job, exception|
-    Rails.logger.error("[ReceiptLineProcessJob] リトライ上限到達: #{exception.message}")
+  retry_on RetryableError, wait: 5.seconds, attempts: 2 do |job, exception|
+    args = job.arguments.first
+    client = Client.find_by(id: args[:client_id])
+    if client
+      batch = client.statement_batches.where(status: "processing", source_type: "receipt").order(created_at: :desc).first
+      batch&.update!(status: "failed", error_message: "リトライ上限到達: #{exception.message}")
+    end
+    LineMessagingService.push(args[:line_user_id], "処理中にエラーが発生しました。もう一度お試しください。")
   end
 
   discard_on ActiveRecord::RecordNotFound
@@ -25,6 +31,10 @@ class ReceiptLineProcessJob < ApplicationJob
 
     existing = StatementBatch.find_by(client: client, pdf_fingerprint: fingerprint)
     if existing
+      if existing.status == "processing"
+        process_receipt(existing, line_user_id)
+        return
+      end
       @line_service.push(line_user_id, "この画像は既に処理済みです。")
       return
     end
@@ -65,8 +75,6 @@ class ReceiptLineProcessJob < ApplicationJob
 
       @line_service.push(line_user_id, format_success_message(result.data))
     elsif result.retryable?
-      batch.update!(status: "failed", error_message: result.error)
-      @line_service.push(line_user_id, "処理中にエラーが発生しました。もう一度お試しください。")
       raise RetryableError, result.error
     else
       batch.update!(status: "failed", error_message: result.error)

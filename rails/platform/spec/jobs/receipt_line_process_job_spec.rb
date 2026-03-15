@@ -124,7 +124,7 @@ RSpec.describe ReceiptLineProcessJob, type: :job do
 
     context "重複画像" do
       before do
-        create(:statement_batch, client: client, source_type: "receipt", pdf_fingerprint: fingerprint)
+        create(:statement_batch, :completed, client: client, source_type: "receipt", pdf_fingerprint: fingerprint)
       end
 
       it "重複メッセージをLINEで送信すること" do
@@ -180,24 +180,30 @@ RSpec.describe ReceiptLineProcessJob, type: :job do
         )
       end
 
-      it "エラーメッセージをLINEで送信しRetryableErrorをraiseすること" do
+      it "RetryableErrorをraiseすること" do
         expect {
           described_class.new.perform(client_id: client.id, message_id: message_id, line_user_id: line_user_id)
         }.to raise_error(ReceiptLineProcessJob::RetryableError)
-
-        expect(line_service).to have_received(:push).with(
-          line_user_id,
-          "処理中にエラーが発生しました。もう一度お試しください。"
-        )
       end
 
-      it "StatementBatchをfailedにすること" do
+      it "StatementBatchをprocessingのまま残すこと" do
         expect {
           described_class.new.perform(client_id: client.id, message_id: message_id, line_user_id: line_user_id)
         }.to raise_error(ReceiptLineProcessJob::RetryableError)
 
         batch = StatementBatch.last
-        expect(batch.status).to eq("failed")
+        expect(batch.status).to eq("processing")
+      end
+
+      it "LINEエラー通知を送信しないこと" do
+        expect {
+          described_class.new.perform(client_id: client.id, message_id: message_id, line_user_id: line_user_id)
+        }.to raise_error(ReceiptLineProcessJob::RetryableError)
+
+        expect(line_service).not_to have_received(:push).with(
+          line_user_id,
+          "処理中にエラーが発生しました。もう一度お試しください。"
+        )
       end
     end
   end
