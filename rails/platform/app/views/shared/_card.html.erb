@@ -1,0 +1,24 @@
+<%# shared/_card.html.erb
+  Optional:
+    padding:   String — パディング（default: "p-6"）
+    hover:     Boolean — ホバー効果（default: false）
+    href:      String — リンクカード化
+    class:     String — 追加CSSクラス
+%>
+<%
+  padding = local_assigns.fetch(:padding, "p-6")
+  hover   = local_assigns.fetch(:hover, false)
+
+  base = "bg-white shadow rounded-lg #{padding}"
+  base += " hover:shadow-md transition-shadow" if hover
+  css = [base, local_assigns[:class]].compact.join(" ")
+%>
+<% if local_assigns[:href] %>
+  <%= link_to local_assigns[:href], class: "block #{css}" do %>
+    <%= yield %>
+  <% end %>
+<% else %>
+  <div class="<%= css %>">
+    <%= yield %>
+  </div>
+<% end %>

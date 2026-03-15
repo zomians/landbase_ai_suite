@@ -1,0 +1,52 @@
+<%# shared/_button.html.erb
+  Required:
+    label:   String — ボタンテキスト
+  Optional:
+    variant: :primary(default) / :secondary / :danger / :success / :edit / :neutral
+    size:    :md(default) / :sm / :lg
+    href:    String — link_toとして描画
+    method:  Symbol — button_toのHTTPメソッド(:delete等)
+    form:    Hash — button_toのformオプション（turbo_confirm等）
+    type:    String — <button>のtype属性("submit"等)
+    icon:    String — ラベル前に表示するSVG/HTML（sanitize済みで出力）
+    disabled: Boolean
+    class:   String — 追加CSSクラス
+    data:    Hash — data属性
+%>
+<%
+  variant  = local_assigns.fetch(:variant, :primary).to_sym
+  size     = local_assigns.fetch(:size, :md).to_sym
+  disabled = local_assigns.fetch(:disabled, false)
+
+  variant_classes = {
+    primary:   "bg-blue-600 text-white hover:bg-blue-700",
+    secondary: "bg-gray-200 text-gray-700 hover:bg-gray-300",
+    danger:    "bg-red-600 text-white hover:bg-red-700",
+    success:   "bg-green-600 text-white hover:bg-green-700",
+    edit:      "bg-orange-600 text-white hover:bg-orange-700",
+    neutral:   "bg-gray-600 text-white hover:bg-gray-700",
+  }
+
+  size_classes = {
+    sm: "px-3 py-1.5 text-sm",
+    md: "px-4 py-2",
+    lg: "px-6 py-2",
+  }
+
+  base = "rounded-md transition-colors cursor-pointer"
+  base += " disabled:bg-gray-400 disabled:cursor-not-allowed" if disabled
+  css = [base, variant_classes[variant], size_classes[size], local_assigns[:class]].compact.join(" ")
+%>
+<% if local_assigns[:href] %>
+  <%= link_to local_assigns[:href], class: css, data: local_assigns[:data] do %>
+    <%= sanitize(local_assigns[:icon], tags: %w[svg path circle rect line polyline polygon g use defs clipPath], attributes: %w[viewBox d fill stroke stroke-width stroke-linecap stroke-linejoin class xmlns width height cx cy r x y x1 y1 x2 y2 points transform clip-path]) if local_assigns[:icon] %><%= label %>
+  <% end %>
+<% elsif local_assigns[:method] %>
+  <%= button_to label, local_assigns[:href] || url_for, method: local_assigns[:method],
+        form: local_assigns[:form], class: css, data: local_assigns[:data] %>
+<% else %>
+  <%= tag.button type: local_assigns.fetch(:type, "button"), class: css,
+        disabled: disabled || nil, data: local_assigns[:data] do %>
+    <%= sanitize(local_assigns[:icon], tags: %w[svg path circle rect line polyline polygon g use defs clipPath], attributes: %w[viewBox d fill stroke stroke-width stroke-linecap stroke-linejoin class xmlns width height cx cy r x y x1 y1 x2 y2 points transform clip-path]) if local_assigns[:icon] %><%= label %>
+  <% end %>
+<% end %>

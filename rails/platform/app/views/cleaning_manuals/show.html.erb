@@ -23,9 +23,9 @@
       <p class="text-gray-500"><%= @manual.room_type %></p>
     </div>
     <% if @manual.status == "published" %>
-      <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">公開</span>
+      <%= render "shared/badge", label: "公開", variant: :success, size: :md %>
     <% else %>
-      <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">下書き</span>
+      <%= render "shared/badge", label: "下書き", variant: :warning, size: :md %>
     <% end %>
   </div>
 
@@ -33,22 +33,30 @@
 
   <!-- サマリー -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-    <div class="bg-white shadow rounded-lg p-4 text-center">
-      <p class="text-2xl font-bold text-blue-600"><%= data[:areas]&.size || 0 %></p>
-      <p class="text-sm text-gray-500">エリア数</p>
-    </div>
-    <div class="bg-white shadow rounded-lg p-4 text-center">
-      <p class="text-2xl font-bold text-blue-600"><%= data[:areas]&.sum { |a| a[:cleaning_steps]&.size || 0 } || 0 %></p>
-      <p class="text-sm text-gray-500">清掃ステップ数</p>
-    </div>
-    <div class="bg-white shadow rounded-lg p-4 text-center">
-      <p class="text-2xl font-bold text-blue-600"><%= data[:total_estimated_minutes] || 0 %></p>
-      <p class="text-sm text-gray-500">推定所要時間（分）</p>
-    </div>
-    <div class="bg-white shadow rounded-lg p-4 text-center">
-      <p class="text-2xl font-bold text-blue-600"><%= data[:supplies_needed]&.size || 0 %></p>
-      <p class="text-sm text-gray-500">必要備品数</p>
-    </div>
+    <%= render "shared/card", padding: "p-4" do %>
+      <div class="text-center">
+        <p class="text-2xl font-bold text-blue-600"><%= data[:areas]&.size || 0 %></p>
+        <p class="text-sm text-gray-500">エリア数</p>
+      </div>
+    <% end %>
+    <%= render "shared/card", padding: "p-4" do %>
+      <div class="text-center">
+        <p class="text-2xl font-bold text-blue-600"><%= data[:areas]&.sum { |a| a[:cleaning_steps]&.size || 0 } || 0 %></p>
+        <p class="text-sm text-gray-500">清掃ステップ数</p>
+      </div>
+    <% end %>
+    <%= render "shared/card", padding: "p-4" do %>
+      <div class="text-center">
+        <p class="text-2xl font-bold text-blue-600"><%= data[:total_estimated_minutes] || 0 %></p>
+        <p class="text-sm text-gray-500">推定所要時間（分）</p>
+      </div>
+    <% end %>
+    <%= render "shared/card", padding: "p-4" do %>
+      <div class="text-center">
+        <p class="text-2xl font-bold text-blue-600"><%= data[:supplies_needed]&.size || 0 %></p>
+        <p class="text-sm text-gray-500">必要備品数</p>
+      </div>
+    <% end %>
   </div>
 
   <!-- エリア別清掃手順 -->
@@ -100,19 +108,19 @@
 
   <!-- 必要備品 -->
   <% if data[:supplies_needed].present? %>
-    <div class="mt-8 bg-white shadow rounded-lg p-6">
+    <%= render "shared/card", class: "mt-8" do %>
       <h2 class="text-lg font-semibold mb-4">必要備品・消耗品</h2>
       <div class="flex flex-wrap gap-2">
         <% data[:supplies_needed].each do |supply| %>
-          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700"><%= supply %></span>
+          <%= render "shared/badge", label: supply, variant: :neutral, size: :md %>
         <% end %>
       </div>
-    </div>
+    <% end %>
   <% end %>
 
   <!-- アップロード画像 -->
   <% if @manual.images.attached? %>
-    <div class="mt-8 bg-white shadow rounded-lg p-6">
+    <%= render "shared/card", class: "mt-8" do %>
       <h2 class="text-lg font-semibold mb-4">参考画像</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <% @manual.images.each do |image| %>
@@ -121,6 +129,6 @@
           </div>
         <% end %>
       </div>
-    </div>
+    <% end %>
   <% end %>
 </div>

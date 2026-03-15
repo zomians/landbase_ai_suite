@@ -12,9 +12,9 @@
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold">仕訳一覧</h1>
     <div class="flex gap-2">
-      <%= link_to "Amex明細処理", new_amex_statement_path(client_code: @client_code), class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
-      <%= link_to "銀行明細処理", new_bank_statement_path(client_code: @client_code), class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
-      <%= link_to "請求書処理", new_invoice_path(client_code: @client_code), class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors" %>
+      <%= render "shared/button", label: "Amex明細処理", href: new_amex_statement_path(client_code: @client_code) %>
+      <%= render "shared/button", label: "銀行明細処理", href: new_bank_statement_path(client_code: @client_code) %>
+      <%= render "shared/button", label: "請求書処理", href: new_invoice_path(client_code: @client_code) %>
     </div>
   </div>
 
@@ -31,9 +31,7 @@
         <option value="receipt" <%= "selected" if @source_type == "receipt" %>>レシート</option>
       </select>
     </div>
-    <button type="submit" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
-      検索
-    </button>
+    <%= render "shared/button", label: "検索", variant: :neutral, type: "submit" %>
     <div class="relative inline-block" data-controller="dropdown">
       <button type="button" data-action="click->dropdown#toggle" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors inline-flex items-center gap-1">
         エクスポート
@@ -123,9 +121,9 @@
               <%# 右端固定列 %>
               <td class="sticky right-[4rem] z-10 bg-white group-hover:bg-gray-50 px-3 py-2 whitespace-nowrap border-l border-gray-200">
                 <% if entry.status == "review_required" %>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">要確認</span>
+                  <%= render "shared/badge", label: "要確認", variant: :warning %>
                 <% else %>
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">OK</span>
+                  <%= render "shared/badge", label: "OK", variant: :success %>
                 <% end %>
               </td>
               <td class="sticky right-0 z-10 bg-white group-hover:bg-gray-50 px-3 py-2 text-right whitespace-nowrap space-x-1 border-l border-gray-200">
