@@ -43,9 +43,9 @@
               <td class="px-6 py-4 text-sm text-gray-500"><%= client.industry.presence || "—" %></td>
               <td class="px-6 py-4">
                 <% if client.status == "active" %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= client.status_label %></span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><%= client.status_label %></span>
                 <% elsif client.status == "trial" %>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><%= client.status_label %></span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><%= client.status_label %></span>
                 <% end %>
               </td>
             </tr>
