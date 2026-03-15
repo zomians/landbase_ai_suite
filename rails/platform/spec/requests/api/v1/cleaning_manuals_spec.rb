@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe "Api::V1::CleaningManuals", type: :request do
-  let(:client) { create(:client, code: "test_client") }
+  let(:client) { create(:client, :hotel, code: "test_client") }
   let(:client_code) { client.code }
   let(:api_token_record) { create(:api_token) }
   let(:authorization_header) { { "Authorization" => "Bearer #{api_token_record.raw_token}" } }
@@ -167,6 +167,26 @@ RSpec.describe "Api::V1::CleaningManuals", type: :request do
       get "/api/v1/cleaning_manuals/#{manual.id}/status", params: { client_code: client_code }, headers: authorization_header
 
       expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe "業種別アクセス制御" do
+    let(:restaurant_client) { create(:client, code: "restaurant_api", industry: "restaurant") }
+
+    it "非hotelクライアントのindex は403を返すこと" do
+      get "/api/v1/cleaning_manuals", params: { client_code: restaurant_client.code }, headers: authorization_header
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "非hotelクライアントのgenerate は403を返すこと" do
+      post "/api/v1/cleaning_manuals/generate", params: { client_code: restaurant_client.code }, headers: authorization_header
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "servicesでオーバーライドされたクライアントはアクセス可能" do
+      overridden = create(:client, code: "overridden", industry: "restaurant", services: { "cleaning_manuals" => true })
+      get "/api/v1/cleaning_manuals", params: { client_code: overridden.code }, headers: authorization_header
+      expect(response).to have_http_status(:ok)
     end
   end
 end
