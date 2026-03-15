@@ -90,9 +90,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_040806) do
     t.string "industry", comment: "業種: restaurant / hotel / tour"
     t.jsonb "services", default: {}, comment: "サービス設定"
     t.string "status", default: "active", comment: "ステータス: active / trial / inactive"
+    t.string "line_user_id", comment: "LINE user ID（Webhook識別用）"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["code"], name: "idx_clients_code", unique: true
+    t.index ["line_user_id"], name: "index_clients_on_line_user_id", unique: true, where: "(line_user_id IS NOT NULL)"
     t.index ["services"], name: "idx_clients_services", using: :gin
   end
 

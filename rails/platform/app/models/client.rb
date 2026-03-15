@@ -17,6 +17,7 @@ class Client < ApplicationRecord
   validates :name, presence: true
   validates :status, inclusion: { in: STATUSES.keys }
   validates :industry, inclusion: { in: %w[restaurant hotel tour] }, allow_nil: true
+  validates :line_user_id, uniqueness: true, allow_nil: true
 
   # === スコープ ===
   scope :active, -> { where(status: "active") }
