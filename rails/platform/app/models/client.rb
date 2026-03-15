@@ -6,6 +6,12 @@ class Client < ApplicationRecord
     "inactive" => "無効"
   }.freeze
 
+  INDUSTRY_FEATURES = {
+    "hotel"      => %w[cleaning_manuals],
+    "restaurant" => %w[],
+    "tour"       => %w[],
+  }.freeze
+
   # === 関連 ===
   has_many :journal_entries, dependent: :restrict_with_error
   has_many :account_masters, dependent: :restrict_with_error
@@ -37,5 +43,14 @@ class Client < ApplicationRecord
 
   def status_label
     STATUSES[status]
+  end
+
+  def feature_available?(feature)
+    key = feature.to_s
+    if services.key?(key)
+      services[key]
+    else
+      INDUSTRY_FEATURES.fetch(industry.to_s, []).include?(key)
+    end
   end
 end

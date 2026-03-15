@@ -159,4 +159,52 @@ RSpec.describe Client, type: :model do
       expect(client.account_masters).to contain_exactly(master)
     end
   end
+
+  describe "#feature_available?" do
+    describe "業種デフォルト" do
+      it "hotelクライアントはcleaning_manualsが利用可能" do
+        client = build(:client, :hotel, services: {})
+        expect(client.feature_available?(:cleaning_manuals)).to be true
+      end
+
+      it "restaurantクライアントはcleaning_manualsが利用不可" do
+        client = build(:client, industry: "restaurant", services: {})
+        expect(client.feature_available?(:cleaning_manuals)).to be false
+      end
+
+      it "tourクライアントはcleaning_manualsが利用不可" do
+        client = build(:client, industry: "tour", services: {})
+        expect(client.feature_available?(:cleaning_manuals)).to be false
+      end
+
+      it "industry未設定のクライアントはcleaning_manualsが利用不可" do
+        client = build(:client, industry: nil, services: {})
+        expect(client.feature_available?(:cleaning_manuals)).to be false
+      end
+    end
+
+    describe "servicesオーバーライド" do
+      it "servicesでtrueに設定するとrestaurantでも利用可能" do
+        client = build(:client, industry: "restaurant", services: { "cleaning_manuals" => true })
+        expect(client.feature_available?(:cleaning_manuals)).to be true
+      end
+
+      it "servicesでfalseに設定するとhotelでも利用不可" do
+        client = build(:client, :hotel, services: { "cleaning_manuals" => false })
+        expect(client.feature_available?(:cleaning_manuals)).to be false
+      end
+    end
+
+    describe "引数の型" do
+      it "Symbolでも動作する" do
+        client = build(:client, :hotel)
+        expect(client.feature_available?(:cleaning_manuals)).to be true
+      end
+
+      it "Stringでも動作する" do
+        client = build(:client, :hotel)
+        expect(client.feature_available?("cleaning_manuals")).to be true
+      end
+    end
+  end
 end
