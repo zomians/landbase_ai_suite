@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>業務委託基本契約書 - CTR-202604-0001</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: "Hiragino Kaku Gothic Pro", "Yu Gothic Medium", "Meiryo", sans-serif;
+        font-size: 10.5pt;
+        color: #222;
+        background: #f0f0f0;
+        padding: 20px;
+      }
+
+      .page {
+        background: #fff;
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0 auto 20px;
+        padding: 25mm 22mm 20mm;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        position: relative;
+      }
+
+      /* タイトル */
+      .doc-title {
+        font-size: 20pt;
+        font-weight: bold;
+        text-align: center;
+        letter-spacing: 1.2em;
+        margin-bottom: 14mm;
+      }
+
+      /* 締結日 */
+      .sign-date {
+        text-align: right;
+        font-size: 10pt;
+        margin-bottom: 10mm;
+      }
+      .sign-date .underline {
+        display: inline-block;
+        border-bottom: 1px solid #333;
+        width: 40px;
+        height: 18px;
+      }
+      .sign-date .underline.wide { width: 24px; }
+
+      /* 当事者情報ボックス */
+      .parties-box {
+        border: 1px solid #888;
+        padding: 6mm 8mm;
+        margin-bottom: 10mm;
+        font-size: 10pt;
+        line-height: 2;
+      }
+      .party-section { margin-bottom: 4mm; }
+      .party-section:last-child { margin-bottom: 0; }
+      .party-label {
+        font-size: 9.5pt;
+        color: #444;
+        margin-bottom: 1mm;
+      }
+      .party-divider {
+        border: none;
+        border-top: 1px solid #ccc;
+        margin: 4mm 0;
+      }
+      .party-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 1mm;
+      }
+      .party-row .label { min-width: 42px; color: #444; }
+      .party-row .value { font-weight: 500; }
+      .party-row .underfield {
+        flex: 1;
+        border-bottom: 1px solid #555;
+        min-height: 18px;
+        min-width: 160px;
+      }
+
+      /* 前文 */
+      .preamble {
+        font-size: 10pt;
+        line-height: 2;
+        margin-bottom: 8mm;
+        text-indent: 1em;
+      }
+
+      /* 条文 */
+      .article {
+        margin-bottom: 7mm;
+      }
+      .article-title {
+        font-size: 10.5pt;
+        font-weight: bold;
+        margin-bottom: 2mm;
+      }
+      .article-body {
+        font-size: 10pt;
+        line-height: 1.95;
+        text-indent: 1em;
+        margin-bottom: 2mm;
+      }
+      .article-body.no-indent { text-indent: 0; }
+      .numbered-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 2mm 0;
+      }
+      .numbered-list li {
+        display: flex;
+        gap: 8px;
+        font-size: 10pt;
+        line-height: 1.95;
+        margin-bottom: 1mm;
+        padding-left: 2em;
+      }
+      .numbered-list li .num {
+        min-width: 1.5em;
+        text-align: right;
+        flex-shrink: 0;
+      }
+      .clause-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 2mm 0;
+      }
+      .clause-list li {
+        display: flex;
+        gap: 8px;
+        font-size: 10pt;
+        line-height: 1.95;
+        margin-bottom: 1mm;
+        padding-left: 3em;
+      }
+      .clause-list li .cnum {
+        min-width: 1.2em;
+        flex-shrink: 0;
+        font-weight: 500;
+      }
+
+      /* ページ区切り */
+      .page-break { page-break-before: always; }
+
+      /* 末文 */
+      .closing {
+        text-align: center;
+        font-size: 10pt;
+        line-height: 2;
+        margin: 10mm 0 8mm;
+      }
+
+      /* 罫線 */
+      .section-rule {
+        border: none;
+        border-top: 1px solid #555;
+        margin: 8mm 0;
+      }
+      .section-rule.thick {
+        border-top: 2px solid #333;
+      }
+
+      /* 署名欄タイトル */
+      .sig-section-title {
+        text-align: center;
+        font-size: 14pt;
+        letter-spacing: 1em;
+        margin-bottom: 8mm;
+      }
+
+      /* 署名ボックス（甲乙） */
+      .sig-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10mm;
+        margin-bottom: 8mm;
+      }
+      .sig-box {
+        border: 1px solid #888;
+        padding: 5mm 6mm;
+        font-size: 9.5pt;
+        line-height: 1.9;
+        position: relative;
+        min-height: 55mm;
+      }
+      .sig-box .party-head {
+        font-size: 10pt;
+        margin-bottom: 3mm;
+        color: #444;
+      }
+      .sig-box .sig-row {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin-bottom: 2mm;
+      }
+      .sig-box .sig-label { min-width: 44px; color: #444; }
+      .sig-box .sig-val {
+        flex: 1;
+        border-bottom: 1px solid #666;
+        min-height: 18px;
+      }
+      .sig-box .sig-val.fixed { border-bottom: none; font-weight: 500; }
+      .seal-area {
+        position: absolute;
+        right: 6mm;
+        bottom: 6mm;
+        width: 20mm;
+        height: 20mm;
+        border: 1px solid #bbb;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9pt;
+        color: #aaa;
+      }
+
+      /* 附属書 */
+      .appendix-title {
+        text-align: center;
+        font-size: 14pt;
+        letter-spacing: 0.3em;
+        margin: 8mm 0;
+      }
+      .appendix-preamble {
+        font-size: 10pt;
+        line-height: 2;
+        margin-bottom: 6mm;
+        text-indent: 1em;
+      }
+      .appendix-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10pt;
+        margin-bottom: 6mm;
+      }
+      .appendix-table th, .appendix-table td {
+        border: 1px solid #888;
+        padding: 3mm 4mm;
+        line-height: 1.9;
+      }
+      .appendix-table th { background: #f5f5f5; text-align: center; }
+      .appendix-table td { vertical-align: top; }
+      .appendix-table .underfield {
+        border-bottom: 1px solid #555;
+        display: inline-block;
+        min-width: 80px;
+        height: 18px;
+      }
+      /* 印刷 */
+      .print-button {
+        display: block;
+        margin: 0 auto 20px;
+        padding: 12px 36px;
+        background: #333;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .print-button:hover { background: #555; }
+
+      @media print {
+        body { background: #fff; padding: 0; }
+        .page { box-shadow: none; margin: 0; padding: 15mm 20mm 15mm; }
+        .print-button { display: none; }
+        @page { size: A4; margin: 0; }
+        .page-break { page-break-before: always; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- ===== ページ1: 表紙 + 条文 ===== -->
+    <div class="page">
+
+      <div class="doc-title">業 務 委 託 基 本 契 約 書</div>
+
+      <div class="sign-date">
+        締結日：<span class="underline wide"></span>&nbsp;年&nbsp;&nbsp;<span class="underline wide"></span>&nbsp;月&nbsp;&nbsp;<span class="underline wide"></span>&nbsp;日
+      </div>
+
+      <!-- 当事者情報 -->
+      <div class="parties-box">
+        <div class="party-section">
+          <div class="party-label">甲（委託者 ／ サービス受益者）</div>
+          <div class="party-row"><span class="label">法人名</span><span class="underfield"></span></div>
+          <div class="party-row"><span class="label">住　所</span><span class="underfield"></span></div>
+          <div class="party-row"><span class="label">代表者</span><span class="underfield"></span></div>
+        </div>
+        <hr class="party-divider" />
+        <div class="party-section">
+          <div class="party-label">乙（受託者 ／ サービス提供者）</div>
+          <div class="party-row"><span class="label">法人名</span><span class="value">株式会社 AI.LandBase</span></div>
+          <div class="party-row"><span class="label">住　所</span><span class="value">〒905-0412　沖縄県国頭郡今帰仁村湧川 852-2</span></div>
+          <div class="party-row"><span class="label">代表者</span><span class="value">代表取締役　末永 壽蔵</span></div>
+        </div>
+      </div>
+
+      <!-- 前文 -->
+      <p class="preamble">
+        甲および乙（以下、総称して「両当事者」という）は、乙が甲に対して提供する業務委託サービスに関し、以下のとおり業務委託基本契約（以下「本契約」という）を締結する。
+      </p>
+
+      <!-- 第1条 -->
+      <div class="article">
+        <div class="article-title">第１条（目的）</div>
+        <p class="article-body">
+          本契約は、甲が乙に対して業務を委託し、乙がこれを受託するにあたっての基本的な条件を定めることを目的とする。
+        </p>
+      </div>
+
+      <!-- 第2条 -->
+      <div class="article">
+        <div class="article-title">第２条（委託業務の内容）</div>
+        <p class="article-body no-indent">乙が甲に提供する業務は以下の2種とする。</p>
+        <ul class="clause-list">
+          <li>
+            <span class="cnum">①</span>
+            <span>
+              <strong>システム開発支援業務</strong><br>
+              甲の事業に関するシステムの設計・開発・改善・運用支援に関する業務全般。
+            </span>
+          </li>
+          <li>
+            <span class="cnum">②</span>
+            <span>
+              <strong>経営助言業務</strong><br>
+              甲の事業戦略・経営課題に関する分析・提言・助言に関する業務全般。
+            </span>
+          </li>
+        </ul>
+        <p class="article-body">各業務の詳細な作業範囲・納品物は、両当事者が別途合意のうえ書面または電磁的方法で定める。</p>
+      </div>
+
+      <!-- 第3条 -->
+      <div class="article">
+        <div class="article-title">第３条（報酬）</div>
+        <ul class="numbered-list">
+          <li><span class="num">1</span><span>甲は乙に対し、各業務の対価として本契約に添付の「別紙　報酬条件表」に定める報酬を支払う。</span></li>
+          <li><span class="num">2</span><span>各報酬に係る消費税は甲が別途負担する（外税）。</span></li>
+          <li><span class="num">3</span><span>報酬条件（月額・レベニューシェア率等）の変更は、両当事者が書面にて合意のうえ別紙条件表を改訂することにより行う。改訂後の別紙は本契約と同等の効力を有する。</span></li>
+        </ul>
+      </div>
+
+      <!-- 第4条 -->
+      <div class="article">
+        <div class="article-title">第４条（支払条件）</div>
+        <ul class="numbered-list">
+          <li><span class="num">1</span><span>乙は毎月末日を締め日として、当月分の報酬を記載した請求書を甲に送付する。</span></li>
+          <li><span class="num">2</span><span>甲は請求書受領後、翌月末日までに乙の指定する銀行口座へ振込にて支払う。振込手数料は甲の負担とする。</span></li>
+          <li><span class="num">3</span><span>支払期限を超過した場合、甲は未払額に対し年率14.6％の遅延損害金を乙に支払う。</span></li>
+        </ul>
+      </div>
+
+      <!-- 第5条 -->
+      <div class="article">
+        <div class="article-title">第５条（契約期間）</div>
+        <ul class="numbered-list">
+          <li>
+            <span class="num">1</span>
+            <span>
+              本契約の有効期間は、
+              <span style="border-bottom:1px solid #555; display:inline-block; width:36px; height:18px; vertical-align:bottom;"></span>年
+              <span style="border-bottom:1px solid #555; display:inline-block; width:24px; height:18px; vertical-align:bottom;"></span>月
+              <span style="border-bottom:1px solid #555; display:inline-block; width:24px; height:18px; vertical-align:bottom;"></span>日を開始日とし、１ヶ月間とする。
+            </span>
+          </li>
+          <li><span class="num">2</span><span>契約期間満了の１ヶ月前までに、いずれの当事者からも書面による解約の申し入れがない場合、本契約は同一条件でさらに１ヶ月間自動更新されるものとし、以後も同様とする。</span></li>
+          <li><span class="num">3</span><span>両当事者のいずれも、相手方に対して１ヶ月前までに書面にて通知することにより、契約期間満了をもって本契約を解約することができる。</span></li>
+        </ul>
+      </div>
+
+      <!-- 第6条 -->
+      <div class="article">
+        <div class="article-title">第６条（秘密保持）</div>
+        <ul class="numbered-list">
+          <li><span class="num">1</span><span>両当事者は、本契約の履行を通じて知り得た相手方の技術上・営業上・財務上の情報を第三者に開示・漏洩してはならない。</span></li>
+          <li><span class="num">2</span><span>前項の義務は本契約終了後２年間存続する。</span></li>
+        </ul>
+      </div>
+
+      <!-- 第7条 -->
+      <div class="article">
+        <div class="article-title">第７条（知的財産権）</div>
+        <ul class="numbered-list">
+          <li><span class="num">1</span><span>乙が本業務を通じて甲に納品した成果物のうち、乙の技術・知見・知識・ノウハウ（以下「乙固有技術」という）を含む部分の著作権その他一切の知的財産権は乙に帰属する。甲は、乙固有技術を含む成果物を、乙の書面による事前承諾なく、無断で転載し、第三者に譲渡し、または改造・改変することはできない。</span></li>
+          <li><span class="num">2</span><span>前項に該当しない成果物（乙固有技術を含まない部分）の著作権は、甲が対価を完済したことを条件として甲に帰属する。</span></li>
+          <li><span class="num">3</span><span>乙が本業務以前から保有する技術・ノウハウ・ツール等の権利は乙に帰属し、本条各項の適用を受けない。</span></li>
+        </ul>
+      </div>
+
+      <!-- 第8条 -->
+      <div class="article">
+        <div class="article-title">第８条（損害賠償）</div>
+        <ul class="numbered-list">
+          <li><span class="num">1</span><span>乙は、本業務の遂行にあたり善良な管理者の注意をもって誠実に対応し、その責に帰すべき事由により甲に損害を与えた場合は、適切に賠償責任を負う。</span></li>
+          <li><span class="num">2</span><span>前項の賠償責任を負う場合においても、賠償の範囲は甲に現実に発生した直接かつ通常の損害に限るものとし（逸失利益・間接損害・特別損害を含まない）、かつその上限は損害発生月の前１ヶ月間に甲が乙に支払った報酬総額とする。これは、業務委託契約における合理的なリスク分担を目的とするものである。</span></li>
+          <li><span class="num">3</span><span>乙の故意または重大な過失による損害については、前項の制限を適用しない。</span></li>
+        </ul>
+      </div>
+
+      <!-- 第9条 -->
+      <div class="article">
+        <div class="article-title">第９条（反社会的勢力の排除）</div>
+        <p class="article-body">
+          両当事者は、現在および将来にわたり、暴力団その他の反社会的勢力に該当しないこと、かつ関係を持たないことを表明・保証する。違反が判明した場合、相手方は催告なく本契約を解除できる。
+        </p>
+      </div>
+
+      <!-- 第10条 -->
+      <div class="article">
+        <div class="article-title">第１０条（協議・合意管轄）</div>
+        <ul class="numbered-list">
+          <li><span class="num">1</span><span>本契約に定めのない事項または解釈に疑義が生じた場合、両当事者は誠実に協議のうえ解決する。</span></li>
+          <li><span class="num">2</span><span>本契約に関する紛争は、那覇地方裁判所または東京地方裁判所を第一審の専属的合意管轄裁判所とする。</span></li>
+        </ul>
+      </div>
+
+      <!-- 末文 -->
+      <p class="closing">本契約の成立を証するため、本書２通を作成し、甲乙各１通を保有する。</p>
+
+      <hr class="section-rule thick" />
+
+      <!-- 署名欄 -->
+      <div class="sig-section-title">署　名　欄</div>
+
+      <div class="sig-grid">
+        <!-- 甲 -->
+        <div class="sig-box">
+          <div class="party-head">甲（委託者）</div>
+          <div class="sig-row">
+            <span class="sig-label">所在地：</span>
+            <span class="sig-val"></span>
+          </div>
+          <div class="sig-row">
+            <span class="sig-label">法人名：</span>
+            <span class="sig-val"></span>
+          </div>
+          <div class="sig-row">
+            <span class="sig-label">代表者：</span>
+            <span class="sig-val"></span>
+            <span style="font-size:9pt; color:#888;">㊞</span>
+          </div>
+          <div class="seal-area">印</div>
+        </div>
+        <!-- 乙 -->
+        <div class="sig-box">
+          <div class="party-head">乙（受託者）</div>
+          <div class="sig-row">
+            <span class="sig-label">所在地：</span>
+            <span class="sig-val fixed">〒905-0412　沖縄県国頭郡今帰仁村湧川 852-2</span>
+          </div>
+          <div class="sig-row">
+            <span class="sig-label">法人名：</span>
+            <span class="sig-val fixed">株式会社 AI.LandBase</span>
+          </div>
+          <div class="sig-row">
+            <span class="sig-label">代表者：</span>
+            <span class="sig-val fixed">代表取締役　末永 壽蔵</span>
+            <span style="font-size:9pt; color:#888;">㊞</span>
+          </div>
+          <div class="seal-area">印</div>
+        </div>
+      </div>
+
+    </div><!-- /page1 -->
+
+    <!-- ===== ページ2: 別紙 報酬条件表 ===== -->
+    <div class="page page-break">
+
+      <div style="text-align:right; font-size:9.5pt; color:#666; margin-bottom:6mm;">
+        業務委託基本契約書　別紙
+      </div>
+
+      <div class="appendix-title">別 紙　報 酬 条 件 表</div>
+
+      <p class="appendix-preamble">
+        本別紙は、業務委託基本契約書（締結日：
+        <span style="border-bottom:1px solid #555; display:inline-block; width:36px; height:18px; vertical-align:bottom;"></span>年
+        <span style="border-bottom:1px solid #555; display:inline-block; width:24px; height:18px; vertical-align:bottom;"></span>月
+        <span style="border-bottom:1px solid #555; display:inline-block; width:24px; height:18px; vertical-align:bottom;"></span>日）第３条に基づく報酬条件を定める。
+      </p>
+
+      <table class="appendix-table">
+        <thead>
+          <tr>
+            <th style="width:30%">項　目</th>
+            <th>条　件　詳　細</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>①　システム開発支援業務報酬</strong><br>（月額固定）</td>
+            <td>
+              月額　<span class="underfield" style="min-width:120px;"></span>　円（税抜）
+            </td>
+          </tr>
+          <tr>
+            <td><strong>②　経営助言業務報酬</strong><br>（レベニューシェア）</td>
+            <td>
+              <div style="margin-bottom:3mm;">
+                対象売上の定義：<span class="underfield" style="min-width:160px;"></span>
+              </div>
+              <div style="margin-bottom:3mm;">
+                シェア率：対象売上の　<span class="underfield" style="min-width:40px;"></span>　％相当額
+              </div>
+              <div>
+                計算・支払サイクル：<span class="underfield" style="min-width:80px;"></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>消費税の取扱い</strong></td>
+            <td>①②ともに消費税は甲が別途負担する（外税）。</td>
+          </tr>
+          <tr>
+            <td><strong>適用開始日</strong></td>
+            <td>
+              <span class="underfield" style="width:36px;"></span>年
+              <span class="underfield" style="width:24px;"></span>月
+              <span class="underfield" style="width:24px;"></span>日以降の請求分から適用する。
+            </td>
+          </tr>
+          <tr>
+            <td><strong>特記事項</strong></td>
+            <td style="font-size:9.5pt; color:#444;">
+              本別紙の内容は、両当事者の書面合意により改訂できる。改訂後の別紙は本契約と同等の効力を有し、旧別紙と差し替えるものとする。
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="font-size:10pt; margin: 8mm 0 6mm; text-align:center;">
+        本別紙の内容を確認・合意したことを証するため、甲乙各自署名または記名捺印する。
+      </p>
+
+      <div class="sig-grid">
+        <!-- 甲 -->
+        <div class="sig-box">
+          <div class="party-head">甲（委託者）</div>
+          <div class="sig-row">
+            <span class="sig-label">所在地：</span>
+            <span class="sig-val"></span>
+          </div>
+          <div class="sig-row">
+            <span class="sig-label">法人名：</span>
+            <span class="sig-val"></span>
+          </div>
+          <div class="sig-row">
+            <span class="sig-label">代表者：</span>
+            <span class="sig-val"></span>
+            <span style="font-size:9pt; color:#888;">㊞</span>
+          </div>
+          <div class="seal-area">印</div>
+        </div>
+        <!-- 乙 -->
+        <div class="sig-box">
+          <div class="party-head">乙（受託者）</div>
+          <div class="sig-row">
+            <span class="sig-label">所在地：</span>
+            <span class="sig-val fixed">〒905-0412　沖縄県国頭郡今帰仁村湧川 852-2</span>
+          </div>
+          <div class="sig-row">
+            <span class="sig-label">法人名：</span>
+            <span class="sig-val fixed">株式会社 AI.LandBase</span>
+          </div>
+          <div class="sig-row">
+            <span class="sig-label">代表者：</span>
+            <span class="sig-val fixed">代表取締役　末永 壽蔵</span>
+            <span style="font-size:9pt; color:#888;">㊞</span>
+          </div>
+          <div class="seal-area">印</div>
+        </div>
+      </div>
+
+    </div><!-- /page2 -->
+
+    <button class="print-button" onclick="window.print()">📄 PDFで保存 / 印刷</button>
+
+  </body>
+</html>
