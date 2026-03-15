@@ -38,8 +38,9 @@
               <span class="text-gray-400">/</span>
               <%= link_to @sidebar_client.name, client_path(@sidebar_client), class: "text-sm text-gray-600 hover:text-gray-800 transition-colors" %>
             <% else %>
+              <% clients_active = current_page?(root_path) || current_page?(clients_path) || request.path.start_with?('/clients/') %>
               <%= link_to "クライアント一覧", clients_path,
-                    class: "text-sm #{current_page?(root_path) || current_page?(clients_path) || request.path.start_with?('/clients/') ? 'text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'} transition-colors" %>
+                    class: "text-sm #{clients_active ? 'text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'} transition-colors" %>
             <% end %>
           </div>
           <div class="flex items-center gap-4">
