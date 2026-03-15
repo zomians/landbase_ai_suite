@@ -4,12 +4,11 @@ export default class extends Controller {
   static targets = [
     "form", "dropZone", "fileInput", "fileName",
     "submitButton", "loading", "error", "errorMessage",
-    "result", "resultContent", "clientCode"
+    "clientCode"
   ]
 
   // --- サブクラスでオーバーライド ---
   get uploadUrl() { throw new Error("implement uploadUrl in subclass") }
-  get statusUrlPrefix() { throw new Error("implement statusUrlPrefix in subclass") }
   get sourceType() { throw new Error("implement sourceType in subclass") }
   get documentLabel() { return "明細" }
 
@@ -86,9 +85,10 @@ export default class extends Controller {
     }
 
     this.hideError()
-    this.hideResult()
     this.showLoading()
     this.submitButtonTarget.disabled = true
+
+    const progressTab = window.open("about:blank", "_blank")
 
     const formData = new FormData()
     formData.append("pdf", this.file)
@@ -105,6 +105,7 @@ export default class extends Controller {
       const data = await response.json()
 
       if (response.status === 409 && data.duplicate) {
+        this.closeTab(progressTab)
         this.hideLoading()
         this.submitButtonTarget.disabled = false
         if (confirm(`この${this.documentLabel}は既に処理済みです。再処理しますか？`)) {
@@ -114,14 +115,17 @@ export default class extends Controller {
       }
 
       if (!response.ok) {
+        this.closeTab(progressTab)
         this.showError(data.error || `${this.documentLabel}の処理に失敗しました。`)
         this.hideLoading()
         this.submitButtonTarget.disabled = false
         return
       }
 
-      await this.pollStatus(data.id, clientCode)
+      this.openProgressTab(progressTab, data.id)
+      this.resetForm()
     } catch (error) {
+      this.closeTab(progressTab)
       this.showError(`通信エラー: ${error.message}`)
     } finally {
       this.hideLoading()
@@ -133,8 +137,8 @@ export default class extends Controller {
     this.showLoading()
     this.submitButtonTarget.disabled = true
 
+    const progressTab = window.open("about:blank", "_blank")
     formData.append("force", "true")
-    const clientCode = formData.get("client_code")
 
     try {
       const response = await fetch(this.uploadUrl, {
@@ -148,12 +152,15 @@ export default class extends Controller {
       const data = await response.json()
 
       if (!response.ok) {
+        this.closeTab(progressTab)
         this.showError(data.error || `${this.documentLabel}の処理に失敗しました。`)
         return
       }
 
-      await this.pollStatus(data.id, clientCode)
+      this.openProgressTab(progressTab, data.id)
+      this.resetForm()
     } catch (error) {
+      this.closeTab(progressTab)
       this.showError(`通信エラー: ${error.message}`)
     } finally {
       this.hideLoading()
@@ -161,34 +168,26 @@ export default class extends Controller {
     }
   }
 
-  async pollStatus(batchId, clientCode) {
-    const POLL_INTERVAL = 3000
-    const MAX_POLLS = 300
-
-    for (let i = 0; i < MAX_POLLS; i++) {
-      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL))
-
-      try {
-        const response = await fetch(
-          `${this.statusUrlPrefix}/${batchId}/status?client_code=${encodeURIComponent(clientCode)}`
-        )
-        const data = await response.json()
-
-        if (data.status === "completed") {
-          this.showResult(data, clientCode)
-          return
-        }
-
-        if (data.status === "failed") {
-          this.showError(data.error_message || `${this.documentLabel}の処理に失敗しました。`)
-          return
-        }
-      } catch (error) {
-        console.warn("Polling error:", error.message)
-      }
+  openProgressTab(tab, batchId) {
+    const url = `/statement_batches/${batchId}`
+    if (tab) {
+      tab.location.href = url
+    } else {
+      window.location.href = url
     }
+  }
 
-    this.showError("処理がタイムアウトしました。しばらく待ってからページを再読み込みしてください。")
+  closeTab(tab) {
+    if (tab) tab.close()
+  }
+
+  resetForm() {
+    this.file = null
+    this.fileInputTarget.value = ""
+    this.fileNameTarget.textContent = ""
+    this.fileNameTarget.classList.add("hidden")
+    this.submitButtonTarget.disabled = true
+    this.hideError()
   }
 
   showLoading() {
@@ -206,50 +205,5 @@ export default class extends Controller {
 
   hideError() {
     this.errorTarget.classList.add("hidden")
-  }
-
-  showResult(data, clientCode) {
-    this.resultTarget.classList.remove("hidden")
-    const summary = data.summary || {}
-
-    let html = `<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">`
-    html += this.renderSummaryCards(summary, data)
-    html += `</div>`
-
-    html += `<div class="flex gap-4">`
-    html += `<a href="/journal_entries?client_code=${encodeURIComponent(clientCode)}&source_type=${this.sourceType}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">仕訳一覧を確認</a>`
-    html += `<a href="/api/v1/journal_entries/export?client_code=${encodeURIComponent(clientCode)}&statement_batch_id=${data.id}" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">CSVダウンロード</a>`
-    html += `</div>`
-
-    this.resultContentTarget.innerHTML = html
-  }
-
-  renderSummaryCards(summary, data) {
-    let html = ""
-    html += `<div class="bg-white shadow rounded-lg p-4 text-center">`
-    html += `<p class="text-2xl font-bold text-blue-600">${this.escapeHTML(String(summary.total_transactions || 0))}</p>`
-    html += `<p class="text-sm text-gray-500">取引件数</p></div>`
-    html += `<div class="bg-white shadow rounded-lg p-4 text-center">`
-    html += `<p class="text-2xl font-bold text-blue-600">${this.escapeHTML(String((summary.total_amount || 0).toLocaleString()))}円</p>`
-    html += `<p class="text-sm text-gray-500">合計金額</p></div>`
-    html += `<div class="bg-white shadow rounded-lg p-4 text-center">`
-    html += `<p class="text-2xl font-bold text-yellow-600">${this.escapeHTML(String(summary.review_required_count || 0))}</p>`
-    html += `<p class="text-sm text-gray-500">要確認</p></div>`
-    html += `<div class="bg-white shadow rounded-lg p-4 text-center">`
-    html += `<p class="text-2xl font-bold text-green-600">${this.escapeHTML(String(data.journal_entries_count || 0))}</p>`
-    html += `<p class="text-sm text-gray-500">仕訳登録数</p></div>`
-    return html
-  }
-
-  hideResult() {
-    this.resultTarget.classList.add("hidden")
-    this.resultContentTarget.innerHTML = ""
-  }
-
-  escapeHTML(str) {
-    if (!str) return ""
-    const div = document.createElement("div")
-    div.textContent = str
-    return div.innerHTML
   }
 }

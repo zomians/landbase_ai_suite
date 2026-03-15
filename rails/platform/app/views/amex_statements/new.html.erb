@@ -47,22 +47,11 @@
   <!-- ローディング -->
   <div data-pdf-upload-target="loading" class="hidden mt-8 text-center">
     <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-    <p class="mt-2 text-gray-600">AIが明細PDFを解析し、仕訳データを生成しています...</p>
-    <p class="text-sm text-gray-400">PDF のページ数によっては数分かかることがあります</p>
+    <p class="mt-2 text-gray-600">アップロード中...</p>
   </div>
 
   <!-- エラー表示 -->
   <div data-pdf-upload-target="error" class="hidden mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
     <p class="text-red-800" data-pdf-upload-target="errorMessage"></p>
-  </div>
-
-  <!-- 結果表示 -->
-  <div data-pdf-upload-target="result" class="hidden mt-8 space-y-6">
-    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-      <p class="text-green-800 font-medium">明細の処理が完了しました</p>
-    </div>
-
-    <div data-pdf-upload-target="resultContent">
-    </div>
   </div>
 </div>

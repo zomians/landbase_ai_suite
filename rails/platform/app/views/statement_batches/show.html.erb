@@ -1,0 +1,48 @@
+<% source_labels = { "bank" => "銀行明細", "amex" => "Amex明細", "invoice" => "請求書", "receipt" => "領収書" } %>
+<% source_label = source_labels[@batch.source_type] || @batch.source_type %>
+<% content_for(:title) { "#{source_label}処理状況" } %>
+
+<%
+  status_paths = {
+    "bank"    => "bank_statements",
+    "amex"    => "amex_statements",
+    "invoice" => "invoices",
+    "receipt" => "receipts"
+  }
+  api_resource = status_paths[@batch.source_type]
+  status_url = api_resource ?
+    "/api/v1/#{api_resource}/#{@batch.id}/status?client_code=#{ERB::Util.url_encode(@client.code)}" :
+    nil
+%>
+
+<div class="w-full max-w-4xl mx-auto"
+     data-controller="batch-progress"
+     data-batch-progress-batch-id-value="<%= @batch.id %>"
+     data-batch-progress-source-type-value="<%= @batch.source_type %>"
+     data-batch-progress-client-code-value="<%= @client.code %>"
+     data-batch-progress-status-url-value="<%= status_url %>"
+     data-batch-progress-status-value="<%= @batch.status %>">
+
+  <h1 class="text-2xl font-bold mb-6"><%= source_label %>処理状況</h1>
+
+  <%# ローディング（処理中のみ表示） %>
+  <div data-batch-progress-target="loading" class="<%= @batch.status == 'processing' ? '' : 'hidden' %> mt-8 text-center">
+    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <p class="mt-2 text-gray-600">AIが<%= source_label %>を解析し、仕訳データを生成しています...</p>
+    <p class="text-sm text-gray-400">PDFのページ数によっては数分かかることがあります</p>
+  </div>
+
+  <%# エラー表示 %>
+  <div data-batch-progress-target="error" class="<%= @batch.status == 'failed' ? '' : 'hidden' %> mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
+    <p class="text-red-800" data-batch-progress-target="errorMessage"><%= @batch.error_message if @batch.status == 'failed' %></p>
+  </div>
+
+  <%# 結果表示 %>
+  <div data-batch-progress-target="result" class="<%= @batch.status == 'completed' ? '' : 'hidden' %> mt-8 space-y-6">
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+      <p class="text-green-800 font-medium"><%= source_label %>の処理が完了しました</p>
+    </div>
+    <div data-batch-progress-target="resultContent">
+    </div>
+  </div>
+</div>
