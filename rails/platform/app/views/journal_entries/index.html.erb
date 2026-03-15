@@ -31,7 +31,7 @@
         <option value="receipt" <%= "selected" if @source_type == "receipt" %>>レシート</option>
       </select>
     </div>
-    <%= render "shared/button", label: "検索", variant: :ghost, type: "submit" %>
+    <%= render "shared/button", label: "検索", variant: :neutral, type: "submit" %>
     <div class="relative inline-block" data-controller="dropdown">
       <button type="button" data-action="click->dropdown#toggle" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors inline-flex items-center gap-1">
         エクスポート

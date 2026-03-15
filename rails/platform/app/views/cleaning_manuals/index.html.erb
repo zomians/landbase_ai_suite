@@ -22,7 +22,7 @@
       <input type="text" name="client_code" id="client_code" value="<%= @client_code %>"
              class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
     </div>
-    <%= render "shared/button", label: "検索", variant: :ghost, type: "submit" %>
+    <%= render "shared/button", label: "検索", variant: :neutral, type: "submit" %>
   </form>
 
   <% if @client_code.blank? %>
