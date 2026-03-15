@@ -5,6 +5,8 @@ module Api
       MAX_IMAGE_SIZE = 10.megabytes
       MAX_IMAGE_COUNT = 50
 
+      before_action :require_feature!
+
       def index
         manuals = @current_client.cleaning_manuals.recent
         render json: manuals.map { |m| manual_summary(m) }
@@ -101,6 +103,12 @@ module Api
 
       def rails_blob_url(blob)
         Rails.application.routes.url_helpers.rails_blob_url(blob, only_path: true)
+      end
+
+      def require_feature!
+        return if @current_client&.feature_available?(:cleaning_manuals)
+
+        render json: { error: "この機能はご利用いただけません" }, status: :forbidden
       end
     end
   end

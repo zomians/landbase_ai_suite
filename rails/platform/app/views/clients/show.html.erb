@@ -47,9 +47,11 @@
       <p class="text-sm text-gray-500">請求書PDFをAIで仕訳データに変換</p>
     <% end %>
 
+    <% if @client.feature_available?(:cleaning_manuals) %>
     <%= render "shared/card", href: cleaning_manuals_path(client_code: @client.code), hover: true do %>
       <h2 class="text-lg font-semibold text-gray-900 mb-2">清掃マニュアル</h2>
       <p class="text-sm text-gray-500">AI生成の清掃基準マニュアル管理</p>
+    <% end %>
     <% end %>
   </div>
 </div>

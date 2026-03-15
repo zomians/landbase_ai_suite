@@ -23,8 +23,10 @@ if Rails.env.development?
   # デモクライアント
   client = Client.find_or_create_by!(code: "demo") do |c|
     c.name = "デモ会社"
+    c.industry = "hotel"
   end
-  puts "デモクライアントを作成しました: #{client.name} (#{client.code})"
+  client.update!(industry: "hotel") if client.industry.blank?
+  puts "デモクライアントを作成しました: #{client.name} (#{client.code}) [#{client.industry}]"
 
   # サンプル仕訳（単一仕訳）
   unless JournalEntry.exists?(client: client, source_type: "amex", transaction_no: 1, source_period: "2026-03")
