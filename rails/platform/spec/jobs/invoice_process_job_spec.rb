@@ -49,7 +49,8 @@ RSpec.describe InvoiceProcessJob, type: :job do
     InvoiceProcessorService::Result.new(
       success: true,
       data: mock_result_data,
-      error: nil
+      error: nil,
+      reason: nil
     )
   end
 
@@ -102,10 +103,32 @@ RSpec.describe InvoiceProcessJob, type: :job do
     expect(entry.source_period).to eq("2026年2月")
   end
 
-  context "サービスが失敗した場合" do
+  context "retryableなエラーの場合" do
     let(:mock_result) do
       InvoiceProcessorService::Result.new(
-        success: false, data: {}, error: "Anthropic API エラー: API key invalid"
+        success: false, data: {}, error: "Anthropic API エラー: timeout", reason: :api_error
+      )
+    end
+
+    it "RetryableErrorをraiseすること" do
+      job = described_class.new(batch.id)
+
+      expect { job.perform(batch.id) }.to raise_error(InvoiceProcessJob::RetryableError, "Anthropic API エラー: timeout")
+    end
+
+    it "JournalEntryを作成しないこと" do
+      job = described_class.new(batch.id)
+
+      expect {
+        job.perform(batch.id) rescue nil
+      }.not_to change(JournalEntry, :count)
+    end
+  end
+
+  context "non-retryableなエラーの場合" do
+    let(:mock_result) do
+      InvoiceProcessorService::Result.new(
+        success: false, data: {}, error: "ANTHROPIC_API_KEY が設定されていません", reason: :config_error
       )
     end
 
@@ -114,7 +137,7 @@ RSpec.describe InvoiceProcessJob, type: :job do
 
       batch.reload
       expect(batch.status).to eq("failed")
-      expect(batch.error_message).to eq("Anthropic API エラー: API key invalid")
+      expect(batch.error_message).to eq("ANTHROPIC_API_KEY が設定されていません")
     end
 
     it "JournalEntryを作成しないこと" do
