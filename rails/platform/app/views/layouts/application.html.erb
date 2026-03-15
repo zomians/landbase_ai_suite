@@ -37,6 +37,9 @@
             <% if @sidebar_client %>
               <span class="text-gray-400">/</span>
               <%= link_to @sidebar_client.name, client_path(@sidebar_client), class: "text-sm text-gray-600 hover:text-gray-800 transition-colors" %>
+            <% else %>
+              <%= link_to "クライアント一覧", clients_path,
+                    class: "text-sm #{current_page?(clients_path) || request.path.start_with?('/clients') ? 'text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'} transition-colors" %>
             <% end %>
           </div>
           <div class="flex items-center gap-4">
@@ -67,12 +70,18 @@
     <% if user_signed_in? %>
       <% if @sidebar_client %>
         <%= render "shared/sidebar" %>
-        <main class="mt-14 lg:ml-56 px-5 py-6 flex">
-          <%= yield %>
+        <main class="mt-14 lg:ml-56 px-5 py-6">
+          <%= content_for?(:breadcrumb) ? content_for(:breadcrumb) : "" %>
+          <div class="flex">
+            <%= yield %>
+          </div>
         </main>
       <% else %>
-        <main class="container mx-auto mt-20 px-5 flex">
-          <%= yield %>
+        <main class="container mx-auto mt-20 px-5">
+          <%= content_for?(:breadcrumb) ? content_for(:breadcrumb) : "" %>
+          <div class="flex">
+            <%= yield %>
+          </div>
         </main>
       <% end %>
       </div>
