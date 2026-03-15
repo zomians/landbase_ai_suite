@@ -1,12 +1,13 @@
 <% content_for(:title) { "#{@manual.property_name} - 清掃マニュアル" } %>
 
-<div class="w-full max-w-4xl mx-auto">
-  <div class="mb-4 text-sm text-gray-500">
-    <%= link_to "清掃マニュアル一覧", cleaning_manuals_path(client_code: @client_code || @manual.client.code), class: "text-blue-600 hover:text-blue-800" %>
-    <span class="mx-1">/</span>
-    <span><%= @manual.property_name %></span>
-  </div>
+<% content_for(:breadcrumb) do %>
+  <%= render "shared/breadcrumb", items: [
+    { label: "清掃マニュアル一覧", path: cleaning_manuals_path(client_code: @client_code || @manual.client.code) },
+    { label: @manual.property_name }
+  ] %>
+<% end %>
 
+<div class="w-full max-w-4xl mx-auto">
   <div class="flex items-center justify-between mb-6">
     <div>
       <h1 class="text-2xl font-bold"><%= @manual.property_name %></h1>

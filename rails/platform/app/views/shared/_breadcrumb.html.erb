@@ -1,0 +1,18 @@
+<%# items: [{ label: "クライアント一覧", path: clients_path }, { label: "詳細" }] %>
+<%# 最後の要素はリンクなし（現在のページ） %>
+<nav aria-label="パンくずリスト" class="mb-4 text-sm text-gray-500">
+  <ol class="flex items-center flex-wrap">
+    <% items.each_with_index do |item, i| %>
+      <li class="flex items-center">
+        <% if i > 0 %>
+          <span class="mx-1">/</span>
+        <% end %>
+        <% if item[:path].present? && i < items.size - 1 %>
+          <%= link_to item[:label], item[:path], class: "text-blue-600 hover:text-blue-800" %>
+        <% else %>
+          <span><%= item[:label] %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+</nav>
