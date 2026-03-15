@@ -1,17 +1,23 @@
 class ReceiptLineProcessJob < ApplicationJob
+  include JournalEntryCreator
+
+  class RetryableError < StandardError; end
+
   queue_as :default
 
-  retry_on StandardError, wait: 5.seconds, attempts: 2
+  retry_on RetryableError, wait: 5.seconds, attempts: 2 do |_job, exception|
+    Rails.logger.error("[ReceiptLineProcessJob] リトライ上限到達: #{exception.message}")
+  end
 
   discard_on ActiveRecord::RecordNotFound
 
   def perform(client_id:, message_id:, line_user_id:)
     client = Client.find(client_id)
-    line_service = LineMessagingService.new
+    @line_service = LineMessagingService.new
 
-    image_binary = line_service.get_content(message_id)
+    image_binary = @line_service.get_content(message_id)
     unless image_binary
-      line_service.push(line_user_id, "画像の取得に失敗しました。もう一度お試しください。")
+      @line_service.push(line_user_id, "画像の取得に失敗しました。もう一度お試しください。")
       return
     end
 
@@ -19,7 +25,7 @@ class ReceiptLineProcessJob < ApplicationJob
 
     existing = StatementBatch.find_by(client: client, pdf_fingerprint: fingerprint)
     if existing
-      line_service.push(line_user_id, "この画像は既に処理済みです。")
+      @line_service.push(line_user_id, "この画像は既に処理済みです。")
       return
     end
 
@@ -35,7 +41,7 @@ class ReceiptLineProcessJob < ApplicationJob
       content_type: detect_content_type(image_binary)
     )
 
-    line_service.push(line_user_id, "領収書を受け付けました。処理中です...")
+    @line_service.push(line_user_id, "領収書を受け付けました。処理中です...")
 
     process_receipt(batch, line_user_id)
   end
@@ -43,6 +49,8 @@ class ReceiptLineProcessJob < ApplicationJob
   private
 
   def process_receipt(batch, line_user_id)
+    return unless batch.status == "processing"
+
     service = ReceiptProcessorService.new(
       image: batch.pdf,
       client_code: batch.client.code
@@ -55,7 +63,11 @@ class ReceiptLineProcessJob < ApplicationJob
         batch.update!(status: "completed", summary: result.data[:summary] || {})
       end
 
-      LineMessagingService.push(line_user_id, format_success_message(result.data))
+      @line_service.push(line_user_id, format_success_message(result.data))
+    elsif result.retryable?
+      batch.update!(status: "failed", error_message: result.error)
+      @line_service.push(line_user_id, "処理中にエラーが発生しました。もう一度お試しください。")
+      raise RetryableError, result.error
     else
       batch.update!(status: "failed", error_message: result.error)
 
@@ -65,52 +77,7 @@ class ReceiptLineProcessJob < ApplicationJob
       else
         "処理中にエラーが発生しました。もう一度お試しください。"
       end
-      LineMessagingService.push(line_user_id, message)
-    end
-  end
-
-  def create_journal_entries(batch, data)
-    source_period = if data[:receipt_date].present?
-      date = Date.parse(data[:receipt_date])
-      "#{date.year}年#{date.month}月"
-    end
-
-    transactions = data[:transactions] || []
-    transactions.each do |txn|
-      batch.journal_entries.create!(
-        client: batch.client,
-        source_type: batch.source_type,
-        source_period: source_period,
-        transaction_no: txn[:transaction_no],
-        date: txn[:date],
-        description: txn[:description] || "",
-        tag: txn[:tag] || "receipt",
-        memo: txn[:memo] || "",
-        cardholder: "",
-        status: txn[:status] || "ok",
-        journal_entry_lines_attributes: [
-          {
-            side: "debit",
-            account: txn[:debit_account],
-            sub_account: txn[:debit_sub_account] || "",
-            department: txn[:debit_department] || "",
-            partner: txn[:debit_partner] || "",
-            tax_category: txn[:debit_tax_category] || "",
-            invoice: txn[:debit_invoice] || "",
-            amount: txn[:debit_amount]
-          },
-          {
-            side: "credit",
-            account: txn[:credit_account],
-            sub_account: txn[:credit_sub_account] || "",
-            department: txn[:credit_department] || "",
-            partner: txn[:credit_partner] || "",
-            tax_category: txn[:credit_tax_category] || "",
-            invoice: txn[:credit_invoice] || "",
-            amount: txn[:credit_amount]
-          }
-        ]
-      )
+      @line_service.push(line_user_id, message)
     end
   end
 

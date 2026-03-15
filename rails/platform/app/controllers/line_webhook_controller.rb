@@ -2,6 +2,10 @@ class LineWebhookController < ApplicationController
   skip_before_action :authenticate_user!
   skip_forgery_protection
 
+  rescue_from ActionDispatch::Http::Parameters::ParseError do
+    head :bad_request
+  end
+
   before_action :verify_line_signature
 
   def receive
@@ -10,6 +14,8 @@ class LineWebhookController < ApplicationController
     events.each { |event| handle_event(event) }
 
     head :ok
+  rescue JSON::ParserError
+    head :bad_request
   end
 
   private
@@ -64,7 +70,7 @@ class LineWebhookController < ApplicationController
 
     ReceiptLineProcessJob.perform_later(
       client_id: client.id,
-      message_id: event.dig("message", "messageId"),
+      message_id: event.dig("message", "id"),
       line_user_id: line_user_id
     )
   end

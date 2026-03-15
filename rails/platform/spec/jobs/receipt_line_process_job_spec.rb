@@ -1,18 +1,5 @@
 require "rails_helper"
 
-# ReceiptProcessorService はPR#221でマージ予定。未マージ時のテスト用スタブ。
-unless defined?(ReceiptProcessorService)
-  class ReceiptProcessorService
-    Result = Data.define(:success, :data, :error, :reason) do
-      alias_method :success?, :success
-      def retryable? = ![:non_receipt, :unsupported_format].include?(reason)
-    end
-
-    def initialize(image:, client_code:); end
-    def call; end
-  end
-end
-
 RSpec.describe ReceiptLineProcessJob, type: :job do
   let(:client) { create(:client, line_user_id: "U1234567890abcdef") }
   let(:line_user_id) { client.line_user_id }
@@ -64,7 +51,6 @@ RSpec.describe ReceiptLineProcessJob, type: :job do
     allow(LineMessagingService).to receive(:new).and_return(line_service)
     allow(line_service).to receive(:get_content).with(message_id).and_return(image_binary)
     allow(line_service).to receive(:push)
-    allow(LineMessagingService).to receive(:push)
   end
 
   describe "#perform" do
@@ -108,7 +94,7 @@ RSpec.describe ReceiptLineProcessJob, type: :job do
       it "処理完了メッセージをLINEで送信すること" do
         described_class.new.perform(client_id: client.id, message_id: message_id, line_user_id: line_user_id)
 
-        expect(LineMessagingService).to have_received(:push).with(
+        expect(line_service).to have_received(:push).with(
           line_user_id,
           a_string_including("領収書を処理しました")
         )
@@ -167,7 +153,7 @@ RSpec.describe ReceiptLineProcessJob, type: :job do
       it "非領収書メッセージをLINEで送信すること" do
         described_class.new.perform(client_id: client.id, message_id: message_id, line_user_id: line_user_id)
 
-        expect(LineMessagingService).to have_received(:push).with(
+        expect(line_service).to have_received(:push).with(
           line_user_id,
           "領収書またはレシートの画像を送信してください。"
         )
@@ -181,7 +167,7 @@ RSpec.describe ReceiptLineProcessJob, type: :job do
       end
     end
 
-    context "APIエラー" do
+    context "リトライ可能なAPIエラー" do
       let(:error_result) do
         ReceiptProcessorService::Result.new(
           success: false, data: {}, error: "Anthropic API エラー", reason: :api_error
@@ -194,13 +180,24 @@ RSpec.describe ReceiptLineProcessJob, type: :job do
         )
       end
 
-      it "エラーメッセージをLINEで送信すること" do
-        described_class.new.perform(client_id: client.id, message_id: message_id, line_user_id: line_user_id)
+      it "エラーメッセージをLINEで送信しRetryableErrorをraiseすること" do
+        expect {
+          described_class.new.perform(client_id: client.id, message_id: message_id, line_user_id: line_user_id)
+        }.to raise_error(ReceiptLineProcessJob::RetryableError)
 
-        expect(LineMessagingService).to have_received(:push).with(
+        expect(line_service).to have_received(:push).with(
           line_user_id,
           "処理中にエラーが発生しました。もう一度お試しください。"
         )
+      end
+
+      it "StatementBatchをfailedにすること" do
+        expect {
+          described_class.new.perform(client_id: client.id, message_id: message_id, line_user_id: line_user_id)
+        }.to raise_error(ReceiptLineProcessJob::RetryableError)
+
+        batch = StatementBatch.last
+        expect(batch.status).to eq("failed")
       end
     end
   end

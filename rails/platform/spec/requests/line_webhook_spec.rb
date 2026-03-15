@@ -30,7 +30,7 @@ RSpec.describe "LineWebhook", type: :request do
       "type" => "message",
       "replyToken" => reply_token,
       "source" => { "type" => "user", "userId" => user_id },
-      "message" => { "type" => "image", "messageId" => message_id }
+      "message" => { "type" => "image", "id" => message_id }
     }
   end
 
@@ -64,6 +64,18 @@ RSpec.describe "LineWebhook", type: :request do
                "X-Line-Signature" => "invalid_signature"
              }
         expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "不正なJSONボディで400を返すこと" do
+        invalid_body = "not json"
+        signature = sign_body(invalid_body)
+        post "/webhook/line",
+             params: invalid_body,
+             headers: {
+               "Content-Type" => "application/json",
+               "X-Line-Signature" => signature
+             }
+        expect(response).to have_http_status(:bad_request)
       end
     end
 
