@@ -76,7 +76,17 @@ RSpec.describe "Web::Clients", type: :request do
         expect(response.body).to include("Amex明細処理")
         expect(response.body).to include("銀行明細処理")
         expect(response.body).to include("請求書処理")
+      end
+
+      it "hotelクライアントは清掃マニュアルカードが表示されること" do
+        hotel_client = create(:client, :hotel, code: "hotel_test", name: "ホテルテスト")
+        get client_path(hotel_client)
         expect(response.body).to include("清掃マニュアル")
+      end
+
+      it "非hotelクライアントは清掃マニュアルカードが表示されないこと" do
+        get client_path(client)
+        expect(response.body).not_to include("清掃マニュアル")
       end
 
       it "存在しないコードの場合リダイレクトすること" do
