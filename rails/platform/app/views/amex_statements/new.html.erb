@@ -1,16 +1,6 @@
 <% content_for(:title) { "Amex明細PDF処理" } %>
 
 <div class="w-full max-w-4xl mx-auto" data-controller="pdf-upload">
-  <% if @client %>
-    <div class="mb-4 text-sm text-gray-500">
-      <%= link_to "クライアント一覧", clients_path, class: "text-blue-600 hover:text-blue-800" %>
-      <span class="mx-1">/</span>
-      <%= link_to @client.name, client_path(@client), class: "text-blue-600 hover:text-blue-800" %>
-      <span class="mx-1">/</span>
-      <span>Amex明細処理</span>
-    </div>
-  <% end %>
-
   <h1 class="text-2xl font-bold mb-6">Amex明細PDF → 仕訳台帳変換</h1>
 
   <form data-pdf-upload-target="form" data-action="submit->pdf-upload#submit" class="space-y-6">
